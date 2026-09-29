@@ -20,6 +20,7 @@
 - [Read-only NVML diagnostics and tests](docs/nvml-diagnostics.md)
 - [NVML backend contract and validation](docs/nvml-backend.md)
 - [Development monitor-only integration](docs/monitor-mode.md)
+- [Preparing the development GUI](docs/gui-development.md)
 - [Configuration backup and restore](docs/configuration-backup.md)
 - [Contributing and development workflow](CONTRIBUTING.md)
 - [Repository instructions for coding agents](AGENTS.md)

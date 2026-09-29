@@ -116,3 +116,10 @@ This can be planned alongside GPU work, but GWE compatibility does not establish
 For each future run, record date, commit, GPU model, driver, kernel, OS, X11/Wayland session, packaging/runtime,
 scenario, expected behavior, observed result and recovery outcome. Avoid personal paths, GPU UUIDs and profile
 contents in shared reports. Mark unperformed scenarios as untested, not passed.
+
+## GUI preparation follow-up
+
+GTK3, Notify and the system GI/Cairo bindings are present. The Python 3.12 venv needs system package
+visibility; Dazzle, Ayatana and the GLib resource compiler require owner installation. The initial Python UI
+dependency set is in `requirements-ui312.txt`. See [GUI preparation](gui-development.md). No package was
+installed by the agent, no GUI was launched, and Python 3.14 remains isolated for backend tests.

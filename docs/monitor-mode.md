@@ -51,3 +51,6 @@ Reactivex 4.0.4 emits a datetime deprecation warning in both interpreters; it do
 for read-only diagnostics; a future control test requires ensuring only one controller owns the fans.
 
 See [configuration backup](configuration-backup.md) before any future profile migration or control test.
+
+See [GUI preparation](gui-development.md) for the exact missing native packages and the Python 3.12
+dependency set. The source launcher/resource compilation workflow is the next implementation step.
