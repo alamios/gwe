@@ -8,10 +8,13 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 - Completed: read-only baseline, source assessment, working branch and English documentation.
 - Completed: interpreter checks for the two owner-provided environments (2026-09-30): Python 3.12.3 and 3.14.6.
-- Pending: dependency installation/validation, reproducible build, backend changes and automated tests.
+- Completed: standalone read-only NVML probe, 16 simulated tests on each interpreter, live GPU reads without
+  display variables, and dependency checks. See [diagnostic validation](nvml-diagnostics.md).
+- Pending: full application dependency validation, reproducible UI build and backend integration.
 - Pending: GPU write tests, Wayland validation, fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
-- NVML is the proposed interface, not an implemented replacement yet. Binding choice and version are undecided.
+- NVML is the proposed application interface, not an integrated replacement yet. The standalone probe uses
+  nvidia-ml-py 13.615.71; live read compatibility is verified on the current driver.
 - A separate privileged service is under evaluation; its protocol, permissions and supervision need design.
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
@@ -43,13 +46,13 @@ GWE backend development; live NVML queries require the NVIDIA driver library.
 
 ## Environment check: 2026-09-30
 
-Both supplied interpreters start successfully. Neither environment exposes the checked project dependencies
-or pytest, including PyGObject, Pycairo and either NVML binding. No packages were installed and GWE was not started.
+Both supplied interpreters start successfully. The owner installed nvidia-ml-py 13.615.71 and pytest 9.1.1
+in both environments. Dependency checks, 16 simulated tests per interpreter and live read-only diagnostics
+passed. See [commands, output semantics and results](nvml-diagnostics.md).
 
-The next increment is a standalone read-only NVML probe and backend tests on both interpreters, before UI
-integration. Evaluate `nvidia-ml-py` (import name `pynvml`) as the maintained binding and pytest as the test runner.
-Ask the owner to install these two packages in both environments, then record and validate their exact versions.
-This small dependency set does not run the current application; its remaining dependencies will be reviewed separately.
+The remaining GTK application dependencies have not been installed or validated. GWE was not started.
+The next increment is an application telemetry backend with stable GPU identity and explicit capability/error
+handling, reusing the lessons from the probe. Integrating that backend into the UI remains a separate step.
 
 ## Phase 1: reproducible development
 

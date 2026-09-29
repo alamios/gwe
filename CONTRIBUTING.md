@@ -28,3 +28,9 @@ Preserve copyright notices and the GPL-3.0-or-later license.
 The current build scripts may regenerate the changelog and clear build output. Inspect them before use.
 The Flatpak submodule must be reviewed and initialized deliberately before a Flatpak build; it still points
 at the historical upstream package. Follow [RELEASING.md](RELEASING.md) for distribution decisions.
+
+## Standalone backend diagnostics
+
+Use `python -m pytest -q` for simulated diagnostic tests; they do not access hardware.
+Use `python -m gwe.nvml_probe` for an explicit read-only hardware snapshot. Neither command starts the GUI.
+See [NVML diagnostics](docs/nvml-diagnostics.md) for environment requirements, exit codes and validated versions.

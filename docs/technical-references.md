@@ -22,7 +22,8 @@ uses GTK4; GWE currently needs GTK3. Interpreter compatibility tests do not repl
 Reviewed on 2026-09-30: [NVIDIA's nvidia-ml-py package](https://pypi.org/project/nvidia-ml-py/)
 provides the `pynvml` import and wraps NVML errors as Python exceptions.
 [pytest's getting started guide](https://docs.pytest.org/en/stable/getting-started.html) documents the proposed
-test runner. Installation and compatibility checks on both project interpreters are still pending.
+test runner. nvidia-ml-py 13.615.71 and pytest 9.1.1 have now passed the standalone diagnostic checks
+on both project interpreters; see the [validation record](nvml-diagnostics.md).
 The binding version does not establish support for every API on the installed driver.
 
 ## API questions for implementation

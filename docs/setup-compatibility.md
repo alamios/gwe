@@ -110,3 +110,9 @@ review the actual APT transaction before upgrading. See the [CUDA installation g
 
 No write, load, failure recovery or migration tests have been performed. Read-only NVML results support the
 feasibility of a personal adaptation; the current GWE is not validated for Wayland or arbitrary upgrades.
+
+## Follow-up validation: 2026-09-30
+
+The new standalone probe successfully read the same GPU through nvidia-ml-py 13.615.71 on Python 3.12.3
+and 3.14.6 with display variables removed. Both fans and their manual limits were readable. This validates
+this diagnostic path, not the existing GUI or fan control. See the [test record](nvml-diagnostics.md).

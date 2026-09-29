@@ -17,13 +17,15 @@
 - [Setup assessment and observed baseline](docs/setup-compatibility.md)
 - [Maintenance plan and validation criteria](docs/maintenance-plan.md)
 - [Technical references](docs/technical-references.md)
+- [Read-only NVML diagnostics and tests](docs/nvml-diagnostics.md)
 - [Contributing and development workflow](CONTRIBUTING.md)
 - [Repository instructions for coding agents](AGENTS.md)
 - [Local builds and future releases](RELEASING.md)
 
 All maintained documentation is written in English. The current implementation still requires X11 NV-CONTROL.
 The assessment records read-only checks; GPU writes, failure recovery and Kubuntu 26.04 remain unvalidated.
-Python 3.12 and 3.14 development interpreters are available; dependency validation is the next step.
+Standalone NVML diagnostics pass on Python 3.12 and 3.14, including real GPU reads without display variables.
+Run `python -m gwe.nvml_probe` from the repository root in a prepared environment; see the diagnostic guide above.
 
 The original authorship and GPL-3.0-or-later license are retained. Existing application identifiers remain
 for now to avoid an unplanned settings migration. Any future publication must use an independent hosting
