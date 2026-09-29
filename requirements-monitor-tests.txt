@@ -1,0 +1,6 @@
+# Repository routing and write-block tests; not the full GTK application.
+-r requirements-diagnostics.txt
+injector==0.21.0
+reactivex==4.0.4
+python-xlib==0.33
+py3nvml==0.2.7

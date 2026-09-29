@@ -87,9 +87,11 @@ class HistoricalDataPresenter:
                 data[GraphType.GPU_TEMP] = (time, float(gpu_temp), '°C', 0.0, 100.0)
             if gpu_status.fan.fan_list:
                 fan_duty = gpu_status.fan.fan_list[0][0]
-                data[GraphType.FAN_DUTY] = (time, float(fan_duty), '%', 0.0, 100.0)
+                if fan_duty is not None:
+                    data[GraphType.FAN_DUTY] = (time, float(fan_duty), '%', 0.0, 100.0)
                 fan_rpm = gpu_status.fan.fan_list[0][1]
-                data[GraphType.FAN_RPM] = (time, float(fan_rpm), 'rpm', 0.0, 2200.0)
+                if fan_rpm is not None:
+                    data[GraphType.FAN_RPM] = (time, float(fan_rpm), 'rpm', 0.0, 2200.0)
             gpu_load = gpu_status.info.gpu_usage
             if gpu_load is not None:
                 data[GraphType.GPU_LOAD] = (time, float(gpu_load), '%', 0.0, 100.0)

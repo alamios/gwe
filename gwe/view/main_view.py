@@ -229,7 +229,11 @@ class MainView(MainViewInterface):
         _LOG.debug('view status')
         if status:
             gpu_status = status.gpu_status_list[gpu_index]
-            if self._first_refresh:
+            if status.read_only:
+                self._window.set_title("GreenWithEnvy — Monitor only")
+                self._fan_warning_label.set_text("Fan control is disabled in monitor-only mode.")
+                self._overclock_warning_label.set_text("Overclocking is disabled in monitor-only mode.")
+            if self._first_refresh or status.read_only:
                 self._first_refresh = False
                 self._set_entry_text(self._info_name_entry, gpu_status.info.name)
                 self._set_entry_text(self._info_vbios_entry, gpu_status.info.vbios)
@@ -257,7 +261,7 @@ class MainView(MainViewInterface):
                 maximum = gpu_status.power.maximum
                 default = gpu_status.power.default
                 limit = gpu_status.power.limit
-                if (minimum is not None and maximum is not None
+                if (not status.read_only and minimum is not None and maximum is not None
                         and default is not None and limit is not None
                         and minimum != maximum):
                     self._power_limit_adjustment.set_lower(minimum)
@@ -306,6 +310,8 @@ class MainView(MainViewInterface):
                                    "<span size=\"xx-large\">{}</span> °C", gpu_status.temp.gpu)
             for index, value in enumerate(self._fan_duty):
                 if gpu_status.fan.fan_list and index < len(gpu_status.fan.fan_list):
+                    value.set_visible(True)
+                    self._fan_rpm[index].set_visible(True)
                     self._set_label_markup(value,
                                            "<span size=\"large\">{}</span> %", gpu_status.fan.fan_list[index][0])
                     self._set_label_markup(self._fan_rpm[index],

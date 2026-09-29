@@ -14,14 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with gst.  If not, see <http://www.gnu.org/licenses/>.
-from gwe.model.fan_profile import FanProfile
-from gwe.model.fan_profile_type import FanProfileType
-from gwe.model.overclock_profile import OverclockProfile
-from gwe.model.overclock_profile_type import OverclockProfileType
-from gwe.model.speed_step import SpeedStep
-
 
 def load_fan_db_default_data() -> None:
+    from gwe.model.fan_profile import FanProfile
+    from gwe.model.fan_profile_type import FanProfileType
+    from gwe.model.speed_step import SpeedStep
+
     FanProfile.create(
         name="Auto (VBIOS controlled)",
         type=FanProfileType.AUTO.value,
@@ -40,4 +38,7 @@ def load_fan_db_default_data() -> None:
 
 
 def load_overclock_db_default_data() -> None:
+    from gwe.model.overclock_profile import OverclockProfile
+    from gwe.model.overclock_profile_type import OverclockProfileType
+
     OverclockProfile.create(type=OverclockProfileType.DEFAULT.value, name="Default", gpu=0, memory=0, read_only=True)

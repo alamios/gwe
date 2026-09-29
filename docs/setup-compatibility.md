@@ -120,3 +120,10 @@ this diagnostic path, not the existing GUI or fan control. See the [test record]
 The subsequent reusable backend also passed live discovery and selection by UUID on both interpreters,
 including memory, utilization and power readings. Identity was not printed or persisted.
 The historical GUI's X11 requirement remains; see the [backend validation](nvml-backend.md).
+
+## Monitor integration preparation
+
+A SQLite online backup of the installed GWE configuration was made and passed an integrity check; see
+[backup/restore guidance](configuration-backup.md). The opt-in monitor integration isolates its configuration
+and blocks GPU writes. All 41 tests and live repository reads pass in both interpreters; GUI validation remains pending as described
+in [monitor mode](monitor-mode.md). The installed GWE instance has not been stopped or modified.

@@ -34,3 +34,7 @@ at the historical upstream package. Follow [RELEASING.md](RELEASING.md) for dist
 Use `python -m pytest -q` for simulated diagnostic tests; they do not access hardware.
 Use `python -m gwe.nvml_probe` for an explicit read-only hardware snapshot. Neither command starts the GUI.
 See [NVML diagnostics](docs/nvml-diagnostics.md) for environment requirements, exit codes and validated versions.
+
+Repository-boundary tests for monitor-only integration also require `requirements-monitor-tests.txt`.
+They verify that fan/clock/power writes cannot reach the driver in this mode. See [monitor mode](docs/monitor-mode.md)
+for isolated configuration, the opt-in environment variable and the remaining GTK validation work.

@@ -10,7 +10,10 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - Completed: interpreter checks for the two owner-provided environments (2026-09-30): Python 3.12.3 and 3.14.6.
 - Completed: standalone read-only NVML probe, 26 simulated tests on each interpreter, live GPU reads without
   display variables, and dependency checks. See [diagnostic validation](nvml-diagnostics.md).
-- Pending: full application dependency validation, reproducible UI build and backend integration.
+- Implemented: opt-in monitor-only repository/UI wiring, isolated settings and blocked GPU writes.
+  All 41 tests and live repository/interactor reads pass in both environments; the GTK launch is unvalidated.
+- Completed: consistent online backup of the installed GWE database, with integrity check and private Git-ignored storage.
+- Pending: full application dependency validation, reproducible UI build and graphical integration tests.
 - Pending: GPU write tests, Wayland validation, fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
 - Completed: reusable NVML backend with UUID selection, per-reading availability/errors, memory, utilization
@@ -54,8 +57,9 @@ passed. See [commands, output semantics and results](nvml-diagnostics.md).
 
 The remaining GTK application dependencies have not been installed or validated. GWE was not started.
 The reusable telemetry backend now provides stable GPU identity and explicit per-reading availability/errors.
-The suite has grown to 26 tests per interpreter. Next: adapt its data to the UI and decouple the startup gate
-while preserving explicit separation between monitoring and the existing control paths.
+The suite has grown to 41 tests per interpreter. An explicit monitor-only integration now adapts
+data to UI models and bypasses the X11 gate; live repository reads pass. Next: prepare the full GTK
+environment (system Dazzle/Ayatana typelibs are missing) and validate graphical behavior.
 
 ## Phase 1: reproducible development
 
