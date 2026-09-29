@@ -1,22 +1,33 @@
 # GreenWithEnvy (GWE)
 
-![archived](https://img.shields.io/badge/status-archived-lightgrey)
+![maintenance resumed](https://img.shields.io/badge/status-maintenance%20resumed-blue)
 
-> **⚠️ Archived / Unmaintained**
+> **Maintenance resumed — personal setup first**
 >
-> GreenWithEnvy (GWE) is **no longer actively maintained**.
+> We are resuming maintenance of GWE, initially for an NVIDIA GeForce RTX 3090 Ti on Kubuntu.
+> Our first priorities are preserving custom fan curves, moving GPU control toward NVML for Wayland,
+> and validating driver and CUDA upgrades with a documented recovery procedure.
 >
-> - I can't run or test GWE anymore after switching my GPU from **NVIDIA to AMD**.
-> - Due to limited free time, I'm unable to review, test, or merge contributions in good faith.
->
-> If you'd like to continue development:
->
-> 1. **Fork this repository** and publish your own maintained version.
-> 2. **Use a new identifier** that doesn't reference me personally:
->    - **Git hosting**: publish under **your** namespace or a dedicated organization (not under `leinardi`).
->    - **Flatpak / Flathub**: use a new **App ID** (e.g., `io.github.<yourname>.GWE` or an org-owned ID), **not** `com.leinardi.gwe`.
->
-> I'll keep this repository archived/read-only for historical reference. Thank you to everyone who used, tested, or contributed to GWE over the years. 💚
+> Development continues on **`maintenance/nvml-revival`**. This continuation is independent of the archived
+> upstream project maintained by Roberto Leinardi. No new release or Wayland compatibility is claimed yet.
+> Public hosting and distribution have not been decided.
+
+## Maintenance documentation
+
+- [Setup assessment and observed baseline](docs/setup-compatibility.md)
+- [Maintenance plan and validation criteria](docs/maintenance-plan.md)
+- [Technical references](docs/technical-references.md)
+- [Contributing and development workflow](CONTRIBUTING.md)
+- [Repository instructions for coding agents](AGENTS.md)
+- [Local builds and future releases](RELEASING.md)
+
+All maintained documentation is written in English. The current implementation still requires X11 NV-CONTROL.
+The assessment records read-only checks; GPU writes, failure recovery and Kubuntu 26.04 remain unvalidated.
+Python 3.12 and 3.14 development interpreters are available; dependency validation is the next step.
+
+The original authorship and GPL-3.0-or-later license are retained. Existing application identifiers remain
+for now to avoid an unplanned settings migration. Any future publication must use an independent hosting
+namespace and application ID, with an explicit profile migration plan.
 
 ---
 

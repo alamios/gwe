@@ -1,33 +1,30 @@
 # Contributing
 
-![archived](https://img.shields.io/badge/status-archived-lightgrey)
+Maintenance has resumed as an independent continuation of GreenWithEnvy. The initial target is a personal
+RTX 3090 Ti setup on Kubuntu, with custom fan curves as the required feature. Public hosting and a broader
+support policy have not been decided. The archived upstream project is not the destination for this work.
 
-> **⚠️ Project archived / unmaintained**
->
-> GreenWithEnvy (GWE) is no longer actively maintained. I switched from NVIDIA to AMD hardware and can't run or test GWE
-> anymore, and I don't have the time required to review, test, or merge contributions in good faith.
+## Working branch and scope
 
-## Current policy
+Development currently takes place on `maintenance/nvml-revival`; `release` preserves the upstream baseline.
+Repository-specific instructions for coding agents are in [AGENTS.md](AGENTS.md).
 
-- **Issues:** New issues are not being triaged or answered.
-- **Pull requests:** New pull requests are not being reviewed or merged.
-- **CI/automation:** Publishing pipelines may be disabled and out of date.
+Read the [assessment](docs/setup-compatibility.md), [plan](docs/maintenance-plan.md) and
+[technical references](docs/technical-references.md) before changing GPU control.
+Write maintained documentation, code comments and commit descriptions in English.
+Preserve copyright notices and the GPL-3.0-or-later license.
 
-This repository remains available **for historical reference**.
+## Development workflow
 
-## Want to continue development?
+1. Record the behavior being changed and the affected hardware capability.
+2. Begin with read-only queries and simulated backends. Do not launch the existing application against
+   the live GPU as a harmless smoke test: startup may restore saved profiles and apply GPU settings.
+3. Add meaningful tests for missing telemetry, permission failures, partial fan writes, bounds and recovery
+   when implementing those behaviors. Run relevant tests and record what they establish.
+4. Validate hardware writes using an agreed test procedure and a recovery plan. Keep development controllers
+   separate from any controller already managing the GPU.
+5. Update the assessment and plan as evidence changes. Separate observed results from proposed behavior.
 
-If you'd like to keep GWE alive, please:
-
-1. **Fork** this repository and maintain your own version.
-2. **Publish under a different identifier** that doesn't reference me personally:
-    - **Git hosting:** use your own namespace or an organization (not under `leinardi`).
-    - **Flatpak / Flathub:** choose a new App ID (e.g. `io.github.<yourname>.GWE` or an org-owned ID), **not**
-      `com.leinardi.gwe`.
-
-You're welcome to reuse code under the project's license (GPL-3.0-or-later). Please update names, icons, and metadata as
-appropriate for your fork.
-
-## Thank you
-
-Huge thanks to everyone who contributed, tested, packaged, or supported GWE over the years. 💚
+The current build scripts may regenerate the changelog and clear build output. Inspect them before use.
+The Flatpak submodule must be reviewed and initialized deliberately before a Flatpak build; it still points
+at the historical upstream package. Follow [RELEASING.md](RELEASING.md) for distribution decisions.
