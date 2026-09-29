@@ -116,3 +116,7 @@ feasibility of a personal adaptation; the current GWE is not validated for Wayla
 The new standalone probe successfully read the same GPU through nvidia-ml-py 13.615.71 on Python 3.12.3
 and 3.14.6 with display variables removed. Both fans and their manual limits were readable. This validates
 this diagnostic path, not the existing GUI or fan control. See the [test record](nvml-diagnostics.md).
+
+The subsequent reusable backend also passed live discovery and selection by UUID on both interpreters,
+including memory, utilization and power readings. Identity was not printed or persisted.
+The historical GUI's X11 requirement remains; see the [backend validation](nvml-backend.md).

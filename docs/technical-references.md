@@ -39,6 +39,7 @@ The binding version does not establish support for every API on the installed dr
 | File | Relevant behavior |
 | --- | --- |
 | `gwe/interactor/has_nvidia_driver_interactor.py` | Mandatory NV-CONTROL startup gate |
+| `gwe/nvml_backend.py` | New read-only telemetry and UUID selection, not yet integrated into the GUI |
 | `gwe/repository/nvidia_repository.py` | Mixed X11/NVML telemetry, fan writes, power and clock operations |
 | `gwe/presenter/main_presenter.py` | Curve execution, write-result handling, refresh errors and profile reapplication |
 | `gwe/__main__.py` | Signal handling and automatic fan cleanup |

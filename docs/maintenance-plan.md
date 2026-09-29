@@ -8,11 +8,13 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 - Completed: read-only baseline, source assessment, working branch and English documentation.
 - Completed: interpreter checks for the two owner-provided environments (2026-09-30): Python 3.12.3 and 3.14.6.
-- Completed: standalone read-only NVML probe, 16 simulated tests on each interpreter, live GPU reads without
+- Completed: standalone read-only NVML probe, 26 simulated tests on each interpreter, live GPU reads without
   display variables, and dependency checks. See [diagnostic validation](nvml-diagnostics.md).
 - Pending: full application dependency validation, reproducible UI build and backend integration.
 - Pending: GPU write tests, Wayland validation, fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
+- Completed: reusable NVML backend with UUID selection, per-reading availability/errors, memory, utilization
+  and power, validated in both environments. See [backend contract](nvml-backend.md).
 - NVML is the proposed application interface, not an integrated replacement yet. The standalone probe uses
   nvidia-ml-py 13.615.71; live read compatibility is verified on the current driver.
 - A separate privileged service is under evaluation; its protocol, permissions and supervision need design.
@@ -47,12 +49,13 @@ GWE backend development; live NVML queries require the NVIDIA driver library.
 ## Environment check: 2026-09-30
 
 Both supplied interpreters start successfully. The owner installed nvidia-ml-py 13.615.71 and pytest 9.1.1
-in both environments. Dependency checks, 16 simulated tests per interpreter and live read-only diagnostics
+in both environments. Dependency checks, initially 16 simulated tests per interpreter and live read-only diagnostics
 passed. See [commands, output semantics and results](nvml-diagnostics.md).
 
 The remaining GTK application dependencies have not been installed or validated. GWE was not started.
-The next increment is an application telemetry backend with stable GPU identity and explicit capability/error
-handling, reusing the lessons from the probe. Integrating that backend into the UI remains a separate step.
+The reusable telemetry backend now provides stable GPU identity and explicit per-reading availability/errors.
+The suite has grown to 26 tests per interpreter. Next: adapt its data to the UI and decouple the startup gate
+while preserving explicit separation between monitoring and the existing control paths.
 
 ## Phase 1: reproducible development
 

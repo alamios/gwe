@@ -2,7 +2,7 @@
 
 The standalone probe reads one telemetry snapshot without importing the GTK application, opening an X display,
 loading profiles or changing GPU settings. It uses `nvidia-ml-py` and does not require the CUDA Toolkit.
-It is an initial diagnostic tool, not the replacement backend used by the application.
+It shares the collector with the [read-only backend](nvml-backend.md); the GUI has not yet been migrated.
 
 ## Run
 
@@ -24,7 +24,8 @@ set, not the existing GTK application's requirements or a complete transitive de
 ## Output and exit status
 
 JSON includes the interpreter and binding versions, driver version, device count, model names, temperature
-in Celsius, fan count, manual fan range and individual speeds in percent. It does not query UUIDs, serial
+in Celsius, fan count, manual fan range, individual speeds in percent, memory in bytes, utilization in percent
+and power in watts. Schema version 2 adds these metrics. The CLI does not query UUIDs, serial
 numbers, process lists or personal profiles. Device indices only identify entries in that snapshot.
 
 Each reading has a status: `ok`, `unsupported`, `unavailable` (missing binding/driver function), or `error`.
@@ -62,3 +63,9 @@ not control targets. No setters or policy resets were called.
 
 The host was still the existing Ubuntu 24.04/KDE setup. Removing display variables is not a Wayland session
 or Kubuntu 26.04 acceptance test. The GWE UI still uses its historical backend, and write/recovery tests remain pending.
+
+## Backend follow-up
+
+The shared collector and UUID-aware backend expand the suite to 26 passing tests on each interpreter.
+Live reads of the added metrics and UUID selection also passed with display variables removed.
+The CLI still omits UUIDs; only explicit backend use queries identity. See the [backend record](nvml-backend.md).
