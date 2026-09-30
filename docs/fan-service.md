@@ -175,3 +175,14 @@ Four new simulated helper tests pass on Python 3.12 and 3.14, covering read-only
 existing configuration, rejection of a root desktop account and cleanup after a mismatched GPU count.
 The preceding 171-test suite remains the last full-suite run; the configuration helper has not yet been
 executed with administrator privileges. No reinstallation is required for this repository-only helper.
+
+## Configuration follow-up: 2026-10-01
+
+The owner ran the isolated helper from commit `82b34be` and supplied its successful configuration-validation
+output. Identity was not displayed. The configuration is now populated; the earlier placeholder status
+is historical. The helper did not start the service or write GPU settings.
+
+Independent read-only preflight confirmed the service inactive/static, CoolerControl active and GWE absent
+from Flatpak process enumeration. The host remains X11, kernel 7.0.0-34-generic, driver 580.178.04 and RTX
+3090 Ti. Both fan policies were automatic, reported speeds zero, temperature 51 C and power limit 250 W.
+The first installed-service/client hardware test is next; no successful service activation is claimed yet.

@@ -37,8 +37,9 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   including real socket/process failures with simulated devices. See [service implementation](fan-service.md).
 - Prepared: isolated root-owned installation bundle, desktop socket provisioning and a 60-second systemd
   trial unit with watchdog/post-stop recovery. The owner installed the reviewed bundle; hashes, root
-  ownership and inactive/static service state were independently verified. Configuration and service
-  hardware validation remain pending; no enablement or activation has occurred.
+  ownership and inactive/static service state were independently verified. The owner completed private
+  user/GPU configuration on 2026-10-01; service hardware validation remains pending. No enablement or
+  activation has occurred.
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 

@@ -45,8 +45,8 @@ with simulated devices. The normal synthetic-curve hardware trial also passed: t
 also returned both fans to automatic. A production privileged service, suspend/resume and recovery from
 driver/host failures remain pending. The local protocol and renewable lease now connect to a supervised
 NVML process adapter. Service/worker failures and recovery are tested with simulated devices. A standalone
-root-owned package and 60-second systemd trial unit have been installed and verified, but remain inactive
-with placeholder configuration. Service configuration and hardware validation remain pending. No production service or profile migration is enabled.
+root-owned package and 60-second systemd trial unit have been installed and configured for the local
+user/GPU, but remain inactive. Service hardware validation remains pending. No production service or profile migration is enabled.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 
