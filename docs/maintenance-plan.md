@@ -32,7 +32,9 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   and power, validated in both environments. See [backend contract](nvml-backend.md).
 - NVML is the proposed application interface, not an integrated replacement yet. The standalone probe uses
   nvidia-ml-py 13.615.71; live read compatibility is verified on the current driver.
-- A separate privileged service is under evaluation; its protocol, permissions and supervision need design.
+- Implemented: experimental local client/protocol, kernel peer authentication and connection-bound leases;
+  136 tests pass per interpreter. See [service boundary](fan-service.md). Persistent supervised NVML
+  integration, root-to-desktop endpoint provisioning and system installation remain pending.
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 

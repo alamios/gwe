@@ -212,3 +212,9 @@ unattended continuous operation, survival of supervisor death, blocked kernel/dr
 failure recovery, suspend/resume or Wayland compatibility. The next implementation stage is the privileged
 service and unprivileged client boundary described above, with explicit ownership and profile review before
 any deployment or migration. The default GWE backend and the installed Flatpak remain unchanged.
+
+## Service-boundary follow-up
+
+The local protocol, client and lease state machine now have simulated-backend socket tests. See
+[implemented boundary and pending supervised NVML integration](fan-service.md). No privileged daemon
+was installed, and the hardware evidence above does not extend to this new transport.
