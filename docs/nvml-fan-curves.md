@@ -105,8 +105,8 @@ Do not launch the installed GWE as recovery without considering its saved profil
   mechanics and simulated device recovery, not real driver behavior during those faults.
 - The new CLI's live read-only preflight passed on the current X11 host at 59 C with both fans automatic
   and reported speed zero. No new GPU write or service stop occurred during this implementation phase.
-- The normal synthetic-curve hardware run subsequently passed as recorded below. Hardware fault
-  scenarios remain pending; simulated process-fault tests do not establish real driver recovery.
+- The normal synthetic-curve and worker-SIGTERM hardware runs subsequently passed as recorded below.
+  SIGKILL and stalled-worker hardware scenarios remain pending.
 
 ## Remaining production work
 
@@ -136,9 +136,29 @@ checked the resulting hardware/service state afterward.
   X11 `GPUFanControlState` zero, CoolerControl active and power limit unchanged at 250 W.
 - No new automated test run was needed for this documentation-only update; the 118-test baseline stands.
 
-Next, test `--scenario term` separately with the same command and exclusive-controller procedure.
+The next trial used `--scenario term` separately with the same command and exclusive-controller procedure.
 It sends SIGTERM only to the curve worker after two verified ticks, while the supervisor remains alive.
 The worker's interrupt handler may print an expected traceback; assess the supervisor's final result:
 `terminated_worker_detected`, `injected: True`, followed by verified automatic policies. Any recovery
 failure is a failed test regardless of the injected signal. Independently check policy and CoolerControl
 again before proceeding to SIGKILL or a stalled-worker scenario. Those hardware scenarios are still pending.
+
+## Worker SIGTERM hardware trial: 2026-09-30
+
+The owner ran `--scenario term` with sudo from commit `3699e90`. The supplied terminal output shows
+preflight at 57 C with both fans automatic/reported speed zero, followed by two verified manual ticks
+at 57 C and a 47% target. SIGTERM interrupted the worker during its sleep; the expected traceback ended
+with `TrialError: Interrupted by signal 15`. The supervisor reported `terminated_worker_detected`,
+two ticks and `injected: True`, then verified automatic policies on both fans.
+
+Independent read-only follow-up confirmed driver 580.178.04, both NVML policies zero, reported speeds
+zero, X11 `GPUFanControlState` zero, CoolerControl active, temperature 58 C and power limit still 250 W.
+This establishes successful end-to-end recovery after this worker SIGTERM. The output does not isolate
+whether the worker or parent performed the effective reset: both attempt restoration. It does not prove
+recovery when worker cleanup cannot run.
+
+Next, run `--scenario kill` separately under the same exclusive-controller procedure. SIGKILL prevents
+worker cleanup, leaving the living supervisor responsible for stopping/joining the child and restoring
+automatic control. The expected final result is `terminated_worker_detected`, `injected: True` and verified
+automatic policies; independently recheck the state afterward. A stalled worker remains a separate test.
+No code changed in this record update; the 118-test software baseline remains unchanged.
