@@ -105,8 +105,8 @@ Do not launch the installed GWE as recovery without considering its saved profil
   mechanics and simulated device recovery, not real driver behavior during those faults.
 - The new CLI's live read-only preflight passed on the current X11 host at 59 C with both fans automatic
   and reported speed zero. No new GPU write or service stop occurred during this implementation phase.
-- The normal synthetic-curve and worker-SIGTERM hardware runs subsequently passed as recorded below.
-  SIGKILL and stalled-worker hardware scenarios remain pending.
+- The normal synthetic-curve, worker-SIGTERM and worker-SIGKILL hardware runs subsequently passed as
+  recorded below. The stalled-worker hardware scenario remains pending.
 
 ## Remaining production work
 
@@ -141,7 +141,7 @@ It sends SIGTERM only to the curve worker after two verified ticks, while the su
 The worker's interrupt handler may print an expected traceback; assess the supervisor's final result:
 `terminated_worker_detected`, `injected: True`, followed by verified automatic policies. Any recovery
 failure is a failed test regardless of the injected signal. Independently check policy and CoolerControl
-again before proceeding to SIGKILL or a stalled-worker scenario. Those hardware scenarios are still pending.
+again before proceeding to SIGKILL or a stalled-worker scenario. Subsequent results are recorded below.
 
 ## Worker SIGTERM hardware trial: 2026-09-30
 
@@ -157,8 +157,28 @@ This establishes successful end-to-end recovery after this worker SIGTERM. The o
 whether the worker or parent performed the effective reset: both attempt restoration. It does not prove
 recovery when worker cleanup cannot run.
 
-Next, run `--scenario kill` separately under the same exclusive-controller procedure. SIGKILL prevents
+The next trial used `--scenario kill` separately under the same exclusive-controller procedure. SIGKILL prevents
 worker cleanup, leaving the living supervisor responsible for stopping/joining the child and restoring
 automatic control. The expected final result is `terminated_worker_detected`, `injected: True` and verified
 automatic policies; independently recheck the state afterward. A stalled worker remains a separate test.
 No code changed in this record update; the 118-test software baseline remains unchanged.
+
+## Worker SIGKILL hardware trial: 2026-09-30
+
+The owner ran `--scenario kill` with sudo from commit `54799af`. Supplied output shows preflight at 57 C,
+both fans automatic and reported speeds zero. The first verified tick requested 47% at 57 C; the second
+requested 48% at 58 C, demonstrating an immediate upward curve adjustment. The supervisor then killed
+the worker and reported `terminated_worker_detected`, two ticks and `injected: True`, followed by
+`Both fan policies verified automatic`.
+
+SIGKILL prevents worker cleanup, so this run validates restoration by the surviving supervisor for this
+specific worker-termination case. Independent follow-up confirmed both NVML policies zero, reported
+speeds zero, X11 `GPUFanControlState` zero, CoolerControl active, driver 580.178.04, temperature 58 C and
+power limit unchanged at 250 W. No code changed; the 118-test software baseline remains unchanged.
+
+Next, test `--scenario stall` separately. It suspends only the worker with SIGSTOP after two verified
+ticks; the living supervisor should detect the five-second heartbeat expiry, kill/join the stalled worker
+and restore both fans. Expect `stalled_worker_detected`, `injected: True` and verified automatic policies.
+While suspended, the worker cannot monitor temperature; this remains a brief supervised desktop-idle
+experiment, with no load generation. It does not simulate a stuck kernel/driver call or whole-host freeze.
+Hardware stalled-worker recovery remains pending until that run and independent follow-up are recorded.
