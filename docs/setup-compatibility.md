@@ -138,5 +138,6 @@ this does not establish Wayland, Python 3.14 GUI or GPU control compatibility.
 ## Fan experiment preparation
 
 The current-host baseline and automatic policy on both fans were reconfirmed after GWE was closed.
-CoolerControl remains a possible competing controller; no manual write has been attempted. See the
+CoolerControl was subsequently stopped with authorization and restarted after the trial. The initial
+NVML resets were denied by permissions; no manual write was attempted. Both policies remained automatic. See the
 [supervised experiment record](nvml-fan-trial.md) for observations, recovery and outstanding checks.

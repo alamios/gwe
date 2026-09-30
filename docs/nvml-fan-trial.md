@@ -75,7 +75,8 @@ without verification. This is not a production watchdog or a validated suspend/r
   bad limits, missing/stale telemetry, reset failure, policy verification and supervisor timeout ordering.
   Reactivex's pre-existing datetime deprecation warning remains.
 
-Hardware writes, recovery under real process failures, Wayland and Kubuntu 26.04 remain untested.
+Manual writes, successful hardware restoration, recovery under real process failures, Wayland and
+Kubuntu 26.04 remain untested. See the permission check below.
 
 ## API reference
 
@@ -83,3 +84,40 @@ NVIDIA documents that the manual setter changes the fan policy and that the defa
 it: [NVML device commands](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlDeviceCommands.html)
 (rechecked 2026-09-30). Local symbol/read validation complements this documentation; it does not establish
 hardware write support.
+
+## Authorized live attempt: 2026-09-30
+
+The owner authorized temporarily stopping CoolerControl. The service was stopped and confirmed inactive;
+Flatpak/process inspection found no competing fan controller. Driver 580.178.04, automatic policies on both
+fans and the unchanged 250 W power limit were verified immediately before the attempt.
+
+At 56 C, the unprivileged preflight passed. Both initial default-policy setters returned
+`NVMLError_NoPermission`. The supervisor aborted before starting the manual worker and retried automatic
+restoration during cleanup; it did not call the manual speed setter. Subsequent NVML reads still showed
+both policies automatic and speeds zero; X11 `GPUFanControlState` was also zero. These readings establish
+the retained state, not successful restoration writes.
+
+A privileged retry was prepared as a transient systemd service with a 40-second runtime limit and an
+`ExecStopPost` automatic-reset command. Systemd rejected service creation with
+`Interactive authentication required`; that attempt did not execute the Python trial. A subsequent stop
+request for that unit timed out. CoolerControl was successfully restarted after both attempts, and the
+final read showed 58 C, both policies automatic, both reported speeds zero and power limit 250 W.
+No power or clock setter, profile change, package change or load test was performed.
+
+An operator terminal with sudo authentication is now required for the hardware trial. From the checkout,
+with the prepared Python 3.12 environment active, and after repeating exclusive-controller inspection:
+
+```bash
+trial_python="$(command -v python)"
+sudo -v && (
+    trap 'sudo systemctl start coolercontrold.service' EXIT
+    sudo systemctl stop coolercontrold.service || exit
+    sudo "$trial_python" -m gwe.nvml_fan_trial --run --controllers-stopped
+)
+```
+
+The parent/worker recovery remains active inside this invocation. The shell trap restarts CoolerControl
+on ordinary exit, including failed preflight; it cannot survive SIGKILL or host failure. Keep the separate
+`--restore-only --controllers-stopped` recovery command ready with the same interpreter and privileges.
+Recheck fan policy and the service state after the run. Do not infer root-level NVML support from the
+permission failure; successful setters and recovery are still pending.
