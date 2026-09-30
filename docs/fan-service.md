@@ -2,7 +2,7 @@
 
 The local protocol is now connected to `ProcessBackend`, which executes the NVML controller and recovery
 in separate processes. A root-owned installation bundle, a 60-second systemd trial unit and an unprivileged
-test client are prepared. None has been installed or run against the real GPU in this stage. The default
+test client are prepared. The owner has now installed the reviewed bundle; it remains inactive and has not controlled the real GPU. The default
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
 ## Protocol and asynchronous states
@@ -150,3 +150,28 @@ The live hardware evidence in [curve trials](nvml-fan-curves.md) remains limited
 
 Reviewed 2026-09-30. Whole-host/kernel/driver failure and combined service/worker failure cannot be given an
 absolute software recovery guarantee. The staged unit and package are experimental and await live review.
+
+## Installation follow-up: 2026-09-30
+
+The owner ran the installer from `build/fan-service-review-final` (service code at commit `626c8ae`).
+All manifest checks passed. Independent inspection confirmed that installed modules, entry point, binding,
+license and unit match the reviewed bundle, with root ownership and configuration mode 0600. Systemd
+reports `inactive` and `static`; no service activation or GPU write occurred. This supersedes the earlier
+pre-installation status above. System Python packages and the installed GWE Flatpak were not changed.
+
+A repository helper now configures the placeholder without printing identity:
+
+```bash
+sudo /usr/bin/python3 -I -B scripts/configure_fan_service.py
+```
+
+Run it from the checkout as the intended desktop account using sudo. It reuses the installed entry point's
+root-ownership/import checks, obtains the sudo caller's UID, requires exactly one RTX 3090 Ti with two fans,
+and queries its UUID using read-only NVML calls. It refuses an already populated or changed configuration.
+It atomically replaces only the placeholder, retains mode 0600 and validates the result. It never starts
+services or invokes GPU setters. The UUID stays in the private system configuration, outside Git/output.
+
+Four new simulated helper tests pass on Python 3.12 and 3.14, covering read-only discovery, refusal to replace
+existing configuration, rejection of a root desktop account and cleanup after a mismatched GPU count.
+The preceding 171-test suite remains the last full-suite run; the configuration helper has not yet been
+executed with administrator privileges. No reinstallation is required for this repository-only helper.

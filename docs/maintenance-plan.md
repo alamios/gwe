@@ -36,8 +36,9 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   recovery, ownership recording and lease expiry in both service and worker. 171 tests pass per interpreter,
   including real socket/process failures with simulated devices. See [service implementation](fan-service.md).
 - Prepared: isolated root-owned installation bundle, desktop socket provisioning and a 60-second systemd
-  trial unit with watchdog/post-stop recovery. Syntax/package checks pass; no installation, enablement
-  or service hardware validation has been performed.
+  trial unit with watchdog/post-stop recovery. The owner installed the reviewed bundle; hashes, root
+  ownership and inactive/static service state were independently verified. Configuration and service
+  hardware validation remain pending; no enablement or activation has occurred.
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 
