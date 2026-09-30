@@ -141,3 +141,12 @@ The current-host baseline and automatic policy on both fans were reconfirmed aft
 CoolerControl was subsequently stopped with authorization and restarted after the trial. The initial
 NVML resets were denied by permissions; no manual write was attempted. Both policies remained automatic. See the
 [supervised experiment record](nvml-fan-trial.md) for observations, recovery and outstanding checks.
+
+## First successful NVML fan writes
+
+The owner subsequently ran the supervised trial with sudo: both fans accepted manual policy and a 40%
+target for ten seconds, with temperature 55–56 C, followed by verified automatic restoration. Independent
+read-only checks confirmed both policies automatic, CoolerControl active and the power limit unchanged
+at 250 W. See the [full evidence and remaining limits](nvml-fan-trial.md#successful-privileged-trial-2026-09-30).
+This validates the standalone experiment on driver 580.178.04/X11, not continuous curves, live failure
+recovery or Wayland. The default application control backend remains unchanged.

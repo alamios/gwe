@@ -68,15 +68,15 @@ without verification. This is not a production watchdog or a validated suspend/r
   write permission or restoration support. The existing power limit was read as 250 W and was not changed.
 - GWE was absent from Flatpak/process inspection. CoolerControl was running and detected this GPU.
   Its saved `device-settings` map was empty; its live device API required authentication. Temporary
-  control could not be excluded, so hardware writes remain pending exclusive ownership.
+  control could not be excluded at this stage; subsequent attempts stopped the service with authorization.
 - Private screenshots were inspected and preserved outside Git; profile autoload and minimize-to-tray
   explain why closing a window or restarting GWE is insufficient as a safety procedure.
 - 62 simulated tests pass on Python 3.12.3 and 3.14.6, including partial writes, permission failures,
   bad limits, missing/stale telemetry, reset failure, policy verification and supervisor timeout ordering.
   Reactivex's pre-existing datetime deprecation warning remains.
 
-Manual writes, successful hardware restoration, recovery under real process failures, Wayland and
-Kubuntu 26.04 remain untested. See the permission check below.
+At this stage manual writes and restoration were untested. The later privileged trial below validates
+normal manual control and restoration; real process-failure recovery, Wayland and Kubuntu 26.04 remain untested.
 
 ## API reference
 
@@ -104,7 +104,7 @@ request for that unit timed out. CoolerControl was successfully restarted after 
 final read showed 58 C, both policies automatic, both reported speeds zero and power limit 250 W.
 No power or clock setter, profile change, package change or load test was performed.
 
-An operator terminal with sudo authentication is now required for the hardware trial. From the checkout,
+The privileged hardware trial required an operator terminal with sudo authentication. From the checkout,
 with the prepared Python 3.12 environment active, and after repeating exclusive-controller inspection:
 
 ```bash
@@ -120,4 +120,33 @@ The parent/worker recovery remains active inside this invocation. The shell trap
 on ordinary exit, including failed preflight; it cannot survive SIGKILL or host failure. Keep the separate
 `--restore-only --controllers-stopped` recovery command ready with the same interpreter and privileges.
 Recheck fan policy and the service state after the run. Do not infer root-level NVML support from the
-permission failure; successful setters and recovery are still pending.
+permission failure alone; the successful privileged trial is recorded below.
+
+## Successful privileged trial: 2026-09-30
+
+The owner ran the supplied sudo command from the checkout at commit `8d323c5`, using Python 3.12 and
+temporarily stopping CoolerControl. Evidence for the manual interval is the owner's supplied terminal
+output; the subsequent read-only verification was performed independently by the maintenance agent.
+No transient systemd service was used in this successful run.
+
+| Observation | Fan 0 | Fan 1 |
+| --- | --- | --- |
+| Preflight policy / reported speed | Automatic / 0% | Automatic / 0% |
+| Manual policy and target, all ten samples | Manual / 40% | Manual / 40% |
+| Reported speeds, one sample per second | 30, 33, 36, 39, 40, 41, 41, 42, 41, 41% | 30, 34, 37, 39, 40, 41, 42, 42, 41, 41% |
+| Completion policy verification | Automatic | Automatic |
+| Independent subsequent policy / reported speed | Automatic / 0% | Automatic / 0% |
+
+Preflight temperature was 55 C; the ten manual samples stayed between 55 and 56 C. The terminal ended
+with `Both fan policies verified automatic` and no reported error. This confirms the initial reset gate,
+manual setters, target/policy readback and normal cleanup on this GPU/driver with administrator privileges.
+It is not an independent physical RPM measurement or a load test.
+
+The independent follow-up found CoolerControl active, both NVML policies zero, X11 `GPUFanControlState`
+zero, temperature 55 C and the power limit still 250 W. Driver 580.178.04 and the GPU model were unchanged.
+No profile migration, power/clock writes or system package changes were performed.
+
+The existing 62 simulated tests per interpreter remain the software baseline; this documentation-only
+follow-up did not rerun them. Live SIGTERM/SIGKILL, frozen-worker recovery, driver loss, suspend/resume,
+continuous curves, Wayland and Kubuntu 26.04 remain pending. The result establishes a narrowly scoped
+hardware capability, not production readiness for unattended fan control.

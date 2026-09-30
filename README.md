@@ -28,14 +28,15 @@
 - [Local builds and future releases](RELEASING.md)
 
 All maintained documentation is written in English. The default control mode still requires X11 NV-CONTROL.
-The assessment records read-only checks and a denied fan-reset attempt; successful GPU writes, hardware
-failure recovery and Kubuntu 26.04 remain unvalidated.
+Both fans have passed a supervised NVML manual-control trial and normal automatic restoration on the
+current X11 host with administrator privileges. Hardware failure recovery and Kubuntu 26.04 remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-62 tests pass on both Python versions, including simulated fan-experiment recovery. The isolated Python 3.12 GTK monitor has passed a live startup,
-telemetry, disabled-controls and shutdown check on the current X11 desktop. Wayland remains untested.
-A separate supervised fan experiment is prepared. With CoolerControl temporarily stopped, the first reset
-calls were denied by NVIDIA permissions; a privileged hardware test awaits terminal authentication.
+62 tests pass on both Python versions, including simulated fan-experiment recovery. The isolated Python
+3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
+X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
+fans at 55–56 C and verified automatic restoration; CoolerControl is running again. Unprivileged reset
+calls were denied. Continuous NVML fan curves and a production privileged controller remain pending.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 

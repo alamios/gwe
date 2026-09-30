@@ -16,11 +16,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - Completed: consistent online backup of the installed GWE database, with integrity check and private Git-ignored storage.
 - Completed: current-host Python 3.12 UI imports, local resource launcher and focused live graphical smoke test.
 - Pending: broader UI interaction testing, target-OS/Wayland validation and fan control implementation.
-- Prepared: standalone supervised fan experiment with 62 passing simulated tests per interpreter;
-  current-host reads reconfirmed. CoolerControl was temporarily stopped with authorization, but NVML
-  reset calls were denied before any manual write. Privileged testing awaits terminal authentication; see
-  [procedure and recovery](nvml-fan-trial.md).
-- Pending: GPU write tests, Wayland validation, live fault recovery tests and distribution upgrade.
+- Validated: standalone supervised NVML fan trial on the current host with administrator privileges.
+  Both fans accepted a 40% target for ten seconds at 55–56 C and returned to automatic. Independent
+  follow-up confirmed automatic policy and CoolerControl running again. Unprivileged resets were denied.
+  The simulated suite remains at 62 passing tests per interpreter; see [procedure and results](nvml-fan-trial.md).
+- Pending: continuous fan curves, Wayland validation, live fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
 - Completed: reusable NVML backend with UUID selection, per-reading availability/errors, memory, utilization
   and power, validated in both environments. See [backend contract](nvml-backend.md).
