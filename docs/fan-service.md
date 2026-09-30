@@ -2,7 +2,8 @@
 
 The local protocol is now connected to `ProcessBackend`, which executes the NVML controller and recovery
 in separate processes. A root-owned installation bundle, a 60-second systemd trial unit and an unprivileged
-test client are prepared. The owner has now installed the reviewed bundle; it remains inactive and has not controlled the real GPU. The default
+test client are prepared. The owner has installed the reviewed bundle and passed its normal hardware trial with an unprivileged client.
+It is stopped after testing; client-loss, expiry and service-failure hardware validation remain pending. The default
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
 ## Protocol and asynchronous states
@@ -97,14 +98,22 @@ The trial is deliberately limited to 60 seconds, with a 60 C temperature ceiling
 competing process names. Those guards cannot detect every custom controller; the operator must still
 establish exclusive ownership and keep GWE closed. It never stops another service automatically.
 
-## Prepared hardware procedure (not performed)
+## Hardware procedure (normal scenario validated; other scenarios pending)
 
 Only after installation/configuration approval and read-only baseline verification, use the prepared
 Python 3.12 environment in the checkout. The client runs as the ordinary user:
 
 ```bash
 sudo -v && (
-    trap 'sudo systemctl stop gwe-fan-service.service; sudo systemctl start coolercontrold.service' EXIT
+    cleanup() {
+        sudo systemctl stop gwe-fan-service.service
+        if sudo test ! -e /run/gwe-fan-service/owned.json; then
+            sudo systemctl start coolercontrold.service
+        else
+            echo 'Recovery pending; CoolerControl remains stopped'
+        fi
+    }
+    trap cleanup EXIT
     sudo systemctl stop coolercontrold.service || exit
     sudo systemctl start gwe-fan-service.service || exit
     python -m gwe.fan_client_trial --scenario normal
@@ -185,4 +194,23 @@ is historical. The helper did not start the service or write GPU settings.
 Independent read-only preflight confirmed the service inactive/static, CoolerControl active and GWE absent
 from Flatpak process enumeration. The host remains X11, kernel 7.0.0-34-generic, driver 580.178.04 and RTX
 3090 Ti. Both fan policies were automatic, reported speeds zero, temperature 51 C and power limit 250 W.
-The first installed-service/client hardware test is next; no successful service activation is claimed yet.
+At this preflight stage the first installed-service/client hardware run had not yet occurred; its result follows.
+
+## Normal installed-service hardware trial: 2026-10-01
+
+The owner ran the normal client from repository commit `4eacd8a`, against the installed service bundle
+from `626c8ae`. The client ran without sudo and reported an active curve followed by
+`Service reports idle after verified automatic recovery`. This exercises socket peer authorization,
+acquisition, the ownership handshake, supervised NVML control, renewal, release and verified recovery.
+The client output does not include per-tick telemetry, so no duty/temperature trace is inferred here.
+
+Independent follow-up confirmed:
+
+- Service inactive/static, `Result=success`, `ExecMainStatus=0`.
+- No pending `/run/gwe-fan-service/owned.json` record; CoolerControl active again.
+- Both NVML fan policies zero (automatic), reported speeds zero, X11 `GPUFanControlState` zero.
+- Driver 580.178.04, temperature 51 C, power limit unchanged at 250 W.
+
+The next separate hardware scenario is `disconnect`, which closes the owning socket without requesting
+release and observes recovery through another unprivileged connection. Lease expiry and service-failure
+scenarios remain pending. No new code or automated test execution was needed for this result record.
