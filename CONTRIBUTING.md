@@ -38,3 +38,7 @@ See [NVML diagnostics](docs/nvml-diagnostics.md) for environment requirements, e
 Repository-boundary tests for monitor-only integration also require `requirements-monitor-tests.txt`.
 They verify that fan/clock/power writes cannot reach the driver in this mode. See [monitor mode](docs/monitor-mode.md)
 for isolated configuration, the opt-in environment variable and the remaining GTK validation work.
+
+For graphical development on the current host, use the [isolated source launcher](docs/gui-development.md)
+in the Python 3.12 UI environment. Its `--smoke-test` performs a live read-only GPU/UI check; it is separate
+from the simulated pytest suite and needs a graphical session.

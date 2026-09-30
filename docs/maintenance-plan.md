@@ -11,9 +11,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - Completed: standalone read-only NVML probe, 26 simulated tests on each interpreter, live GPU reads without
   display variables, and dependency checks. See [diagnostic validation](nvml-diagnostics.md).
 - Implemented: opt-in monitor-only repository/UI wiring, isolated settings and blocked GPU writes.
-  All 41 tests and live repository/interactor reads pass in both environments; the GTK launch is unvalidated.
+  All 42 simulated tests and live repository/interactor reads pass in both environments. The isolated Python
+  3.12 GTK source monitor also passes its live X11 smoke check; Python 3.14 GUI/Wayland remain untested.
 - Completed: consistent online backup of the installed GWE database, with integrity check and private Git-ignored storage.
-- Pending: full application dependency validation, reproducible UI build and graphical integration tests.
+- Completed: current-host Python 3.12 UI imports, local resource launcher and focused live graphical smoke test.
+- Pending: broader UI interaction testing, target-OS/Wayland validation and fan control implementation.
 - Pending: GPU write tests, Wayland validation, fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
 - Completed: reusable NVML backend with UUID selection, per-reading availability/errors, memory, utilization
@@ -57,9 +59,9 @@ passed. See [commands, output semantics and results](nvml-diagnostics.md).
 
 The remaining GTK application dependencies have not been installed or validated. GWE was not started.
 The reusable telemetry backend now provides stable GPU identity and explicit per-reading availability/errors.
-The suite has grown to 41 tests per interpreter. An explicit monitor-only integration now adapts
-data to UI models and bypasses the X11 gate; live repository reads pass. Next: prepare the full GTK
-environment (system Dazzle/Ayatana typelibs are missing) and validate graphical behavior.
+The suite has grown to 42 tests per interpreter. An explicit monitor-only integration now adapts
+data to UI models and bypasses the X11 gate; live repository reads pass. The Python 3.12 GTK
+source launcher and live smoke check now pass; see [GUI development](gui-development.md).
 
 ## Phase 1: reproducible development
 
@@ -119,7 +121,6 @@ contents in shared reports. Mark unperformed scenarios as untested, not passed.
 
 ## GUI preparation follow-up
 
-GTK3, Notify and the system GI/Cairo bindings are present. The Python 3.12 venv needs system package
-visibility; Dazzle, Ayatana and the GLib resource compiler require owner installation. The initial Python UI
-dependency set is in `requirements-ui312.txt`. See [GUI preparation](gui-development.md). No package was
-installed by the agent, no GUI was launched, and Python 3.14 remains isolated for backend tests.
+The owner installed the GUI prerequisites and enabled system package visibility in the Python 3.12 venv.
+The source monitor now compiles local resources and passes its ten-second live check without replacing the
+installed Flatpak. See [GUI development](gui-development.md). Python 3.14 remains isolated for backend tests.

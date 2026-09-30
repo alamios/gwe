@@ -127,3 +127,10 @@ A SQLite online backup of the installed GWE configuration was made and passed an
 [backup/restore guidance](configuration-backup.md). The opt-in monitor integration isolates its configuration
 and blocks GPU writes. All 41 tests and live repository reads pass in both interpreters; GUI validation remains pending as described
 in [monitor mode](monitor-mode.md). The installed GWE instance has not been stopped or modified.
+
+## Current-host graphical validation
+
+After owner installation of the native/UI prerequisites, the isolated source monitor passed a ten-second
+GTK smoke check on X11 using Python 3.12. Telemetry and disabled controls were verified before normal exit.
+The suite now has 42 tests passing on both interpreters. See [GUI results](gui-development.md) for details;
+this does not establish Wayland, Python 3.14 GUI or GPU control compatibility.

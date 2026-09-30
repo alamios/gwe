@@ -38,7 +38,7 @@ from gwe.interactor.set_fan_speed_interactor import SetFanSpeedInteractor
 from gwe.interactor.set_overclock_interactor import SetOverclockInteractor
 from gwe.interactor.set_power_limit_iInteractor import SetPowerLimitInteractor
 from gwe.interactor.settings_interactor import SettingsInteractor
-from gwe.model import SpeedStep
+from gwe.model.speed_step import SpeedStep
 from gwe.model.cb_change import DbChange
 from gwe.model.current_fan_profile import CurrentFanProfile
 from gwe.model.current_overclock_profile import CurrentOverclockProfile

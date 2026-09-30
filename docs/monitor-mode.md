@@ -2,8 +2,8 @@
 
 Set `GWE_MONITOR_ONLY=1` before starting a development build to select NVML telemetry in the existing UI.
 This is an opt-in integration, not a switch of the installed Flatpak or the default legacy controller.
-The complete GTK development environment/build is still pending validation; do not treat the commands below
-as an installation guide for the existing Flatpak.
+The Python 3.12 source monitor has passed a live smoke check on the current X11 desktop. These instructions
+do not update or install the existing Flatpak. See [GUI development](gui-development.md) for the source launcher.
 
 ## Behavior
 
@@ -24,9 +24,9 @@ A graphical session is still necessary to display GTK windows.
 
 ## Validation commands
 
-In a prepared source build environment, preserve the usual built-resource launcher and prefix its command
-with `GWE_MONITOR_ONLY=1`. Do not launch the development GUI until GTK dependencies/resources are validated.
-Do not run `python -m gwe` as an assumed harmless import check: it starts the full application.
+Use `python scripts/run_monitor.py` from the repository root in the prepared Python 3.12 environment.
+The launcher forces monitor mode and local configuration before importing the application. Add `--smoke-test`
+for an automatic ten-second check and shutdown. It compiles resources locally without invoking the legacy installer.
 
 For tests of repository routing and blocked writes, the owner installs `requirements-monitor-tests.txt`
 into the isolated development environments, then runs:
@@ -41,16 +41,10 @@ packages listed in `requirements-monitor-tests.txt`; they do not import GTK or a
 
 ## Current evidence
 
-All 41 tests pass on Python 3.12.3 and 3.14.6, including repository write rejection, cleanup as a no-op,
-NVML startup routing and preservation of the default X11 gate. Both environments pass pip check.
-Live repository/interactor reads also passed with display variables removed, returning the RTX 3090 Ti
-and its two fans. No development GUI has been launched and no GPU control operation has been performed.
-Visible UI behavior is not yet confirmed. The system exposes GTK3, but Dazzle and AyatanaAppIndicator3
-typelibs are missing; full application dependencies and build resources still need preparation.
-Reactivex 4.0.4 emits a datetime deprecation warning in both interpreters; it does not fail these tests. The installed GWE can remain open
-for read-only diagnostics; a future control test requires ensuring only one controller owns the fans.
+All 42 simulated tests pass on both Python versions. Live repository reads and the Python 3.12 GTK smoke check
+pass on the current X11 desktop. The window received GPU telemetry and all three GPU control sections were
+disabled; it then exited normally. No GPU control operation was performed. Python 3.14 GUI, Wayland and 26.04
+remain untested. See [GUI validation](gui-development.md) for dependencies, warnings and limitations.
 
-See [configuration backup](configuration-backup.md) before any future profile migration or control test.
-
-See [GUI preparation](gui-development.md) for the exact missing native packages and the Python 3.12
-dependency set. The source launcher/resource compilation workflow is the next implementation step.
+The installed GWE may remain open alongside the monitor. Future control testing requires a separate procedure
+with only one fan controller. See [configuration backup](configuration-backup.md) before profile migration.

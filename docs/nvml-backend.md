@@ -2,7 +2,7 @@
 
 `gwe.nvml_backend.NvmlBackend` provides telemetry independently of GTK, X11, settings and profile databases.
 The diagnostic CLI now shares its collector. The default GUI still uses the legacy `NvidiaRepository` path. The opt-in [monitor mode](monitor-mode.md)
-now routes that repository to this backend and bypasses the NV-CONTROL startup gate; its GUI launch is unvalidated.
+now routes that repository to this backend and bypasses the NV-CONTROL startup gate; its Python 3.12 GTK launch has passed the current-host smoke check.
 
 ## Contract
 

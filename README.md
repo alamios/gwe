@@ -30,8 +30,10 @@ All maintained documentation is written in English. The default control mode sti
 The assessment records read-only checks; GPU writes, failure recovery and Kubuntu 26.04 remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-41 tests and live repository reads pass on both Python versions. The GTK window launch remains unvalidated.
-Run `python -m gwe.nvml_probe` from the repository root in a prepared environment; see the diagnostic guide above.
+42 tests pass on both Python versions. The isolated Python 3.12 GTK monitor has passed a live startup,
+telemetry, disabled-controls and shutdown check on the current X11 desktop. Wayland remains untested.
+Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
+Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 
 The original authorship and GPL-3.0-or-later license are retained. Existing application identifiers remain
 for now to avoid an unplanned settings migration. Any future publication must use an independent hosting

@@ -4,11 +4,11 @@ The first graphical validation uses the current Ubuntu 24.04 system interpreter 
 Python 3.14 remains the backend compatibility environment; do not expose Python 3.12 binary extension modules
 to it. This preparation does not replace or update the installed GWE Flatpak.
 
-## Prerequisites checked
+## Native prerequisites
 
-The host provides Python 3.12, PyGObject, Pycairo, GTK3 and Notify. The dedicated Python 3.12 environment
-currently cannot see the system GI/Cairo modules. Dazzle and AyatanaAppIndicator typelibs and
-`glib-compile-resources` are missing. The following packages are available in the host's configured Ubuntu repositories:
+The host provides Python 3.12, PyGObject, Pycairo, GTK3 and Notify. The owner has also installed Dazzle,
+AyatanaAppIndicator and the resource compiler, and enabled system package visibility in the Python 3.12
+environment. For an equivalent Ubuntu 24.04 setup, the additional native packages are:
 
 ```bash
 sudo apt install gir1.2-dazzle-1.0 gir1.2-ayatanaappindicator3-0.1 libglib2.0-dev-bin
@@ -37,14 +37,42 @@ System package visibility is intentional for GI/Cairo and means the environment 
 Validate imports and `pip check` after the owner installs the requirements. Do not install the old PyGObject pin
 from `requirements.txt` over the distribution binding.
 
-## Next validation
+## Run the isolated source monitor
 
-1. Check GTK3, Dazzle, Notify, Cairo and matplotlib GTK imports without creating the application.
-2. Compile resources into an ignored local build directory and prepare a source launcher for monitor-only mode.
-   The old Meson installation still references a missing vendored python-xlib directory; do not use its
-   historical build/install commands as the development workflow without repair.
-3. Run the test suite, then launch the isolated monitor with `GWE_MONITOR_ONLY=1` and verify visible telemetry.
-4. Confirm the monitoring instance uses its separate configuration/application ID and exits without GPU writes.
+From the repository root in the prepared Python 3.12 environment:
 
-The existing GWE may stay running while preparing dependencies. Only the monitor instance will be launched
-for graphical checks; future fan-control testing requires a separate procedure with one active controller.
+```bash
+python scripts/run_monitor.py
+```
+
+The launcher compiles resources and schemas under `build/monitor/`, forces `GWE_MONITOR_ONLY=1` before
+application imports and redirects XDG configuration, data and cache into that ignored build directory.
+Application settings are therefore in `build/monitor/config/gwe-monitor/`. No system installation, Flatpak
+replacement or original profile migration is performed. The legacy build scripts are not invoked.
+The distinct `.Monitor` application ID keeps the installed GWE instance separate.
+
+For a ten-second live check that exits automatically:
+
+```bash
+python scripts/run_monitor.py --smoke-test
+```
+
+The check requires real GPU name/temperature telemetry and disabled fan, overclock and power controls.
+It returns nonzero on failure. Close any previous development monitor before running the check so D-Bus
+activation does not redirect it to that instance; the installed GWE can remain open.
+
+## Validation results
+
+- GTK3, Gdk, Dazzle, Notify, Ayatana, Cairo and matplotlib GTK imports succeeded.
+- Resolved UI packages include matplotlib 3.8.2, peewee 3.17.0 and requests 2.34.2.
+- The initial GUI launch exposed an outdated SpeedStep import, now corrected. GLib option argument assignment
+  now uses an integer to avoid the observed introspection warning.
+- The live smoke check passed on the current X11 desktop, including telemetry, disabled controls and shutdown.
+- All 42 simulated tests pass on Python 3.12.3 and 3.14.6. The latter has not run the GUI.
+- With system packages visible, Python 3.12 pip check reports inherited liquidctl 0.0.0 missing smbus.
+  This is unrelated to GWE; no liquidctl or system dependency was changed. The earlier clean pip check
+  results applied to the environment before enabling system package visibility.
+- Reactivex still emits a datetime deprecation warning during tests.
+
+This is a focused live startup check, not a full visual or interaction audit. Wayland, Kubuntu 26.04,
+profile migration and all GPU control writes remain unvalidated. The installed GWE was not stopped.
