@@ -16,7 +16,10 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - Completed: consistent online backup of the installed GWE database, with integrity check and private Git-ignored storage.
 - Completed: current-host Python 3.12 UI imports, local resource launcher and focused live graphical smoke test.
 - Pending: broader UI interaction testing, target-OS/Wayland validation and fan control implementation.
-- Pending: GPU write tests, Wayland validation, fault recovery tests and distribution upgrade.
+- Prepared: standalone supervised fan experiment with 62 passing simulated tests per interpreter;
+  current-host reads reconfirmed. Live writes await exclusive controller ownership; see
+  [procedure and recovery](nvml-fan-trial.md).
+- Pending: GPU write tests, Wayland validation, live fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
 - Completed: reusable NVML backend with UUID selection, per-reading availability/errors, memory, utilization
   and power, validated in both environments. See [backend contract](nvml-backend.md).

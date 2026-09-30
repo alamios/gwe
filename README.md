@@ -19,6 +19,7 @@
 - [Technical references](docs/technical-references.md)
 - [Read-only NVML diagnostics and tests](docs/nvml-diagnostics.md)
 - [NVML backend contract and validation](docs/nvml-backend.md)
+- [Supervised NVML fan experiment and recovery](docs/nvml-fan-trial.md)
 - [Development monitor-only integration](docs/monitor-mode.md)
 - [Preparing the development GUI](docs/gui-development.md)
 - [Configuration backup and restore](docs/configuration-backup.md)
@@ -30,8 +31,9 @@ All maintained documentation is written in English. The default control mode sti
 The assessment records read-only checks; GPU writes, failure recovery and Kubuntu 26.04 remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-42 tests pass on both Python versions. The isolated Python 3.12 GTK monitor has passed a live startup,
+62 tests pass on both Python versions, including simulated fan-experiment recovery. The isolated Python 3.12 GTK monitor has passed a live startup,
 telemetry, disabled-controls and shutdown check on the current X11 desktop. Wayland remains untested.
+A separate supervised fan experiment is prepared; hardware writes await exclusive controller ownership.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 

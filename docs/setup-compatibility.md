@@ -134,3 +134,9 @@ After owner installation of the native/UI prerequisites, the isolated source mon
 GTK smoke check on X11 using Python 3.12. Telemetry and disabled controls were verified before normal exit.
 The suite now has 42 tests passing on both interpreters. See [GUI results](gui-development.md) for details;
 this does not establish Wayland, Python 3.14 GUI or GPU control compatibility.
+
+## Fan experiment preparation
+
+The current-host baseline and automatic policy on both fans were reconfirmed after GWE was closed.
+CoolerControl remains a possible competing controller; no manual write has been attempted. See the
+[supervised experiment record](nvml-fan-trial.md) for observations, recovery and outstanding checks.
