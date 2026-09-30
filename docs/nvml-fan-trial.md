@@ -150,3 +150,9 @@ The existing 62 simulated tests per interpreter remain the software baseline; th
 follow-up did not rerun them. Live SIGTERM/SIGKILL, frozen-worker recovery, driver loss, suspend/resume,
 continuous curves, Wayland and Kubuntu 26.04 remain pending. The result establishes a narrowly scoped
 hardware capability, not production readiness for unattended fan control.
+
+## Curve-controller follow-up
+
+A separate curve engine and heartbeat supervisor now pass simulated-device tests, including real process
+fault injection. See [implementation, hardware procedure and pending validation](nvml-fan-curves.md).
+The fixed-duty trial in this document does not validate the new curve controller on hardware.
