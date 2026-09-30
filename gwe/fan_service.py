@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Experimental local fan-service boundary. No NVML backend or system installation.
-
-Backend operations must be bounded/nonblocking and independently supervised. The
-transport is tested with simulated backends only; do not attach native NVML calls.
-"""
+"""Local fan-service boundary with asynchronous supervised backend support."""
 import json
 import os
 from pathlib import Path
@@ -63,10 +59,17 @@ class Lease:
         except Exception:
             self.state = 'recovery_failed'
             return False
-        self.state = 'idle'
-        return True
+        self.state = getattr(self.backend, 'state', 'idle')
+        return self.state not in ('fault', 'recovery_failed')
 
     def expire(self):
+        poll = getattr(self.backend, 'poll', None)
+        if poll is not None:
+            state = poll()
+            if self.state not in ('fault', 'recovery_failed'):
+                self.state = state
+            if state in ('idle', 'fault', 'recovery_failed'):
+                self.owner = self.deadline = None
         if self.owner is not None and self.clock() >= self.deadline:
             self.stop()
 
@@ -82,7 +85,7 @@ class Lease:
         if self.state in ('fault', 'recovery_failed'):
             return {'ok': False, 'error': self.state}
         if op == 'acquire':
-            if self.owner is not None:
+            if self.owner is not None or self.state != 'idle':
                 return {'ok': False, 'error': 'busy'}
             try:
                 self.backend.start(request['curve'])
@@ -90,12 +93,20 @@ class Lease:
                 if self.stop():
                     self.state = 'fault'
                 return {'ok': False, 'error': self.state}
-            self.owner, self.deadline, self.state = connection, self.clock() + 5, 'active'
-            return {'ok': True, 'lease_seconds': 5}
+            self.owner, self.deadline = connection, self.clock() + 5
+            self.state = getattr(self.backend, 'state', 'active')
+            return {'ok': True, 'lease_seconds': 5, 'state': self.state}
         if self.owner is not connection:
             return {'ok': False, 'error': 'not_owner'}
         if op == 'renew':
             self.deadline = self.clock() + 5
+            renew = getattr(self.backend, 'renew', None)
+            if renew is not None:
+                try:
+                    renew(self.deadline)
+                except Exception:
+                    self.stop()
+                    return {'ok': False, 'error': 'worker_unavailable'}
             return {'ok': True, 'lease_seconds': 5}
         return {'ok': self.stop(), 'state': self.state}
 
@@ -104,13 +115,18 @@ class FanService:
     """Linux SOCK_SEQPACKET transport with kernel peer credentials and bounded I/O.
 
     Caller owns lifecycle/event-loop scheduling. Production root-to-user socket
-    provisioning and a supervised backend are intentionally not implemented yet.
+    provisioning uses an explicitly supplied root-owned runtime directory.
     """
-    def __init__(self, path, backend, *, allowed_uid, clock=boot_time):
+    def __init__(self, path, backend, *, allowed_uid, clock=boot_time, provision=False):
         self.path = Path(path)
         parent = self.path.parent.stat()
-        if parent.st_uid != os.geteuid() or stat.S_IMODE(parent.st_mode) != 0o700:
-            raise ValueError('Socket directory must be owned by service user with mode 0700')
+        if type(allowed_uid) is not int or allowed_uid < 0:
+            raise ValueError('Invalid allowed UID')
+        expected_mode = 0o711 if provision else 0o700
+        if provision and os.geteuid() != 0:
+            raise PermissionError('Only root may provision a desktop socket')
+        if parent.st_uid != os.geteuid() or stat.S_IMODE(parent.st_mode) != expected_mode:
+            raise ValueError('Socket directory ownership or mode mismatch')
         self.allowed_uid = allowed_uid
         self.lease = Lease(backend, clock)
         self.selector = selectors.DefaultSelector()
@@ -123,6 +139,8 @@ class FanService:
             raise
         self.inode = self.path.stat().st_ino
         os.chmod(self.path, 0o600)
+        if provision:
+            os.chown(self.path, allowed_uid, -1)
         self.listener.listen(8)
         self.listener.setblocking(False)
         self.selector.register(self.listener, selectors.EVENT_READ)

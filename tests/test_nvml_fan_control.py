@@ -173,3 +173,12 @@ def test_interrupt_during_write_restores(fake,session):
     with pytest.raises(KeyboardInterrupt):controller.tick()
     assert fake.state['policies']==[0,0]
     assert controller.state=='fault'
+
+
+def test_denied_ownership_handshake_performs_no_native_setter(fake):
+    controller=NvmlFanController(fake,'GPU-test',FanCurve(((40,30),)))
+    def deny(fans):raise PermissionError('ownership not recorded')
+    with pytest.raises(PermissionError):controller.start(on_owned=deny)
+    assert fake.state['writes']==[]
+    assert fake.state['resets']==[]
+    assert controller.state=='fault'

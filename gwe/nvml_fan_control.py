@@ -98,7 +98,7 @@ class NvmlFanController:
         self.state = "fault"
         self._restore()
 
-    def start(self):
+    def start(self, *, on_owned=None):
         """Validate before taking ownership; resets prove support before manual writes."""
         with self._lock:
             if self.state != "new":
@@ -113,6 +113,8 @@ class NvmlFanController:
                     raise FanControlError("GPU is already under manual control")
                 self._deadline(started)
                 # Ownership starts only after all read-only checks pass.
+                if on_owned is not None:
+                    on_owned(fans)
                 self._fans, self._limits = fans, limits
                 self._restore()
                 self._deadline(started)

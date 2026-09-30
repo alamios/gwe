@@ -215,6 +215,7 @@ any deployment or migration. The default GWE backend and the installed Flatpak r
 
 ## Service-boundary follow-up
 
-The local protocol, client and lease state machine now have simulated-backend socket tests. See
-[implemented boundary and pending supervised NVML integration](fan-service.md). No privileged daemon
-was installed, and the hardware evidence above does not extend to this new transport.
+The local protocol and lease state machine are now connected to the NVML process adapter, with simulated
+socket-to-worker recovery tests. A root-owned installation package and bounded systemd trial are prepared;
+see [service implementation and pending hardware validation](fan-service.md). No daemon was installed,
+and the hardware evidence above does not extend to this service.

@@ -1,72 +1,152 @@
-# Experimental local fan-service boundary
+# Experimental supervised fan service
 
-`gwe.fan_service` implements the client/transport and lease state machine for the next service stage.
-It is tested with simulated backends only. There is no runnable privileged daemon, systemd installation,
-root-to-desktop socket provisioning, GTK integration or live NVML adapter in this module. Do not connect
-blocking NVML methods directly to its event loop. The default GWE backend and private profiles are unchanged.
+The local protocol is now connected to `ProcessBackend`, which executes the NVML controller and recovery
+in separate processes. A root-owned installation bundle, a 60-second systemd trial unit and an unprivileged
+test client are prepared. None has been installed or run against the real GPU in this stage. The default
+GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
-## Implemented protocol
+## Protocol and asynchronous states
 
-Linux UNIX sequenced-packet sockets carry one JSON request/response per packet. The service checks kernel
-peer credentials against one configured allowed UID. Identity supplied in a message is never accepted.
-The endpoint is created in a service-owned mode-0700 directory and has mode 0600; an existing endpoint is
-never replaced. These development permissions support same-user tests, not yet root-to-desktop access.
+Linux UNIX sequenced-packet sockets carry JSON requests of at most 4096 bytes. Kernel peer credentials
+must match one configured desktop UID. The owner is a specific connection; another connection, including
+one from the same UID, cannot renew or release it. Only these operations exist:
 
-Requests have protocol `version: 1` and one of four operations:
-
-| Operation | Fields beyond version/op | Behavior |
+| Operation | Extra fields | Result |
 | --- | --- | --- |
-| status | None | Return state and whether this connection owns the lease |
-| acquire | points, hysteresis, vbios_silent | Validate a curve and start one backend session |
-| renew | None | Extend this connection's active lease by five seconds |
-| release | None | Stop the owned backend session and require restoration |
+| status | None | Current state and whether this connection owns the lease |
+| acquire | points, hysteresis, vbios_silent | Accept validated curve; state `starting` |
+| renew | None | Extend this connection's lease by five seconds |
+| release | None | Begin shutdown; normally state `stopping` |
 
-Curve points are explicit numeric pairs, at most 32. The existing `FanCurve` validation applies; device
-limits must additionally be checked by the eventual supervised backend. Requests are limited to 4096 bytes;
-unknown/duplicate fields, unsupported versions/operations and invalid data are rejected. No client-selected
-UUID, path, program, import, power operation or clock operation exists in this protocol. Device identity and
-backend policy must come from trusted service configuration. Responses omit internal exception messages.
+`ok: true` on acquire/release means accepted, not completion of a hardware operation. Clients must poll
+for `active` or `idle` respectively. `active` requires a verified worker tick. `idle` after control requires
+verified automatic restoration and clearing the ownership record. While `starting`/`stopping`, another
+acquisition is refused. `fault` and `recovery_failed` latch and prevent rearming until explicit service
+restart/review. Errors never include raw NVML messages or private device identity.
 
-The owner is a particular persistent connection, not just a UID. Other connections cannot replace, renew
-or release its session. Disconnect and malformed owner requests stop its session. Expiry is checked before
-processing requests, so a late renewal cannot revive an expired lease. A new explicit acquisition is needed.
-CLOCK_BOOTTIME includes suspended time; this prevents resuming an expired lease on a future service, but is
-not itself a suspend hook or proof of recovery while the host is asleep.
+Unknown/duplicate fields, unsupported versions, malformed curves and more than 32 points are rejected.
+There are no client-selected UUIDs, paths, programs, imports, power operations or clock operations. The
+trusted service configuration selects the GPU. Points are validated again against live manual limits.
+Malformed owner traffic, disconnection and lease expiry initiate shutdown. Late renewal cannot revive an
+expired lease. Status requests do not renew control. Nonblocking I/O and at most eight clients keep a slow
+reader from blocking service supervision. The existing synthetic-curve tests cover protocol failures.
 
-Backend startup faults latch after attempting cleanup. Failed cleanup becomes `recovery_failed` and blocks
-new acquisition. Successful release/expiry returns to idle. The service uses nonblocking socket I/O, accepts
-at most eight clients and caps event-loop waits at 100 ms. A client that cannot receive its response is
-disconnected rather than allowed to block lease processing. The backend contract must also remain bounded.
+## Process lifecycle and recovery
 
-## Backend contract and remaining integration
+The service process never imports/initializes NVML or invokes its native calls in its event loop. The
+worker receives the configured UUID and curve, initializes NVML, validates identity/capabilities/temperature
+and requires initial automatic policy. Before the first native setter it announces the known fan indices.
+The service writes a private ownership record and only then acknowledges permission to proceed. This
+prevents resetting another controller after a preflight rejection and permits recovery after service death.
+No manual setter can run before that ownership handshake.
 
-The injected backend currently has `start(curve)` and `stop()` operations. `stop()` must return only after
-verified automatic restoration, or raise. Startup cleanup must never reset an unrelated controller. All
-backend calls must be bounded and must not execute native NVML in this event-loop process. The tests use
-an in-memory backend to validate protocol state transitions separately from previously tested NVML logic.
+After each verified curve tick the worker sends a heartbeat. The service monitors a five-second heartbeat
+deadline. Release, lost client, expiry, fault or stalled worker trigger kill/join of the writer; recovery
+starts only after its exit is confirmed. A separate recovery process resets every recorded fan by UUID and
+verifies automatic policies. Its deadline is five seconds. Failed/hung recovery becomes `recovery_failed`,
+retains the record and blocks a new writer. A worker that cannot be killed also blocks recovery/new control.
 
-Next implementation work must connect this boundary to an independently supervised worker with trusted
-UUID selection and device revalidation. It must expose asynchronous worker faults, serialize recovery,
-ensure connection expiry cannot race another manual write, and propagate recovery failure into service
-status. The existing bounded trial supervisor does not yet provide that persistent backend interface.
+The worker independently enforces the absolute lease deadline using CLOCK_BOOTTIME, including suspended
+time. Losing the service socket or lease causes worker cleanup while native calls remain responsive.
+It cannot revive a lease after expiry, even if delayed renewals arrive. Graceful worker expiry is distinct
+from an unexpected crash; both go through independent parent verification before returning idle.
+This does not restore automatic control while the host is asleep: suspend integration remains pending.
 
-Before deployment, prepare a reviewed administrator-owned installation, controlled socket access for the
-selected desktop user, process/watchdog lifecycle, independent recovery on daemon failure, suspend hooks,
-and explicit coexistence rules for CoolerControl/GWE. No root daemon may import the development checkout.
-Installation, enablement and private-profile migration are separate steps, not performed here.
+The trial systemd unit kills the complete service cgroup on teardown. Its `ExecStopPost` performs a separate
+bounded recovery using the retained ownership record, after writers have stopped. With no record it makes
+no NVML calls. A runtime lock excludes concurrent service/recovery instances. An unresolved record prevents
+new control. The ten-second systemd watchdog covers a stuck main event loop; live systemd failure recovery
+has not yet been validated. Worker EOF/lease recovery has been tested using a killed/frozen simulated service.
+
+## Prepared installation
+
+Build a fresh review bundle in the checkout using the prepared Python 3.12 environment:
+
+```bash
+python scripts/stage_fan_service.py build/fan-service-review-final
+```
+
+The staging tool refuses an existing destination. It copies only the required service modules, the verified
+nvidia-ml-py 13.615.71 pure-Python binding (including its license notice), GWE's license, entry point, unit,
+configuration template and install/uninstall scripts. `SHA256SUMS` covers the bundle. No database, screenshot,
+real UUID or user environment path is included. No package download or system installation occurs.
+
+After explicit approval, the reviewed installer would create only:
+
+- `/opt/gwe-fan-service/`: root-owned service code and bundled binding.
+- `/etc/gwe-fan-service.json`: private root-owned configuration, initially invalid placeholders.
+- `/etc/systemd/system/gwe-fan-service.service`: manual trial unit, no boot enablement.
+
+The installer verifies hashes, refuses existing artifacts (including symlinks), sets root ownership and
+reloads systemd metadata. It does not start/enable anything or change system Python packages. Partial
+installation errors trigger removal of the newly created artifacts. The daemon runs `/usr/bin/python3 -I -B`
+and verifies root-owned, non-writable code before imports; it never imports a user venv or checkout.
+
+The selected desktop UID owns only the mode-0600 socket, in a root-owned mode-0711 runtime directory.
+The user can traverse that directory but cannot replace its entries or read the mode-0600 recovery record.
+The root configuration contains `version: 1`, a non-root `allowed_uid` and the actual `gpu_uuid`. Set those
+locally after installation; do not paste the completed configuration into Git or shared diagnostics.
+Configuration validation is read-only and makes no NVML calls:
+
+```bash
+sudo /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py check
+```
+
+The trial is deliberately limited to 60 seconds, with a 60 C temperature ceiling, no restart loop and no
+`[Install]` section. It refuses startup unless CoolerControl is confirmed inactive/failed and checks known
+competing process names. Those guards cannot detect every custom controller; the operator must still
+establish exclusive ownership and keep GWE closed. It never stops another service automatically.
+
+## Prepared hardware procedure (not performed)
+
+Only after installation/configuration approval and read-only baseline verification, use the prepared
+Python 3.12 environment in the checkout. The client runs as the ordinary user:
+
+```bash
+sudo -v && (
+    trap 'sudo systemctl stop gwe-fan-service.service; sudo systemctl start coolercontrold.service' EXIT
+    sudo systemctl stop coolercontrold.service || exit
+    sudo systemctl start gwe-fan-service.service || exit
+    python -m gwe.fan_client_trial --scenario normal
+)
+```
+
+The service does not replay a stored profile; this client supplies the synthetic 40–50% trial curve and
+renews briefly before requesting release. Test `disconnect` and `expire` separately after a normal pass.
+They close the owning socket or stop renewing, then wait for verified `idle`. Confirm policies independently
+and check CoolerControl active afterward. The shell trap restores CoolerControl on ordinary exit, not
+SIGKILL or host failure. Keep the previous standalone automatic recovery procedure available.
+
+Service SIGKILL/watchdog tests, actual cross-UID access, hardening/NVML compatibility and `ExecStopPost`
+recovery need their own live validation. Do not treat the previous standalone worker-fault trials as proof
+of this service's behavior. GUI connection, continuous operation and profile migration remain later work.
+
+## Removal and recovery
+
+The reviewed bundle's `uninstall.sh` stops the unit first and refuses removal while an ownership record
+remains unresolved. It removes the installed code/unit and reloads systemd, while preserving the private
+configuration and runtime directory for review. It never changes the installed Flatpak or profile database.
+If removal is refused, retain the installed code and resolve/verify recovery first; do not delete a record
+to bypass the check. A failed or inaccessible driver may require separately authorized system recovery.
 
 ## Validation: 2026-09-30
 
-136 tests pass on Python 3.12.3 and 3.14.6. New tests use actual local sockets and kernel peer credentials
-without administrator privileges or GPU calls. They cover client requests, rejection of the wrong UID,
-connection ownership, renewal/expiry, malformed input, startup/recovery failures, redacted errors,
-disconnect cleanup and preservation of existing endpoint files. The existing Reactivex warning remains.
-The previously recorded hardware results belong to the standalone curve trial; they do not validate this
-new protocol/service boundary on hardware. No system service or GPU setting changed in this stage.
+The suite covers socket-to-worker operation, release/disconnect/expiry, ownership handshakes, denied writes,
+worker kill/stall, failed/hung recovery, and killed/frozen service processes with shared simulated policies.
+Bundle tests check isolated imports without hardware, hashes, license retention, placeholder configuration,
+shell syntax and refusal to overwrite existing files. The unit passes `systemd-analyze verify` on this host.
+171 tests pass on Python 3.12.3 and 3.14.6. The existing Reactivex deprecation warning remains.
+
+All new service lifecycle tests used simulated devices without root. Systemd syntax verification is not an
+installed service test. No real GPU setter, package installation or service activation was performed here.
+The live hardware evidence in [curve trials](nvml-fan-curves.md) remains limited to those earlier experiments.
 
 ## References
 
-- [Linux UNIX sockets](https://man7.org/linux/man-pages/man7/unix.7.html): local packet semantics and peer credentials.
-- [Python time constants](https://docs.python.org/3/library/time.html#time.CLOCK_BOOTTIME): clock including suspended time.
+- [Linux UNIX sockets](https://man7.org/linux/man-pages/man7/unix.7.html): packet semantics and peer credentials.
+- [Python clock constants](https://docs.python.org/3/library/time.html#time.CLOCK_BOOTTIME): suspended time.
+- [systemd service reference source](https://github.com/systemd/systemd/blob/main/man/systemd.service.xml): watchdog, cgroup lifecycle and post-stop execution.
+- [systemd execution reference source](https://github.com/systemd/systemd/blob/main/man/systemd.exec.xml): runtime directories and hardening.
 
-Reviewed 2026-09-30; local socket tests establish behavior in both current development interpreters.
+Reviewed 2026-09-30. Whole-host/kernel/driver failure and combined service/worker failure cannot be given an
+absolute software recovery guarantee. The staged unit and package are experimental and await live review.
