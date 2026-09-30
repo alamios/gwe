@@ -2,8 +2,9 @@
 
 The local protocol is now connected to `ProcessBackend`, which executes the NVML controller and recovery
 in separate processes. A root-owned installation bundle, a 60-second systemd trial unit and an unprivileged
-test client are prepared. The owner has installed the reviewed bundle and passed its normal hardware trial with an unprivileged client.
-It is stopped after testing; client-loss, expiry and service-failure hardware validation remain pending. The default
+test client are prepared. The owner has installed the reviewed bundle and passed normal-release and client-disconnection hardware
+trials with an unprivileged client. It is stopped after testing; expiry and service-failure hardware
+validation remain pending. The default
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
 ## Protocol and asynchronous states
@@ -98,7 +99,7 @@ The trial is deliberately limited to 60 seconds, with a 60 C temperature ceiling
 competing process names. Those guards cannot detect every custom controller; the operator must still
 establish exclusive ownership and keep GWE closed. It never stops another service automatically.
 
-## Hardware procedure (normal scenario validated; other scenarios pending)
+## Hardware procedure (normal/disconnect validated; expiry pending)
 
 Only after installation/configuration approval and read-only baseline verification, use the prepared
 Python 3.12 environment in the checkout. The client runs as the ordinary user:
@@ -211,6 +212,23 @@ Independent follow-up confirmed:
 - Both NVML fan policies zero (automatic), reported speeds zero, X11 `GPUFanControlState` zero.
 - Driver 580.178.04, temperature 51 C, power limit unchanged at 250 W.
 
-The next separate hardware scenario is `disconnect`, which closes the owning socket without requesting
-release and observes recovery through another unprivileged connection. Lease expiry and service-failure
-scenarios remain pending. No new code or automated test execution was needed for this result record.
+The subsequent `disconnect` scenario closes the owning socket without requesting release and observes
+recovery through another unprivileged connection. Its result is recorded below; lease expiry and
+service-failure scenarios remain pending. No new code or automated test execution was needed for this result record.
+
+## Client-disconnection hardware trial: 2026-10-01
+
+The owner ran `--scenario disconnect` from repository commit `124ba39` against the unchanged installed
+service bundle (`626c8ae`). The client reported an active curve, then idle after verified automatic
+recovery. In this scenario it closes the owning connection without sending `release`; a separate
+unprivileged observer connection waits for idle. This validates disconnect-triggered recovery on this host,
+not merely normal explicit release. The terminal output contains no per-tick duty or temperature trace.
+
+Independent follow-up confirmed service inactive/static with `Result=success` and `ExecMainStatus=0`,
+no pending ownership record, CoolerControl active, both NVML policies automatic, reported speeds zero,
+X11 `GPUFanControlState` zero, driver 580.178.04, temperature 53 C and power limit unchanged at 250 W.
+
+Next, run `--scenario expire` separately: the client keeps its connection open and queries status but stops
+renewing its five-second lease. Successful recovery must occur despite that open connection. Service-failure
+hardware scenarios remain separate pending checks. This update only records results; no code changed or
+additional automated tests ran.

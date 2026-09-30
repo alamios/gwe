@@ -39,8 +39,8 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   trial unit with watchdog/post-stop recovery. The owner installed the reviewed bundle; hashes, root
   ownership and inactive/static service state were independently verified. The owner completed private
   user/GPU configuration on 2026-10-01. The normal installed-service/unprivileged-client hardware trial
-  passed with automatic recovery, clean shutdown and CoolerControl restarted. No boot enablement has
-  occurred; client-loss, lease-expiry and service-failure hardware tests remain pending.
+  and client-disconnection scenarios passed with automatic recovery, clean shutdown and CoolerControl
+  restarted. No boot enablement has occurred; lease-expiry and service-failure hardware tests remain pending.
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 
