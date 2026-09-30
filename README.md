@@ -38,7 +38,9 @@ and real reads without display variables. An opt-in monitor-only UI integration 
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
 fans at 55–56 C and verified automatic restoration; CoolerControl is running again. Unprivileged reset
 calls were denied. An independent curve engine and bounded process supervisor are implemented and tested
-with simulated devices; their new hardware trials and a production privileged service remain pending.
+with simulated devices. The normal synthetic-curve hardware trial also passed: ten ticks at a 45% target,
+54–55 C and verified automatic restoration. Hardware fault trials and a production privileged service
+remain pending.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 

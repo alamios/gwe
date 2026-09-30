@@ -71,7 +71,7 @@ A reported injected-termination outcome means the parent detected the fault; onl
 restoration makes the command successful. These are deliberate hardware-fault experiments when `--run`
 is used: perform them separately after a normal run and with current operator authorization.
 
-### Operator command for the next normal hardware trial
+### Operator command for a normal hardware trial
 
 From the checkout in the prepared Python 3.12 environment, with GWE fully closed and no competing GPU
 controller, authenticate in a terminal. CoolerControl is stopped temporarily and restarted on shell exit:
@@ -105,8 +105,8 @@ Do not launch the installed GWE as recovery without considering its saved profil
   mechanics and simulated device recovery, not real driver behavior during those faults.
 - The new CLI's live read-only preflight passed on the current X11 host at 59 C with both fans automatic
   and reported speed zero. No new GPU write or service stop occurred during this implementation phase.
-- The normal synthetic-curve hardware run and all hardware fault scenarios remain pending. The earlier
-  successful fixed-40% trial must not be presented as validation of this new controller.
+- The normal synthetic-curve hardware run subsequently passed as recorded below. Hardware fault
+  scenarios remain pending; simulated process-fault tests do not establish real driver recovery.
 
 ## Remaining production work
 
@@ -119,3 +119,26 @@ The current parent/child design does not guarantee recovery if both die, the dri
 hang or the host freezes. Parent death leaves the bounded worker to finish/restore while it remains
 responsive. Suspend/resume, service restarts, session changes and actual Wayland/Kubuntu 26.04 must be tested
 before continuous operation. Profile import/migration and UI curve activation remain separate work.
+
+## Normal curve hardware trial: 2026-09-30
+
+The owner ran the supplied normal scenario with sudo from commit `34e7688` on the current X11 host.
+The manual interval is evidenced by the supplied terminal output; the maintenance agent independently
+checked the resulting hardware/service state afterward.
+
+- Preflight: 55 C, both policies automatic, both reported speeds zero.
+- Ten verified control ticks: target 45% on both fans; nine temperature samples at 55 C, then one at 54 C.
+  The retained 45% target on cooling is consistent with the configured 2 C hysteresis. The controller
+  checks both policies and target readbacks before emitting each successful tick; this output does not
+  independently measure fan RPM or validate the entire curve across its temperature range.
+- Supervisor result: `completed`, ten ticks, no injected fault; automatic policies verified on completion.
+- Independent follow-up: driver 580.178.04, 54 C, both NVML policies zero, reported speeds zero,
+  X11 `GPUFanControlState` zero, CoolerControl active and power limit unchanged at 250 W.
+- No new automated test run was needed for this documentation-only update; the 118-test baseline stands.
+
+Next, test `--scenario term` separately with the same command and exclusive-controller procedure.
+It sends SIGTERM only to the curve worker after two verified ticks, while the supervisor remains alive.
+The worker's interrupt handler may print an expected traceback; assess the supervisor's final result:
+`terminated_worker_detected`, `injected: True`, followed by verified automatic policies. Any recovery
+failure is a failed test regardless of the injected signal. Independently check policy and CoolerControl
+again before proceeding to SIGKILL or a stalled-worker scenario. Those hardware scenarios are still pending.

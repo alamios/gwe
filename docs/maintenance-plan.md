@@ -22,7 +22,8 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   The simulated suite remains at 62 passing tests per interpreter; see [procedure and results](nvml-fan-trial.md).
 - Implemented: independent curve engine, NVML session with latched faults and bounded heartbeat supervisor.
   118 tests pass per interpreter, including real process faults with simulated devices. The new read-only
-  preflight passed; [curve hardware and fault trials](nvml-fan-curves.md) remain pending.
+  preflight and normal ten-tick curve hardware trial passed, including 45% target readback and automatic
+  restoration. [Hardware fault trials](nvml-fan-curves.md) remain pending.
 - Pending: production continuous fan control, Wayland validation, live fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
 - Completed: reusable NVML backend with UUID selection, per-reading availability/errors, memory, utilization
