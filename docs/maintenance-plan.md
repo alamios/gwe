@@ -23,9 +23,9 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - Implemented: independent curve engine, NVML session with latched faults and bounded heartbeat supervisor.
   118 tests pass per interpreter, including real process faults with simulated devices. The new read-only
   preflight and normal ten-tick curve hardware trial passed, including 45% target readback and automatic
-  restoration. Hardware worker-SIGTERM and SIGKILL trials also passed with final automatic policies;
-  the latter confirms parent recovery without worker cleanup. The [stalled-worker hardware trial](nvml-fan-curves.md)
-  remains pending.
+  restoration. Hardware worker-SIGTERM, SIGKILL and SIGSTOP-induced stall trials also passed with final
+  automatic policies. The latter two validate parent recovery without worker cleanup while the supervisor
+  and driver remain responsive. See the [hardware validation record](nvml-fan-curves.md).
 - Pending: production continuous fan control, Wayland validation, remaining live fault recovery tests and distribution upgrade.
 - Keep GTK and the existing profile model initially; prioritize the NVIDIA access layer and recovery.
 - Completed: reusable NVML backend with UUID selection, per-reading availability/errors, memory, utilization

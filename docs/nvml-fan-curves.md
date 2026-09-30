@@ -105,8 +105,8 @@ Do not launch the installed GWE as recovery without considering its saved profil
   mechanics and simulated device recovery, not real driver behavior during those faults.
 - The new CLI's live read-only preflight passed on the current X11 host at 59 C with both fans automatic
   and reported speed zero. No new GPU write or service stop occurred during this implementation phase.
-- The normal synthetic-curve, worker-SIGTERM and worker-SIGKILL hardware runs subsequently passed as
-  recorded below. The stalled-worker hardware scenario remains pending.
+- The normal synthetic-curve, worker-SIGTERM, worker-SIGKILL and SIGSTOP-induced stalled-worker hardware
+  runs subsequently passed as recorded below. The supervisor and driver remained responsive in each case.
 
 ## Remaining production work
 
@@ -176,9 +176,39 @@ specific worker-termination case. Independent follow-up confirmed both NVML poli
 speeds zero, X11 `GPUFanControlState` zero, CoolerControl active, driver 580.178.04, temperature 58 C and
 power limit unchanged at 250 W. No code changed; the 118-test software baseline remains unchanged.
 
-Next, test `--scenario stall` separately. It suspends only the worker with SIGSTOP after two verified
+The next trial used `--scenario stall` separately. It suspends only the worker with SIGSTOP after two verified
 ticks; the living supervisor should detect the five-second heartbeat expiry, kill/join the stalled worker
 and restore both fans. Expect `stalled_worker_detected`, `injected: True` and verified automatic policies.
 While suspended, the worker cannot monitor temperature; this remains a brief supervised desktop-idle
 experiment, with no load generation. It does not simulate a stuck kernel/driver call or whole-host freeze.
-Hardware stalled-worker recovery remains pending until that run and independent follow-up are recorded.
+The resulting hardware trial and independent follow-up are recorded below.
+
+## Stalled-worker hardware trial: 2026-09-30
+
+The owner ran `--scenario stall` with sudo from commit `2ef5f34`. Supplied output shows preflight at 43 C,
+both fans automatic and reported speeds zero, followed by two verified manual ticks at 43 C with a 40%
+target. The supervisor reported `stalled_worker_detected`, two ticks and `injected: True`, then verified
+both fan policies automatic. In this code path the supervisor detects heartbeat expiry, kills and joins
+the SIGSTOP-suspended worker, and performs recovery without worker cleanup. The output does not include
+elapsed timestamps; the configured heartbeat deadline is five seconds.
+
+Independent follow-up confirmed driver 580.178.04, both NVML policies zero, reported speeds zero,
+X11 `GPUFanControlState` zero, CoolerControl active, temperature 50 C and power limit still 250 W.
+The follow-up temperature was measured later, not during the suspended interval. No power/clock setter,
+profile migration, load test or package change was performed. No code changed in this documentation-only
+update; the 118-test software baseline remains unchanged.
+
+### Completed bounded hardware matrix
+
+| Scenario | Worker observations | Supervisor result | Final policy independently checked |
+| --- | --- | --- | --- |
+| Normal synthetic curve | Ten ticks, 45%, 54–55 C | completed | Both automatic |
+| SIGTERM | Two ticks, 47%, 57 C | terminated_worker_detected | Both automatic |
+| SIGKILL | Two ticks, 47–48%, 57–58 C | terminated_worker_detected | Both automatic |
+| SIGSTOP-induced stall | Two ticks, 40%, 43 C | stalled_worker_detected | Both automatic |
+
+This completes the initial bounded worker-fault matrix on this GPU/driver/X11 setup. It does not establish
+unattended continuous operation, survival of supervisor death, blocked kernel/driver recovery, whole-host
+failure recovery, suspend/resume or Wayland compatibility. The next implementation stage is the privileged
+service and unprivileged client boundary described above, with explicit ownership and profile review before
+any deployment or migration. The default GWE backend and the installed Flatpak remain unchanged.

@@ -30,8 +30,8 @@
 
 All maintained documentation is written in English. The default control mode still requires X11 NV-CONTROL.
 Both fans have passed a supervised NVML manual-control trial and normal automatic restoration on the
-current X11 host with administrator privileges. Recovery after worker SIGTERM and SIGKILL is also verified;
-stalled-worker recovery and Kubuntu 26.04 remain unvalidated.
+current X11 host with administrator privileges. Recovery after worker SIGTERM, SIGKILL and SIGSTOP-induced
+stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
 118 tests pass on both Python versions, including curve control and simulated-device process recovery. The isolated Python
@@ -40,8 +40,9 @@ X11 desktop. Wayland remains untested. The separate fan trial held a 40% target 
 fans at 55–56 C and verified automatic restoration; CoolerControl is running again. Unprivileged reset
 calls were denied. An independent curve engine and bounded process supervisor are implemented and tested
 with simulated devices. The normal synthetic-curve hardware trial also passed: ten ticks at a 45% target,
-54–55 C and verified automatic restoration. Subsequent worker SIGTERM and SIGKILL trials also returned both
-fans to automatic. Further hardware fault trials and a production privileged service remain pending.
+54–55 C and verified automatic restoration. Subsequent worker SIGTERM, SIGKILL and stalled-worker trials
+also returned both fans to automatic. A production privileged service, suspend/resume and recovery from
+supervisor/driver/host failures remain pending.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 
