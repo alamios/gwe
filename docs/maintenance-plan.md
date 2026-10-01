@@ -163,9 +163,9 @@ main-window session with two verified transactions and an owner-confirmed visibl
 follow-up found 250 W, automatic fan policies and clean service shutdown. Earlier GUI failures remain
 unexplained. Real power-worker fault recovery and continuous operation remain pending; see
 [power-control validation](power-control.md).
-The next service-level power recovery check is one command combining SIGKILL and SIGSTOP/watchdog,
-with guarded 250 W restoration. Its runner and cleanup are tested with simulated boundaries; real
-execution remains pending. Interrupted power-worker recovery after an actual simulated setter is also
+The single-command service-level power recovery check combines SIGKILL and SIGSTOP/watchdog,
+with guarded 250 W restoration. Both hardware scenarios passed on 2026-10-02, with independent
+readback and no pending records. Interrupted power-worker recovery after an actual simulated setter is also
 tested with real spawned-process SIGKILL and SIGSTOP, without changing the installed service.
 
 For each future run, record date, commit, GPU model, driver, kernel, OS, X11/Wayland session, packaging/runtime,

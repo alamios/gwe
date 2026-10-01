@@ -82,7 +82,9 @@ window. Its final session logged two verified transactions and independent follo
 automatic fan policies and clean shutdown. Earlier GUI failures remain unexplained. Power-worker fault
 recovery on real hardware, continuous service and target-OS/Wayland validation remain pending.
 An optional single-command service recovery check now combines SIGKILL and watchdog scenarios with
-automatic guarded restoration and independent readback; its real execution remains pending.
+automatic guarded restoration and independent readback. Both hardware scenarios passed on 2026-10-02,
+restoring 250 W and automatic fan policies with no pending records. The final watchdog failure state is
+expected; CoolerControl is active again.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

@@ -261,8 +261,28 @@ This checks systemd recovery of the acceptance guard after a committed reduction
 real NVML worker to fail between its setter and journal commit. That interrupted-transaction boundary
 is tested automatically with spawned simulated NVML workers: SIGKILL and SIGSTOP after the simulated
 hardware change both restore the previous value through the independent recovery worker. No privileged
-fault hook has been added to the installed service. Real execution of the combined command is pending.
+fault hook has been added to the installed service. The combined command passed on real hardware as
+recorded below.
 
 Validation on 2026-10-02: the complete automated suite passes with 420 tests on each of Python 3.12 and
 3.14, including both worker signals, recovery-runner failure/deadline/identity checks and shell cleanup
 after successful or failed recovery runs. The existing Reactivex datetime deprecation warning remains.
+
+### Hardware result: 2026-10-02
+
+The owner ran the combined command successfully. Each scenario committed and independently read
+250→240 W, verified retention after client disconnection and reported PASS after service termination:
+SIGKILL with signal result, then SIGSTOP with watchdog result. Both post-stop checks verified restoration
+to 250 W and both automatic fan policies. The overall recovery check reported PASS.
+
+Independent read-only follow-up found 250 W, both fan policies automatic, temperature 57 C and no fan,
+power-transaction or trial pending record. CoolerControl was active again. The experimental unit remained
+`ActiveState=failed`, `Result=watchdog`, which is the expected record of the injected second fault, not
+an indication of failed recovery. The wrapper requires an inactive unit before another trial; preserve
+this fault result until reviewed and reset the failed unit before a future run.
+
+This validates the installed systemd post-stop trial-guard recovery after complete-service death and
+watchdog termination. It does not establish hardware interruption inside an uncommitted NVML power
+transaction. That boundary remains covered by simulated tests. Continuous operation, suspend/resume,
+driver/host failure and target-OS/Wayland acceptance remain pending. No new hardware tests are needed
+to repeat this accepted service-level result.
