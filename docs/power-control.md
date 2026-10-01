@@ -185,4 +185,21 @@ limits requests to 240/250 W and restores 250 W at shutdown; this is acceptance 
 committed-power retention policy. Select 240 W, press Apply, wait for the verified message, then apply
 250 W and close the window. Complete within the unit's 60-second lifetime; if it expires, close and rerun.
 The wrapper's simulated tests verify argument routing, guard-before-window ordering, and cleanup after
-window exit. A real GUI result remains pending.
+window exit.
+
+## Main-window result visibility: 2026-10-01
+
+The owner's real GUI session logged a `power_verified` event, but the owner saw only the initial notice.
+The power result was appended after long fan-preview instructions in an unwrapped label. This establishes
+one verified GUI transaction, not completion of both requested limits or visible acceptance. Later status
+requests failed near the service lifetime; that timing is consistent with expiry, but is not a proven cause.
+
+Idle power status now starts the notice, and power-only launches omit unrelated fan-preview instructions.
+Service notices wrap within a bounded label width. Active fan/recovery messages retain priority.
+The focused controller tests pass (45 on each interpreter), and the Python 3.12 simulated GTK power check
+passes while checking the actual mapped, revealed label and its `Power verified:` prefix. No real GPU
+writes occurred during these checks. Independent read-only follow-up found 250 W, both fan policies
+automatic, the service inactive with a success result and CoolerControl active at 56 C.
+
+Repeat the guarded GUI command above to confirm both messages visibly. These are source UI changes;
+the installed service does not need an update. The private diagnostic log is retained.

@@ -399,6 +399,9 @@ class MainView(MainViewInterface):
         self._fan_edit_button.set_sensitive(enabled)
 
     def prepare_service_controls(self) -> None:
+        self._main_infobar_label.set_line_wrap(True)
+        self._main_infobar_label.set_max_width_chars(80)
+        self._main_infobar_label.set_xalign(0)
         self._fan_profile_frame.set_sensitive(True)
         self._fan_apply_button.set_use_stock(False)
         self._fan_edit_button.set_use_stock(False)

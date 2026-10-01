@@ -143,7 +143,11 @@ def main(argv=None):
                     expected = round(gpu.power.limit * 1000)
                     wanted = round(max(gpu.power.minimum, gpu.power.limit - 10) * 1000)
                     return finish(simulated_power.calls == [(wanted, expected)]
-                                  and 'Power verified:' in power.message and backend.starts == 0)
+                                  and 'Power verified:' in power.message and backend.starts == 0
+                                  and view._main_infobar_label.get_text().startswith('Power verified:')
+                                  and view._main_infobar_label.get_line_wrap()
+                                  and view._main_infobar_label.get_mapped()
+                                  and view._main_infobar.get_revealed())
                 return GLib.SOURCE_CONTINUE
             if (view._overclock_frame.get_sensitive() or view._power_limit_apply_button.get_sensitive()
                     or not presenter._latest_status.read_only):

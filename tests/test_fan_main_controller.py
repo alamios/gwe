@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Main-window adapter with real I/O scheduling and simulated service requests."""
 import time
+from types import SimpleNamespace
 import pytest
 from gwe.fan_curve import FanCurve
 from gwe.fan_gui_session import FanGuiSession
@@ -152,3 +153,28 @@ def test_window_close_disconnects_and_is_idempotent(controller):
     instance.close()
     assert client.closed and instance.session.client is None
     assert not instance.pulse()
+
+
+@pytest.mark.parametrize('message', [
+    'Applying power limit; awaiting service verification.',
+    'Power verified: 240 W (previous 250 W). Closing preserves this limit.',
+    'Power result unavailable or rejected. Check live limit and service; no automatic retry.',
+])
+@pytest.mark.parametrize('fan_enabled', [False, True])
+def test_idle_power_status_precedes_optional_fan_instructions(controller, message, fan_enabled):
+    instance, view, client, now = controller
+    instance.allow_control = fan_enabled
+    instance.power = SimpleNamespace(busy=False, message=message, close=lambda: None)
+    instance.refresh()
+    displayed = view.calls['show_main_infobar_message'][0]
+    assert displayed.startswith(message)
+    assert ('Select a saved curve.' in displayed) == fan_enabled
+    assert not client.calls
+
+
+def test_active_fan_recovery_message_keeps_priority_over_power(controller):
+    activate(controller)
+    instance, view, client, now = controller
+    instance.power = SimpleNamespace(busy=False, message='Power unavailable during fan control.', close=lambda: None)
+    instance.refresh()
+    assert view.calls['show_main_infobar_message'][0].startswith(instance.session.message)

@@ -74,7 +74,13 @@ class FanMainController:
         if self.session.log_failed:
             message += ' Local diagnostic log unavailable.'
         if self.power is not None:
-            message += ' ' + self.power.message
+            # Keep the relevant result visible before optional preview instructions.
+            if self.session.state == 'idle':
+                message = self.power.message + ('\n' + message if self.allow_control else '')
+                if self.session.log_failed and not self.allow_control:
+                    message += ' Local diagnostic log unavailable.'
+            else:
+                message += '\n' + self.power.message
         self.view.show_main_infobar_message(message)
 
     def _submit(self, operation, *arguments):
