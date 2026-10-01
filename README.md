@@ -75,7 +75,9 @@ readback verification, an interrupted-transaction journal and rollback to the pr
 backend/GUI checks pass; the first bundle update stopped at its installation-path validation before any
 power trial. The corrected `build/power-service-v2` bundle was subsequently installed, preserving its
 configuration and rollback copy. A missing-runtime preparation failure was corrected in the trial wrapper;
-real 250→240→250 W acceptance remains pending using its `--installed` mode.
+the protected 250→240→250 W hardware trial passed using its `--installed` mode, including independent
+readback, retention after client disconnect and verified cleanup back at 250 W. Real main-window Power
+Apply interaction remains pending.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

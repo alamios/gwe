@@ -2,8 +2,8 @@
 
 Implemented in source on 2026-10-01. This extends the manually started experimental service; it does
 not enable boot startup, replace the installed Flatpak, enable overclocking or change drivers/packages.
-The default X11 controller and isolated monitor remain unchanged. Real power writes are pending until
-the reviewed service bundle is updated and the guarded hardware trial passes.
+The default X11 controller and isolated monitor remain unchanged. The reviewed service bundle is installed and the guarded 250→240→250 W hardware trial passed.
+Real main-window Power Apply interaction remains pending.
 
 ## Semantics and boundary
 
@@ -103,7 +103,7 @@ and restore the saved code/unit; never deploy the old fan-only recovery while po
 The complete suite passes **379 tests on Python 3.12 and 3.14**, with the existing Reactivex datetime
 deprecation warning. Monitor, simulated fan-service and simulated power GTK checks pass on Python 3.12/X11.
 The staged `build/power-service-v2` bundle has 18 verified hashes; all three shell scripts and its systemd
-unit pass syntax validation. No updated service has been installed or real power setter invoked.
+unit pass syntax validation. These source/package checks preceded the installed-service hardware acceptance below.
 
 Automated tests use simulated NVML and processes. They cover strict protocol fields, peer boundary reuse,
 UUID checks, stale values, limits/precision, permission errors, missing reads, exact verification, partial
@@ -114,7 +114,7 @@ Python 3.12/X11 `--demo --smoke-power` exercises the actual Power slider/Apply s
 socket service. It checks that the edited value survives several real read-only telemetry updates before
 Apply, that the exact requested/previous milliwatts reach the service, and that overclock/fan writes remain
 disabled. The existing simulated fan-service GTK smoke also passes. These checks do not write to the GPU.
-The prepared privileged trial has not run: noninteractive sudo requires the owner's password.
+The owner subsequently ran the privileged trial after the preparation corrections below.
 
 References: [NVIDIA power-limit setter](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlDeviceCommands.html)
 and [main-window fan acceptance](main-window-service.md). API documentation establishes requirements,
@@ -155,3 +155,18 @@ bash scripts/validate_power_service.sh /path/to/prepared/python3.12 --installed
 Close installed GWE and development controllers before running. The focused wrapper/updater suite passes
 20 tests in each Python environment, including the formerly missing-directory case, ordering of guard
 preparation before startup, cleanup and the absence of an update in installed mode. Hardware retry is pending.
+
+
+## Successful installed-service power trial: 2026-10-01
+
+The owner ran installed mode successfully. The service and independent readback verified 250→240 W,
+retention of the committed 240 W value after client disconnection, and 240→250 W. The wrapper then
+stopped the service and performed guarded recovery/cleanup.
+
+Independent read-only follow-up found the service inactive with success result, CoolerControl active,
+no fan ownership, power-pending or power-trial record, both fan policies automatic and both fan speeds
+zero at 54 C. The power limit was 250 W. No load was added or hardware settings changed during follow-up.
+
+This validates real one-shot power writes, readback, disconnect semantics and normal guarded cleanup
+on the current driver/X11 host. It does not establish real power-worker crash/stall recovery, main-window
+Power Apply interaction, reboot persistence, continuous service or Wayland/target-OS acceptance.

@@ -63,8 +63,9 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   [main-window service validation](main-window-service.md).
 - Implemented: explicit power-limit service transactions and isolated GUI Apply, with live bounds/UUID
   validation, compare-and-set, exact readback and interrupted-operation recovery. Simulated core, process,
-  protocol, GUI and package-update tests pass; installation and real power-write acceptance are pending
-  the guarded trial. Continuous service/autostart remain unimplemented. See [power control](power-control.md).
+  protocol, GUI and package-update tests pass. The updated bundle is installed; the guarded real
+  250→240→250 W trial passed with independent readback, committed-limit retention after disconnect,
+  automatic fan policies and clean shutdown. Real Power Apply interaction in the main window remains pending. Continuous service/autostart remain unimplemented. See [power control](power-control.md).
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 
