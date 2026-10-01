@@ -217,3 +217,41 @@ def test_backend_fault_is_not_reported_as_socket_failure(session):
     instance.tick(0)
     assert instance.last_error == 'service_fault'
     assert instance.last_operation == 'status' and client.closed
+
+
+def test_log_records_lifecycle_but_does_not_claim_recovery_on_disconnect(session):
+    instance, client, now = session
+    events = []
+    instance.event_sink = lambda event, **fields: events.append((event, fields))
+    instance.begin(CURVE, (30, 100))
+    instance.tick(0)
+    instance.close()
+    assert [event for event, fields in events] == ['acquire_requested', 'starting', 'active', 'disconnected']
+    assert all(set(fields) == {'state', 'operation', 'error'} for event, fields in events)
+
+
+def test_log_records_recovery_only_after_verified_idle(session):
+    instance, client, now = session
+    events = []
+    instance.event_sink = lambda event, **fields: events.append(event)
+    instance.begin(CURVE, (30, 100))
+    instance.release()
+    instance.tick(0)
+    assert 'recovery_verified' not in events
+    client.state = 'idle'
+    instance.tick(0)
+    assert events[-1] == 'recovery_verified'
+
+
+def test_failed_log_write_cannot_prevent_release_and_disconnect(session):
+    instance, client, now = session
+    def disk_full(event, **fields):
+        raise OSError('private disk details')
+    instance.event_sink = disk_full
+    instance.begin(CURVE, (30, 100))
+    instance.release()
+    assert instance.state == 'stopping' and instance.log_failed
+    client.state = 'idle'
+    instance.tick(0)
+    assert instance.state == 'idle' and client.closed
+    assert 'private' not in instance.message

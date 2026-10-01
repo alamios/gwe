@@ -133,5 +133,43 @@ retrospectively diagnosed from the second successful run.
 Seven new simulated tests check connection-error redaction, allowed/refused protocol codes, UI-stall
 classification and backend-fault classification. Full regression now passes 224 tests on both Python
 versions, with the existing Reactivex warning. The synthetic GTK preview smoke check also passes.
-These diagnostics have not yet been exercised in another GPU-writing GUI trial. The installation bundle
-needs no update because only the unprivileged repository client changed.
+The owner subsequently ran two successful GUI trials with these diagnostics available, as recorded
+below. The installation bundle needs no update because only the unprivileged repository client changed.
+
+## Provisional GUI acceptance and retained diagnostics: 2026-10-01
+
+Following the diagnostic update, the owner reported two consecutive successful GUI trials and accepted
+this bounded behavior provisionally. Independent read-only follow-up confirmed both fan policies
+automatic, temperature 47 C, power limit 250 W, unit inactive/static with `Result=success`,
+`ExecMainStatus=0`, `ControlPID=0`, no ownership record and CoolerControl active. This does not explain
+the first generic failure or establish continuous-operation readiness. No further GPU-writing test was
+requested to complete this acceptance record.
+
+At the owner's request, future GUI launches now retain a local diagnostic log at
+`build/fan-gui/trial.log`, with one rotated file `trial.log.1`. Each file is limited to approximately 64 KiB;
+old rotated content is replaced. The directory is mode 0700 and files are mode 0600. The existing `build/`
+Git exclusion covers them. This log is diagnostic retention, not a permanent audit archive; copy both
+files to private backup storage before clearing build output or if preserving an old incident is needed.
+
+JSON lines contain UTC time, event, state, operation and an allowlisted error code. They record opening,
+acquisition, starting/active control, release, recovery verification, disconnect, failures and closure.
+They contain no database/socket paths, profile identifiers/names/points, GPU UUIDs, raw exceptions or
+arbitrary server messages. A disconnect event does not assert recovery; only service-verified idle emits
+`recovery_verified`. GTK never autonomously renews control merely to keep a log running.
+
+Read the current log locally after an incident:
+
+```bash
+tail -n 40 build/fan-gui/trial.log
+```
+
+An unavailable log at startup prevents opening the control window. A later write failure does not interrupt
+release/disconnect or independent recovery; the window reports that logging is unavailable. No past
+hardware run has been reconstructed as log events. The first unexplained failure remains in this record.
+
+Seven new tests cover field redaction, permissions, bounded rotation, symlink refusal, state transitions,
+verified recovery and disk-write failure during release. Full regression passes 231 tests per interpreter
+on Python 3.12 and 3.14, with the existing Reactivex warning. A synthetic GTK preview also verifies local
+log creation without any GPU reads/writes or service connection. Logging has not yet been exercised in
+a further hardware-control trial. Wayland, suspend/resume, continuous operation, private-profile migration
+and integration into the historical main window remain pending.

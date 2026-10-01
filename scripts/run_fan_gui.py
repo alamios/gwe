@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from gwe.fan_curve import FanCurve
 from gwe.fan_gui_session import FanGuiSession
+from gwe.fan_gui_log import FanGuiLog
 from gwe.fan_profiles import SavedFanProfile, manual_limits, read_profiles
 from gwe.fan_service import boot_time
 
@@ -56,7 +57,13 @@ def main(argv=None):
 
     application = Gtk.Application(application_id='com.leinardi.gwe.FanTrial',
                                   flags=Gio.ApplicationFlags.NON_UNIQUE)
-    session = FanGuiSession('/run/gwe-fan-service/control.sock')
+    try:
+        diagnostic_log = FanGuiLog(ROOT / 'build' / 'fan-gui' / 'trial.log')
+        diagnostic_log.record('control_window_opened' if args.allow_control else 'preview_opened')
+    except Exception:
+        print('Local diagnostic log unavailable; the window was not opened.', flush=True)
+        return 1
+    session = FanGuiSession('/run/gwe-fan-service/control.sock', event_sink=diagnostic_log.record)
     executor = ThreadPoolExecutor(max_workers=1)
     pending = [None]
     selected = [None]
@@ -70,7 +77,8 @@ def main(argv=None):
         widgets['apply'].set_sensitive(bool(args.allow_control and profile and not problem(profile) and not busy))
         widgets['release'].set_sensitive(pending[0] is None and session.state in ('starting', 'active'))
         widgets['profiles'].set_sensitive(not busy)
-        widgets['status'].set_text(session.message)
+        widgets['status'].set_text(session.message +
+                                  (' Local diagnostic log unavailable.' if session.log_failed else ''))
 
     def submit(operation, *arguments):
         if pending[0] is not None:
@@ -186,6 +194,11 @@ def main(argv=None):
         # Serialized behind any pending request; disconnect is covered by service supervision.
         executor.submit(session.close)
         executor.shutdown(wait=True)
+        try:
+            diagnostic_log.record('window_closed', state=session.state,
+                                  operation=session.last_operation, error=session.last_error)
+        except Exception:
+            print('Local diagnostic log unavailable at shutdown.', flush=True)
     return (0 if passed == [True] else 1) if args.smoke_test else result
 
 

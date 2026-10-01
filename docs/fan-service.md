@@ -10,7 +10,8 @@ GWE backend, installed Flatpak and private profiles remain unchanged. This is no
 
 The [isolated GUI client](fan-gui.md) is prepared for explicit ten-second trials of curves read from a
 backup. Its read-only GTK preview passes; a saved-curve GUI hardware trial succeeded on its second
-attempt with automatic recovery. The first failure remains unexplained; see the GUI result record.
+attempt with automatic recovery, followed by two consecutive successful trials accepted provisionally.
+The first failure remains unexplained; local GUI diagnostics are retained. See the GUI result record.
 
 ## Protocol and asynchronous states
 

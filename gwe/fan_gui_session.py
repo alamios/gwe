@@ -9,7 +9,7 @@ class GuiTrialError(RuntimeError):
 
 class FanGuiSession:
     """Serialize calls in one I/O worker. Renew only in response to fresh UI ticks."""
-    def __init__(self, path, *, factory=FanClient, clock=boot_time):
+    def __init__(self, path, *, factory=FanClient, clock=boot_time, event_sink=None):
         self.path, self.factory, self.clock = path, factory, clock
         self.client = None
         self.state = 'idle'
@@ -17,6 +17,17 @@ class FanGuiSession:
         self.deadline = self.last_tick = self.recovery_deadline = None
         self.last_error = None
         self.last_operation = 'preview'
+        self.event_sink = event_sink
+        self.log_failed = False
+
+    def _emit(self, event):
+        if self.event_sink is not None:
+            try:
+                self.event_sink(event, state=self.state, operation=self.last_operation,
+                                error=self.last_error)
+            except Exception:
+                # A disk failure must never interrupt disconnect or service recovery.
+                self.log_failed = True
 
     def _request(self, operation, **fields):
         self.last_operation = operation
@@ -46,6 +57,7 @@ class FanGuiSession:
         self.state = 'fault'
         self.message = (f'Trial stopped ({code} during {self.last_operation}). '
                         'Automatic recovery is not verified; check the service.')
+        self._emit('failed')
 
     def begin(self, curve, limits):
         if self.state != 'idle' or self.client is not None:
@@ -54,6 +66,7 @@ class FanGuiSession:
         try:
             self.last_error = None
             self.last_operation = 'connect'
+            self._emit('acquire_requested')
             self.client = self.factory(self.path)
             status = self._request('status')
             if status.get('state') != 'idle' or status.get('owned') is not False:
@@ -64,6 +77,7 @@ class FanGuiSession:
             self.deadline = self.last_tick + 10
             self.state = 'starting'
             self.message = 'Starting a ten-second trial; waiting for verified control.'
+            self._emit('starting')
         except Exception as error:
             self._fail(error)
 
@@ -71,10 +85,12 @@ class FanGuiSession:
         if self.state not in ('starting', 'active'):
             return
         try:
+            self._emit('release_requested')
             self._request('release')
             self.state = 'stopping'
             self.recovery_deadline = self.clock() + 10
             self.message = 'Restoring automatic control; waiting for verification.'
+            self._emit('stopping')
         except Exception as error:
             self._fail(error)
 
@@ -97,6 +113,7 @@ class FanGuiSession:
                 self.close()
                 self.state = 'idle'
                 self.message = 'Both fans restored to automatic; recovery verified by the service.'
+                self._emit('recovery_verified')
             elif self.state == 'stopping':
                 if state != 'stopping' or self.clock() >= self.recovery_deadline:
                     raise GuiTrialError('recovery_not_verified')
@@ -106,8 +123,11 @@ class FanGuiSession:
                     self.release()
                 else:
                     self._request('renew')
+                    became_active = self.state != 'active' and state == 'active'
                     self.state = state
                     self.message = 'Curve active; service owns fan writes.' if state == 'active' else self.message
+                    if became_active:
+                        self._emit('active')
             else:
                 if state in ('fault', 'recovery_failed'):
                     raise GuiTrialError('service_' + state)
@@ -119,3 +139,4 @@ class FanGuiSession:
         if self.client is not None:
             self.client.close()  # Disconnect initiates independent service recovery.
             self.client = None
+            self._emit('disconnected')

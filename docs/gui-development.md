@@ -84,3 +84,7 @@ Its synthetic and private-backup read-only preview smoke checks passed on Python
 application database and does not replace the monitor launcher or historical main window. Explicit
 GUI-to-service control succeeded on its second hardware attempt; the first failure remains unexplained.
 Wayland remains untested; see the bounded procedure and result record in that guide.
+
+The owner subsequently accepted two consecutive successful bounded GUI trials provisionally. Future
+GUI launches retain private, bounded diagnostics under `build/fan-gui/`; see [log retention](fan-gui.md).
+This does not establish continuous fan control or integration into the historical main window.
