@@ -8,6 +8,9 @@ Complete-service SIGSTOP/watchdog recovery also passed. It is stopped after test
 extended operation and driver/host failure validation remain pending. The default
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
+The [isolated GUI client](fan-gui.md) is prepared for explicit ten-second trials of curves read from a
+backup. Its read-only GTK preview passes; GUI-to-installed-service hardware control remains pending.
+
 ## Protocol and asynchronous states
 
 Linux UNIX sequenced-packet sockets carry JSON requests of at most 4096 bytes. Kernel peer credentials

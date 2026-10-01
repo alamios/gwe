@@ -52,3 +52,11 @@ changes made in GWE are not included.
    and startup may apply a saved profile. Only start it when the intended driver/GPU combination is ready.
 
 Changing driver or GPU capability is not undone by restoring this database. Validate profiles separately after upgrades.
+
+## Read-only fan-profile review
+
+The [isolated profile-review window](fan-gui.md) accepts an explicit backup and reads it without application
+initialization, migrations or database writes. It preserves saved points, hysteresis and silent mode,
+reports incompatibilities and ignores autoload/current-profile preferences. Reading a backup is not
+restoring or migrating it. Prefer a fresh verified online snapshot if profiles have changed since the
+recorded backup. Review low-duty points against the live manual minimum before enabling a trial.

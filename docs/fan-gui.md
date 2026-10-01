@@ -1,0 +1,103 @@
+# Isolated fan-profile review and service client
+
+An experimental GTK3 window reads existing fan curves and can explicitly submit a ten-second trial to
+the installed supervised service. This is a separate preparation tool, not integration into the historical
+main presenter or a replacement for the installed Flatpak. Its application ID ends in `.FanTrial`.
+It does not import application database initialization or legacy GPU writers.
+
+## Preserve profiles before control
+
+Choose an explicit verified SQLite backup. Follow [backup guidance](configuration-backup.md) when making
+a fresh snapshot. The reader opens SQLite with `mode=ro` and `query_only`, checks integrity and reads one
+transaction. There is no migration, profile edit, saved-selection update or preference write. Nothing is
+copied into the source monitor database. Names and points appear in the local window; terminal inspection
+prints only anonymous counts and manual limits.
+
+Point insertion order, hysteresis and firmware silent mode are preserved. The reader never sorts, clamps,
+drops low-duty points or converts them to automatic operation. Duplicate/descending temperatures,
+decreasing duties, invalid values, unsupported types and curves exceeding 32 points are blocked. All points
+must fit the live manual range, including points below the silent-mode threshold. A saved zero or 25% point
+is blocked on a GPU with a 30% minimum. Such a profile needs explicit review and a separately named
+proposal; this tool does not rewrite it. Silent mode means firmware automatic control below the first
+temperature, not a manual zero-percent write. The graph plots duty points; the silent-mode flag is separate.
+
+Saved hysteresis is read as an integer or decimal ASCII value; the historical two-degree default is used
+only when absent. Invalid hysteresis refuses review. Automatic profiles are displayed but cannot be
+submitted as curves. Current-profile and autoload preferences never activate control.
+
+## Read-only preview
+
+From the checkout, in the prepared Python 3.12 GTK environment, replace the input with a chosen backup:
+
+```bash
+python scripts/run_fan_gui.py --database "$BACKUP_DB"
+python scripts/run_fan_gui.py --database "$BACKUP_DB" --inspect-only
+```
+
+Without `--allow-control`, both control buttons stay disabled and no service connection is made. The
+preview reads NVML capabilities for exactly one RTX 3090 Ti with two fans, without GPU setters.
+Unexpected hardware or missing capabilities refuse review. The window shows the saved points, curve,
+hysteresis, silent-mode flag and incompatibility reason.
+
+An entirely synthetic preview uses no database or GPU access:
+
+```bash
+python scripts/run_fan_gui.py --demo --smoke-test
+```
+
+The three-second smoke test checks a selected profile, disabled controls and no service connection.
+Demo, smoke-test and inspect-only cannot be combined with control.
+
+## Prepared supervised GUI trial (hardware pending)
+
+Keep GWE closed and avoid loads. The GUI does not run sudo or manage system services. With the prepared
+Python environment active, use the existing installed trial service and this cleanup procedure:
+
+```bash
+(
+    cleanup() {
+        if sudo systemctl stop gwe-fan-service.service &&
+           sudo test ! -e /run/gwe-fan-service/owned.json; then
+            sudo systemctl start coolercontrold.service
+        else
+            echo 'Recovery pending; CoolerControl remains stopped'
+        fi
+    }
+    trap cleanup EXIT
+    sudo systemctl stop coolercontrold.service || exit
+    sudo systemctl start gwe-fan-service.service || exit
+    python scripts/run_fan_gui.py --database "$BACKUP_DB" --allow-control
+)
+```
+
+Opening the window does not acquire control. Select a compatible curve and press **Run selected curve
+for 10 seconds**. The window waits for verified service ownership, renews with fresh GTK ticks and releases
+after ten seconds from acquisition. **Restore automatic** releases this client's own trial and cannot
+reset another controller. Restoration is displayed only after the service reports verified idle. Closing
+the window disconnects its owner socket and initiates independent service recovery. Check policies and
+shutdown independently afterward, following [service validation](fan-service.md).
+
+Socket calls run in a serialized I/O thread, with at most one pending task. Only the GTK event loop
+schedules renewals, approximately once per second. A frozen UI stops scheduling; stale queued ticks or
+a gap over 2.5 seconds close the connection and latch a fault. A background thread cannot keep renewing
+indefinitely after a stalled window. The absolute trial deadline uses CLOCK_BOOTTIME, including suspended
+time. The service's lease, watchdog, 60 C ceiling and sixty-second lifetime remain in force. This is not
+suspend/resume integration or continuous operation.
+
+Errors, lost ownership and timeouts close the socket and disable new trials until review/relaunch. Recovery
+polling has a ten-second limit. A disconnected socket reports unverified recovery, not successful restoration.
+No direct fan, power or clock writes occur in the GUI. Normal exit cannot guarantee recovery from an
+unresponsive driver or host. Service code and installed packaging need no changes for this client.
+
+## Validation: 2026-10-01
+
+217 tests pass on both Python 3.12 and 3.14, with the existing Reactivex deprecation warning. New tests
+cover unchanged database content, preserved points/settings, malformed profiles, manual limits, missing
+sources, busy services, renewal, release, ten-second termination, stale UI ticks, lost ownership, bounded
+recovery and redacted errors. A real local socket test connects the UI session to a simulated service backend
+and checks acquisition and verified recovery; no hardware writes occur in automated tests.
+
+The synthetic GTK preview and private-backup read-only GTK preview passed on Python 3.12/X11. Read-only
+validation of that backup against current NVML limits also succeeded. Private contents are not recorded
+here. GUI-to-installed-service hardware control, Python 3.14 GUI, Wayland, continuous operation, editing,
+profile migration and integration into the historical main window remain pending.

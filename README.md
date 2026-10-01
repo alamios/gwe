@@ -22,6 +22,7 @@
 - [Supervised NVML fan experiment and recovery](docs/nvml-fan-trial.md)
 - [Experimental NVML curves and process recovery](docs/nvml-fan-curves.md)
 - [Local fan-service protocol and implementation status](docs/fan-service.md)
+- [Isolated fan-profile review and GUI service client](docs/fan-gui.md)
 - [Development monitor-only integration](docs/monitor-mode.md)
 - [Preparing the development GUI](docs/gui-development.md)
 - [Configuration backup and restore](docs/configuration-backup.md)
@@ -35,7 +36,7 @@ current X11 host with administrator privileges. Recovery after worker SIGTERM, S
 stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-186 tests pass on both Python versions, including the socket-to-process service, client loss and recovery. The isolated Python
+217 tests pass on both Python versions, including the socket-to-process service, client loss and recovery. The isolated Python
 3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
 fans at 55–56 C and verified automatic restoration; CoolerControl is running again. Unprivileged reset
@@ -52,6 +53,9 @@ hardware trial also passed with systemd post-stop recovery and both fans automat
 service with SIGSTOP also passed: watchdog termination and post-stop recovery restored both fans to
 automatic. Suspend/resume, extended operation and driver/host failure recovery remain unvalidated. No production service or profile
 migration is enabled.
+An isolated GTK profile-review window reads an explicit backup without modifying it and prepares opt-in
+ten-second service trials. Its read-only preview passes on Python 3.12/X11; GUI fan-control hardware
+validation and integration into the historical main window remain pending. See the profile-review guide.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 

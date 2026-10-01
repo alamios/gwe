@@ -33,7 +33,7 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - NVML is the proposed application interface, not an integrated replacement yet. The standalone probe uses
   nvidia-ml-py 13.615.71; live read compatibility is verified on the current driver.
 - Implemented: local client/protocol connected to a nonblocking NVML process adapter with independent
-  recovery, ownership recording and lease expiry in both service and worker. 186 tests pass per interpreter,
+  recovery, ownership recording and lease expiry in both service and worker. 217 tests pass per interpreter,
   including real socket/process failures with simulated devices. See [service implementation](fan-service.md).
 - Prepared: isolated root-owned installation bundle, desktop socket provisioning and a 60-second systemd
   trial unit with watchdog/post-stop recovery. The owner installed the reviewed bundle; hashes, root
@@ -45,6 +45,10 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   failure result. A complete-service SIGSTOP trial also passed with `Result=watchdog`, verified
   post-stop recovery and CoolerControl restarted. No boot enablement has occurred; suspend/resume,
   extended operation and driver/host failure hardware tests remain pending.
+- Prepared: isolated GTK3 profile-review/service-client window and read-only SQLite loader. It preserves
+  curves and settings without autoload, editing or migration. Preview passed on Python 3.12/X11; explicit
+  ten-second GUI control hardware trials and historical main-window integration remain pending. See
+  [GUI service-client preparation](fan-gui.md).
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 
