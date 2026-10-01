@@ -50,3 +50,56 @@ def test_wait_has_bounded_deadline():
     now=iter([0,0,21]);arguments['clock']=lambda:next(now)
     with pytest.raises(RuntimeError,match='deadline'):kill_and_verify(**arguments)
     assert 'verified' not in calls
+
+
+def watchdog_scenario(final=None, marker=False):
+    arguments, calls = scenario(final=final or {
+        'ActiveState': 'failed', 'Result': 'watchdog', 'ExecMainStatus': '9', 'ControlPID': '0'
+    }, marker=marker)
+    original_state = arguments['state']
+    def state():
+        return {**original_state(), 'WatchdogUSec': '10s', 'WatchdogSignal': '9',
+                'KillMode': 'control-group', 'TimeoutStopUSec': '15s', 'SendSIGKILL': 'yes'}
+    arguments.update(state=state, watchdog=True)
+    return arguments, calls
+
+
+def test_watchdog_stops_complete_unit_and_requires_watchdog_result():
+    arguments, calls = watchdog_scenario()
+    kill_and_verify(**arguments)
+    assert calls == [['sudo', '-n', 'systemctl', 'kill', '--kill-whom=all',
+                      '--signal=SIGSTOP', 'gwe-fan-service.service'], 'verified']
+
+
+def test_watchdog_refuses_unexpected_configuration():
+    arguments, calls = watchdog_scenario()
+    original_state = arguments['state']
+    arguments['state'] = lambda: {**original_state(), 'WatchdogUSec': '0'}
+    with pytest.raises(RuntimeError, match='configuration'):
+        kill_and_verify(**arguments)
+    assert calls == []
+
+
+def test_watchdog_does_not_accept_external_kill_as_success():
+    arguments, calls = watchdog_scenario(final={
+        'ActiveState': 'failed', 'Result': 'signal', 'ExecMainStatus': '9', 'ControlPID': '0'
+    })
+    with pytest.raises(RuntimeError, match='Unexpected service'):
+        kill_and_verify(**arguments)
+    assert 'verified' not in calls
+
+
+def test_watchdog_remaining_record_is_not_success():
+    arguments, calls = watchdog_scenario(marker=True)
+    with pytest.raises(RuntimeError, match='ownership record'):
+        kill_and_verify(**arguments)
+    assert 'verified' not in calls
+
+
+def test_watchdog_wait_allows_teardown_but_is_bounded():
+    arguments, calls = watchdog_scenario(final={'ActiveState': 'deactivating', 'ControlPID': '12'})
+    now = iter([0, 0, 25, 41])
+    arguments['clock'] = lambda: next(now)
+    with pytest.raises(RuntimeError, match='deadline'):
+        kill_and_verify(**arguments)
+    assert 'verified' not in calls

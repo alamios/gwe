@@ -36,9 +36,9 @@ def run(path, scenario):
             if not client.request('renew').get('ok'):
                 raise RuntimeError('Lease renewal failed')
             time.sleep(1)
-        if scenario == 'service-kill':
+        if scenario in ('service-kill', 'service-watchdog'):
             from gwe.fan_service_fault_trial import kill_and_verify
-            kill_and_verify()
+            kill_and_verify(watchdog=scenario == 'service-watchdog')
             return
         if scenario == 'disconnect':
             observer = FanClient(path)
@@ -61,7 +61,7 @@ def run(path, scenario):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--socket', default='/run/gwe-fan-service/control.sock')
-    parser.add_argument('--scenario', choices=('normal', 'disconnect', 'expire', 'service-kill'), default='normal')
+    parser.add_argument('--scenario', choices=('normal', 'disconnect', 'expire', 'service-kill', 'service-watchdog'), default='normal')
     args = parser.parse_args(argv)
     try:
         run(args.socket, args.scenario)

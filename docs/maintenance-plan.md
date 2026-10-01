@@ -33,7 +33,7 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - NVML is the proposed application interface, not an integrated replacement yet. The standalone probe uses
   nvidia-ml-py 13.615.71; live read compatibility is verified on the current driver.
 - Implemented: local client/protocol connected to a nonblocking NVML process adapter with independent
-  recovery, ownership recording and lease expiry in both service and worker. 181 tests pass per interpreter,
+  recovery, ownership recording and lease expiry in both service and worker. 186 tests pass per interpreter,
   including real socket/process failures with simulated devices. See [service implementation](fan-service.md).
 - Prepared: isolated root-owned installation bundle, desktop socket provisioning and a 60-second systemd
   trial unit with watchdog/post-stop recovery. The owner installed the reviewed bundle; hashes, root

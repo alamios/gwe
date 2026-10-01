@@ -3,7 +3,8 @@
 The local protocol is now connected to `ProcessBackend`, which executes the NVML controller and recovery
 in separate processes. A root-owned installation bundle, a 60-second systemd trial unit and an unprivileged
 test client are prepared. The owner has installed the reviewed bundle and passed normal-release, client-disconnection and lease-expiry hardware
-trials with an unprivileged client. It is stopped after testing; service-failure hardware validation remains pending. The default
+trials with an unprivileged client. Complete-service SIGKILL post-stop recovery also passed on hardware.
+It is stopped after testing; watchdog/stall hardware validation remains pending. The default
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
 ## Protocol and asynchronous states
@@ -56,8 +57,8 @@ This does not restore automatic control while the host is asleep: suspend integr
 The trial systemd unit kills the complete service cgroup on teardown. Its `ExecStopPost` performs a separate
 bounded recovery using the retained ownership record, after writers have stopped. With no record it makes
 no NVML calls. A runtime lock excludes concurrent service/recovery instances. An unresolved record prevents
-new control. The ten-second systemd watchdog covers a stuck main event loop; live systemd failure recovery
-has not yet been validated. Worker EOF/lease recovery has been tested using a killed/frozen simulated service.
+new control. The ten-second systemd watchdog covers a stuck main event loop; its hardware test remains
+pending. Complete-service SIGKILL post-stop recovery is validated in the result record below. Worker EOF/lease recovery has been tested using a killed/frozen simulated service.
 
 ## Prepared installation
 
@@ -304,3 +305,45 @@ responsive. It does not establish recovery from a stalled service, watchdog expi
 an unresponsive driver/host. Those scenarios, extended operation, Wayland and GUI/profile integration
 remain pending. The installed service remains a bounded trial and is not enabled at boot.
 This update records hardware results only; no code changed and no automated tests were rerun.
+
+## Prepared complete-service watchdog trial: 2026-10-01
+
+The repository client accepts `--scenario service-watchdog`, without changing or reinstalling the
+installed bundle (`626c8ae`). It waits for active control, briefly renews ownership, and checks the installed
+unit is active with an ownership record, `WatchdogUSec=10s`, `WatchdogSignal=9`,
+`KillMode=control-group`, `TimeoutStopUSec=15s` and `SendSIGKILL=yes`. Unexpected configuration refuses
+fault injection. It then sends this fixed command using cached sudo credentials:
+
+```bash
+sudo -n systemctl kill --kill-whom=all --signal=SIGSTOP gwe-fan-service.service
+```
+
+Freezing the complete service also freezes the controller: its own lease expiry cannot restore automatic
+control while stopped. The intended recovery is watchdog termination followed by systemd post-stop
+recovery. The client makes no further socket requests or renewals after injection, waits at most 40 seconds
+for a terminal unit state with `ControlPID=0`, and requires `Result=watchdog` and `ExecMainStatus=9`.
+An unrelated SIGKILL (`Result=signal`) is not accepted as a watchdog pass. Success also requires no
+ownership record and independent automatic NVML policies on both fans; temperature and power limit are
+reported without private identity.
+
+Systemd's [kill documentation](https://github.com/systemd/systemd/blob/main/man/systemd.kill.xml)
+describes watchdog signals and bounded control-group shutdown; its
+[service documentation](https://github.com/systemd/systemd/blob/main/man/systemd.service.xml)
+describes watchdog failure and post-stop commands. Actual timing and recovery still need this hardware
+trial. The wait budget allows the ten-second watchdog, fifteen-second shutdown timeout and bounded
+post-stop recovery; it does not guarantee recovery from an unresponsive driver or host.
+
+Use the preceding stop/start/cleanup shell procedure with scenario `service-watchdog`, keeping GWE closed
+and avoiding loads. Strengthen its cleanup condition to restart CoolerControl only after
+`sudo systemctl stop gwe-fan-service.service` succeeds **and** no ownership record remains. If the client
+fails or is interrupted, that stop operation terminates the experimental unit and runs its post-stop
+recovery. If stopping fails or the record remains, keep CoolerControl stopped and investigate recovery.
+Expected final output is `Expected service result: watchdog / SIGKILL; recovery completed`; failed unit
+state is expected after this deliberate stall.
+
+Five additional simulated tests cover complete-unit SIGSTOP, refusal of unexpected watchdog configuration,
+rejection of an ordinary signal result, retained recovery records and the bounded extended wait.
+Hardware execution is pending.
+
+Full regression: 186 tests pass per interpreter on Python 3.12 and 3.14, with the existing
+Reactivex deprecation warning. No real fault signals or GPU writes occurred during these automated tests.
