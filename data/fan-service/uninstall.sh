@@ -3,7 +3,7 @@
 set -eu
 [ "$(id -u)" -eq 0 ] || { echo 'Administrator privileges required'; exit 1; }
 systemctl stop gwe-fan-service.service
-for marker in /run/gwe-fan-service/owned.json /run/gwe-fan-service/power-pending.json /run/gwe-fan-service/power-trial.json; do
+for marker in /run/gwe-fan-service/owned.json /run/gwe-fan-service/power-pending.json /run/gwe-fan-service/power-trial.json /run/gwe-fan-service/session.json; do
     [ ! -e "$marker" ] && [ ! -L "$marker" ] || {
         echo 'Recovery unresolved; refusing removal. Keep the service files for recovery.'; exit 1;
     }

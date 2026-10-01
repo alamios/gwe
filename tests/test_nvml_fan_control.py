@@ -29,6 +29,19 @@ def test_curve_updates_both_fans_and_stops(fake,session):
     assert fake.state['resets']==[0,1]
 
 
+def test_continuous_curve_handles_normal_range_and_recovers_at_ceiling(fake, session):
+    controller, clock = session
+    for temperature in (59, 61, 70, 80, 84):
+        clock[0] += 1
+        fake.nvmlDeviceGetTemperature = lambda *args: temperature
+        assert controller.tick()['state'] == 'manual'
+        assert fake.state['policies'] == [1, 1]
+    fake.nvmlDeviceGetTemperature = lambda *args: 85
+    with pytest.raises(FanControlError):
+        controller.tick()
+    assert controller.state == 'fault' and fake.state['policies'] == [0, 0]
+
+
 def test_hysteresis_keeps_anchor_until_duty_changes(fake,session):
     controller,clock=session
     controller.tick()

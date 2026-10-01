@@ -407,4 +407,5 @@ flag. The default daemon and installed unit still retain the historical 60-secon
 A staged runtime override can remove that lifetime while retaining the watchdog and post-stop recovery.
 Existing fan leases, worker supervision and power transaction semantics are unchanged. This is
 prepared and simulated-tested, not yet installed or accepted for extended hardware use. See
-[continuous session](continuous-session.md), including its retained 60 C ceiling and rollback handling.
+[continuous session](continuous-session.md), including the 85 C continuous ceiling, private launcher
+ownership record, root post-stop session cleanup and rollback handling. Brief trials retain 60 C.

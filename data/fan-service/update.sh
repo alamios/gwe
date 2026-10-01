@@ -8,7 +8,7 @@ sha256sum --check --strict SHA256SUMS
 [ "$(systemctl show gwe-fan-service.service -p ActiveState --value)" = inactive ] || {
     echo 'Stop and verify the installed service before updating'; exit 1;
 }
-for marker in /run/gwe-fan-service/owned.json /run/gwe-fan-service/power-pending.json /run/gwe-fan-service/power-trial.json; do
+for marker in /run/gwe-fan-service/owned.json /run/gwe-fan-service/power-pending.json /run/gwe-fan-service/power-trial.json /run/gwe-fan-service/session.json; do
     [ ! -e "$marker" ] && [ ! -L "$marker" ] || { echo 'Recovery pending; refusing update'; exit 1; }
 done
 for target in /opt/gwe-fan-service /etc/systemd/system/gwe-fan-service.service /etc/gwe-fan-service.json; do

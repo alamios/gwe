@@ -243,4 +243,5 @@ automatic fan policies and clean service shutdown. Continuous operation remains 
 An opt-in `--continuous` client mode and reviewed manual service-session launcher are now prepared.
 They retain explicit curve selection, Restore, close/disconnect recovery and isolated backup access.
 The ten-second behavior remains the default. See [continuous session](continuous-session.md) for
-validation, the retained 60 C ceiling and the single-command launcher. Hardware operation is pending.
+validation, the 85 C continuous ceiling and the single-command launcher. A first real client session
+lasted about 104 seconds; clean shutdown acceptance of the revised bundle remains pending.

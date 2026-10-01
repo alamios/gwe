@@ -231,10 +231,12 @@ class MainView(MainViewInterface):
         if status:
             gpu_status = status.gpu_status_list[gpu_index]
             if status.read_only:
-                self._window.set_title("GreenWithEnvy — Service trial" if service_trial()
-                                       else "GreenWithEnvy — Monitor only")
+                self._window.set_title(
+                    ("GreenWithEnvy — Control session" if getattr(self, '_service_continuous', False)
+                     else "GreenWithEnvy — Service trial") if service_trial()
+                    else "GreenWithEnvy — Monitor only")
                 self._fan_warning_label.set_text(
-                    ("Explicit curve control; closing restores automatic."
+                    ("Explicit curve control; automatic recovery at 85 °C or on close."
                      if getattr(self, '_service_continuous', False)
                      else "Explicit ten-second service trials; no startup application.")
                     if service_trial() else "Fan control is disabled in monitor-only mode.")

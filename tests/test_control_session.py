@@ -21,6 +21,11 @@ def run_session(tmp_path, *, installed=False, old_backup=False, override_exists=
         '            if [ -f "$TRIAL_RUNTIME/recovered-once" ]; then exit 44; fi\n'
         '            touch "$TRIAL_RUNTIME/recovered-once"\n'
         '        fi\n'))
+    installed_python.write_text(installed_python.read_text().replace(
+        '    recover)\n', '    prepare-session) touch "$TRIAL_RUNTIME/session.json"; exit 0 ;;\n    recover)\n').replace(
+        'rm -f "$TRIAL_RUNTIME/owned.json"', 'rm -f "$TRIAL_RUNTIME/session.json" "$TRIAL_RUNTIME/owned.json"'))
+    sudo = bindir / 'sudo'
+    sudo.write_text(sudo.read_text().replace('exec "$@"', 'if [ "$1" = -n ]; then shift; fi\nexec "$@"'))
     override_root = tmp_path / 'runtime-systemd'
     script = (ROOT / 'scripts/run_control_session.sh').read_text()
     script = script.replace('/opt/gwe-fan-service', str(code))
@@ -99,12 +104,12 @@ def test_recovery_failure_does_not_launch_gui_or_restart_cooler(tmp_path):
     assert not override.exists()
 
 
-def test_failed_final_recovery_keeps_cooler_stopped_and_removes_override(tmp_path):
+def test_failed_final_recovery_keeps_cooler_stopped_and_retains_override(tmp_path):
     result, log, _, override, _ = run_session(tmp_path, FAIL_FINAL_RECOVER='1')
     assert result.returncode != 0
     assert 'gui_args' in log and 'start coolercontrold' not in log
-    assert not override.exists()
-    assert 'Recovery pending' in result.stdout
+    assert override.exists()
+    assert 'Cleanup not verified' in result.stdout
 
 
 def test_old_rollback_copy_is_archived_without_deletion(tmp_path):
@@ -118,12 +123,14 @@ def test_existing_runtime_override_is_preserved_and_refuses_launch(tmp_path):
     result, log, _, override, _ = run_session(tmp_path, override_exists=True)
     assert result.returncode != 0
     assert override.read_text() == 'existing session'
-    assert 'entry recover' not in log and 'gui_args' not in log
+    assert 'gui_args' not in log
 
 
 def test_continuous_override_retains_watchdog_and_no_boot_enablement():
     override = (ROOT / 'data/fan-service/continuous.conf').read_text()
     unit = (ROOT / 'data/fan-service/gwe-fan-service.service').read_text()
     assert 'run --continuous' in override and 'RuntimeMaxSec=infinity' in override
+    assert 'KillMode=mixed' in override
+    assert 'ReadWritePaths=/run/systemd/system/gwe-fan-service.service.d' in override
     assert 'WatchdogSec=10s' in unit and 'ExecStopPost=' in unit
     assert '[Install]' not in override

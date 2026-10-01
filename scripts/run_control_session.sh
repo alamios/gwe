@@ -19,12 +19,12 @@ if [ "$bundle" = --installed ]; then
 else
     [ -f "$bundle/continuous.conf" ] && [ -f "$bundle/update.sh" ] || exit 1
 fi
+sudo systemctl stop "$unit"
+sudo /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py recover
 sudo test ! -e "$override" && sudo test ! -L "$override" || {
     echo 'Existing session override; review and recover it first'; exit 1;
 }
-sudo systemctl stop "$unit"
-sudo /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py recover
-for marker in owned.json power-pending.json power-trial.json; do
+for marker in owned.json power-pending.json power-trial.json session.json; do
     sudo test ! -e "/run/gwe-fan-service/$marker" || exit 1
 done
 sudo systemctl reset-failed "$unit"
@@ -48,27 +48,31 @@ cleanup() {
     result=$?
     trap - EXIT
     recovered=0
-    if sudo systemctl stop "$unit" &&
-       sudo /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py recover; then
+    if sudo -n systemctl stop "$unit" &&
+       sudo -n /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py recover; then
         recovered=1
-        for marker in owned.json power-pending.json power-trial.json; do
+        for marker in owned.json power-pending.json power-trial.json session.json; do
             sudo test ! -e "/run/gwe-fan-service/$marker" || recovered=0
         done
     fi
-    if [ "$override_installed" = 1 ]; then
-        sudo rm -f -- "$override" || result=1
-        sudo systemctl daemon-reload || result=1
+    if [ "$override_installed" = 1 ] && [ "$recovered" = 1 ]; then
+        sudo -n rm -f -- "$override" || result=1
+        sudo -n systemctl daemon-reload || result=1
     fi
     if [ "$recovered" = 1 ]; then
-        if [ "$cooler_was_active" = 1 ]; then sudo systemctl start coolercontrold.service || result=1; fi
+        if [ "$cooler_was_active" = 1 ]; then sudo -n systemctl start coolercontrold.service || result=1; fi
     else
-        echo 'Recovery pending; leave CoolerControl stopped and retain records'
+        echo 'Cleanup not verified by launcher; service supervises launcher exit. Retain recovery records.'
         result=1
     fi
     exit "$result"
 }
 trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
+if sudo test ! -e /run/gwe-fan-service && sudo test ! -L /run/gwe-fan-service; then
+    sudo install -d -o root -g root -m 0711 /run/gwe-fan-service
+fi
+sudo /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py --owner-pid "$$" prepare-session
 sudo systemctl stop coolercontrold.service
 sudo install -d -o root -g root -m 0755 "$(dirname -- "$override")"
 override_installed=1

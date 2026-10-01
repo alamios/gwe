@@ -7,6 +7,7 @@ import multiprocessing
 import os
 from pathlib import Path
 import re
+import select
 import signal
 import socket
 import stat
@@ -20,6 +21,8 @@ from gwe.power_process import PowerBackend, recovery_worker as power_recovery_wo
 
 RUNTIME = Path('/run/gwe-fan-service')
 UUID_PATTERN = re.compile(r'GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}')
+SESSION_OVERRIDE = Path('/run/systemd/system/gwe-fan-service.service.d/90-gwe-continuous.conf')
+SESSION_TEMPLATE = Path('/opt/gwe-fan-service/continuous.conf')
 
 
 def trusted(path):
@@ -132,6 +135,79 @@ def recover_power_record(trial=False):
             process.close()
 
 
+def process_identity(pid):
+    path = Path('/proc') / str(pid)
+    return path.stat().st_uid, int((path / 'stat').read_text().rsplit(')', 1)[1].split()[19])
+
+
+def session_record():
+    path = RUNTIME / 'session.json'
+    if not path.exists():
+        return None
+    trusted(path)
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    with os.fdopen(fd) as source:
+        info = os.fstat(source.fileno())
+        if (not stat.S_ISREG(info.st_mode) or info.st_size > 1024 or info.st_nlink != 1
+                or stat.S_IMODE(info.st_mode) != 0o600):
+            raise ValueError('Invalid session record')
+        row = json.load(source)
+    if (not isinstance(row, dict) or set(row) != {'version', 'pid', 'uid', 'start', 'cooler_active'}
+            or type(row['version']) is not int or row['version'] != 1
+            or any(type(row[key]) is not int or row[key] <= 0 for key in ('pid', 'uid', 'start'))
+            or row['pid'] <= 1 or type(row['cooler_active']) is not bool):
+        raise ValueError('Invalid session owner')
+    return row
+
+
+def prepare_session(pid, uid):
+    if type(pid) is not int or pid <= 1:
+        raise ValueError('Explicit session owner required')
+    if any((RUNTIME / name).exists() for name in ('owned.json', 'power-pending.json', 'power-trial.json')):
+        raise RuntimeError('GPU recovery must complete before session preparation')
+    actual_uid, start = process_identity(pid)
+    if actual_uid != uid:
+        raise ValueError('Session owner does not match configured desktop user')
+    result = subprocess.run(['systemctl', 'is-active', 'coolercontrold.service'],
+                            capture_output=True, timeout=5)
+    if (result.returncode, result.stdout.strip()) not in (
+            (0, b'active'), (3, b'inactive'), (3, b'failed')):
+        raise RuntimeError('Cannot determine previous CoolerControl state')
+    PowerRecord(RUNTIME).write(RUNTIME / 'session.json', dict(
+        version=1, pid=pid, uid=uid, start=start, cooler_active=result.returncode == 0), exclusive=True)
+
+
+def recover_session():
+    row = session_record()
+    if row is None:
+        return
+    # Run only after all GPU journals have recovered. Never delete an unknown override.
+    if SESSION_OVERRIDE.exists() or SESSION_OVERRIDE.is_symlink():
+        trusted(SESSION_OVERRIDE)
+        trusted(SESSION_TEMPLATE)
+        if SESSION_OVERRIDE.read_bytes() != SESSION_TEMPLATE.read_bytes():
+            raise RuntimeError('Unexpected session override; retain record')
+        SESSION_OVERRIDE.unlink()
+        subprocess.run(['systemctl', 'daemon-reload'], check=True, timeout=10)
+    if row['cooler_active']:
+        subprocess.run(['systemctl', 'start', 'coolercontrold.service'], check=True, timeout=10)
+    (RUNTIME / 'session.json').unlink()
+
+
+def session_owner(uid):
+    row = session_record()
+    if row is None or row['uid'] != uid:
+        raise RuntimeError('Missing authenticated manual session owner')
+    fd = os.pidfd_open(row['pid'])
+    try:
+        if process_identity(row['pid']) != (uid, row['start']):
+            raise RuntimeError('Manual session owner changed')
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
 def serve(service, backend, power, stopping, *, continuous=False):
     """Keep watchdog and recovery checks identical in trial and manual sessions."""
     notify('READY=1')
@@ -148,15 +224,19 @@ def serve(service, backend, power, stopping, *, continuous=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('run', 'recover', 'check', 'prepare-power-trial'))
+    parser.add_argument('action', choices=('run', 'recover', 'check', 'prepare-power-trial', 'prepare-session'))
     parser.add_argument('--config', default='/etc/gwe-fan-service.json')
     parser.add_argument('--continuous', action='store_true', help='Manual session without the trial lifetime')
+    parser.add_argument('--owner-pid', type=int, help='Desktop launcher process to supervise')
     args = parser.parse_args(argv)
     if args.continuous and args.action != 'run':
         parser.error('--continuous is valid only for run')
+    if args.owner_pid is not None and args.action != 'prepare-session':
+        parser.error('--owner-pid is valid only for prepare-session')
     if os.geteuid() != 0:
         parser.error('This installed service requires root')
     lock = None
+    owner_fd = None
     try:
         if args.action != 'check' and RUNTIME.exists():
             trusted(RUNTIME)
@@ -173,12 +253,19 @@ def main(argv=None):
                     failures.append(error)
             if failures:
                 raise RuntimeError('Post-stop recovery failed')
+            recover_session()
             return 0
         config = load_config(args.config)
         if args.action == 'check':
             print('Configuration valid; no NVML calls performed')
             return 0
+        if args.action == 'prepare-session':
+            trusted(RUNTIME)
+            prepare_session(args.owner_pid, config['allowed_uid'])
+            return 0
         if args.action == 'prepare-power-trial':
+            if (RUNTIME / 'session.json').exists():
+                raise RuntimeError('Manual session recovery is pending')
             from gwe.power_trial import prepare
             trusted(RUNTIME)
             prepare(nvml_factory(), RUNTIME, config['gpu_uuid'])
@@ -203,6 +290,8 @@ def main(argv=None):
         record = OwnershipRecord(RUNTIME / 'owned.json', config['gpu_uuid'])
         if args.continuous and (RUNTIME / 'power-trial.json').exists():
             raise RuntimeError('Acceptance guard must be recovered before a continuous session')
+        if args.continuous:
+            owner_fd = session_owner(config['allowed_uid'])
         if record.path.exists() or (RUNTIME / 'power-pending.json').exists():
             raise RuntimeError('Unresolved recovery record; refusing new control')
         endpoint = RUNTIME / 'control.sock'
@@ -210,7 +299,8 @@ def main(argv=None):
             if not stat.S_ISSOCK(endpoint.lstat().st_mode):
                 raise RuntimeError('Unexpected existing endpoint')
             endpoint.unlink()  # Root-owned parent, only after an old service has stopped.
-        backend = ProcessBackend(config['gpu_uuid'], record=record.record, clear=record.clear)
+        backend = ProcessBackend(config['gpu_uuid'], ceiling=85 if args.continuous else 60,
+                                 record=record.record, clear=record.clear)
         power = PowerBackend(config['gpu_uuid'], RUNTIME)
         service = FanService(endpoint, backend, allowed_uid=config['allowed_uid'], provision=True, power=power)
         stopping = False
@@ -220,7 +310,9 @@ def main(argv=None):
         for sig in (signal.SIGTERM, signal.SIGINT):
             signal.signal(sig, stop)
         try:
-            serve(service, backend, power, lambda: stopping, continuous=args.continuous)
+            serve(service, backend, power, lambda: stopping or (
+                owner_fd is not None and bool(select.select([owner_fd], [], [], 0)[0])),
+                continuous=args.continuous)
         finally:
             try:
                 service.close()
@@ -236,6 +328,8 @@ def main(argv=None):
         print(f'Service failed: {type(error).__name__}', flush=True)
         return 1
     finally:
+        if owner_fd is not None:
+            os.close(owner_fd)
         if lock is not None:
             os.close(lock)
 

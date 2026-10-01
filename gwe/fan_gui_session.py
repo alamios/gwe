@@ -56,7 +56,7 @@ class FanGuiSession:
         self.last_error = code
         self.close()
         self.state = 'fault'
-        self.message = (f'Trial stopped ({code} during {self.last_operation}). '
+        self.message = (f'Control stopped ({code} during {self.last_operation}). '
                         'Automatic recovery is not verified; check the service.')
         self._emit('failed')
 

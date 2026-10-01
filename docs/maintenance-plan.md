@@ -160,8 +160,11 @@ This can be planned alongside GPU work, but GWE compatibility does not establish
 
 Prepared on 2026-10-02: an explicit manual continuous session without GUI/service trial deadlines,
 retaining lease expiry, watchdog and independent recovery. Source and simulated GTK checks pass;
-the conservative 60 C ceiling remains. The private bundle is staged; installation and extended hardware
-operation remain pending. See [continuous session](continuous-session.md).
+the initial 60 C ceiling has since been replaced by an 85 C continuous ceiling (brief trials remain at
+60 C). The follow-up adds graceful shutdown and root supervision of launcher exit/cleanup. A real
+client session lasted about 104 seconds but reported a service shutdown error, followed by verified
+automatic recovery. The revised private bundle is staged; hardware acceptance remains pending. See
+[continuous session](continuous-session.md).
 
 Guarded power acceptance on 2026-10-01 now includes the terminal 250→240→250 W trial and a real
 main-window session with two verified transactions and an owner-confirmed visible result. Independent
