@@ -13,10 +13,11 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def prepare_environment(root):
-    build = root / "build" / "monitor"
+def prepare_environment(root, directory="monitor"):
+    build = root / "build" / directory
     build.mkdir(parents=True, exist_ok=True)
     os.environ["GWE_MONITOR_ONLY"] = "1"
+    os.environ.pop("GWE_SERVICE_TRIAL", None)
     # Force local paths before imports can initialize the settings database.
     for variable, directory in (("XDG_CONFIG_HOME", "config"), ("XDG_CACHE_HOME", "cache"),
                                 ("XDG_DATA_HOME", "data")):
@@ -25,6 +26,19 @@ def prepare_environment(root):
         os.environ[variable] = str(target)
     os.environ["GSETTINGS_SCHEMA_DIR"] = str(build)
     return build
+
+
+def prepare_resources(root, build):
+    for command in ("glib-compile-resources", "glib-compile-schemas"):
+        if shutil.which(command) is None:
+            raise RuntimeError(f"Missing {command}; install the native GUI prerequisites")
+    data = root / "data"
+    resource_path = build / "com.leinardi.gwe.gresource"
+    subprocess.run(["glib-compile-resources", str(data / "com.leinardi.gwe.gresource.xml"),
+                    f"--sourcedir={data}", f"--target={resource_path}"], check=True)
+    shutil.copyfile(data / "com.leinardi.gwe.gschema.xml", build / "com.leinardi.gwe.gschema.xml")
+    subprocess.run(["glib-compile-schemas", str(build)], check=True)
+    return resource_path
 
 
 def main():
@@ -36,11 +50,7 @@ def main():
             parser.error(f"Missing {command}; install the native GUI prerequisites")
     build = prepare_environment(ROOT)
     data = ROOT / "data"
-    resource_path = build / "com.leinardi.gwe.gresource"
-    subprocess.run(["glib-compile-resources", str(data / "com.leinardi.gwe.gresource.xml"),
-                    f"--sourcedir={data}", f"--target={resource_path}"], check=True)
-    shutil.copyfile(data / "com.leinardi.gwe.gschema.xml", build / "com.leinardi.gwe.gschema.xml")
-    subprocess.run(["glib-compile-schemas", str(build)], check=True)
+    resource_path = prepare_resources(ROOT, build)
     sys.path.insert(0, str(ROOT))
     import gi
     for namespace, version in (("Gtk", "3.0"), ("Gdk", "3.0"), ("Dazzle", "1.0"), ("Notify", "0.7")):

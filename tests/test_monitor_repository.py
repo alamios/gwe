@@ -54,3 +54,14 @@ def test_default_mode_keeps_x11_gate(monkeypatch):
     monkeypatch.setattr(repository, "has_nv_control_extension", lambda: False)
     assert not repository.monitor_only
     assert HasNvidiaDriverInteractor(repository)._has_nvidia_driver() == HasNvidiaDriverResult.NV_CONTROL_MISSING
+
+
+def test_service_mode_repository_cannot_write_even_without_monitor_flag(monkeypatch):
+    monkeypatch.setenv('GWE_SERVICE_TRIAL', '1')
+    monkeypatch.delenv('GWE_MONITOR_ONLY', raising=False)
+    repository = module.NvidiaRepository()
+    for operation, arguments in [('set_fan_speed', (0, 40, True)),
+                                 ('set_overclock', (0, 0, 0, 0)), ('set_power_limit', (0, 200))]:
+        with pytest.raises(RuntimeError, match='disabled'):
+            getattr(repository, operation)(*arguments)
+    repository.set_all_gpus_fan_to_auto()

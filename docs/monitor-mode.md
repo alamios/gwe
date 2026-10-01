@@ -48,3 +48,11 @@ remain untested. See [GUI validation](gui-development.md) for dependencies, warn
 
 The installed GWE may remain open alongside the monitor. Future control testing requires a separate procedure
 with only one fan controller. See [configuration backup](configuration-backup.md) before profile migration.
+
+## Separate main-window service mode
+
+The [service-trial launcher](main-window-service.md) reuses NVML monitoring with a separate application
+identity and configuration namespace. In that mode direct repository writes remain blocked while an
+explicit service client can acquire a bounded fan lease. The regular monitor launcher clears inherited
+service mode and remains GPU-read-only. Do not use the service launcher as a substitute for a monitor-only
+smoke test when `--allow-control` is present.

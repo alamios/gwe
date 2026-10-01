@@ -23,7 +23,7 @@ from gettext import gettext as _
 from typing import Any, Optional, List
 from injector import inject, singleton
 from gwe.conf import APP_NAME, APP_ID, APP_VERSION, APP_ICON_NAME
-from gwe.runtime_mode import application_id
+from gwe.runtime_mode import application_id, service_trial
 from gwe.di import MainBuilder
 from gwe.model import load_fan_db_default_data, load_overclock_db_default_data
 from gwe.model.fan_profile import FanProfile
@@ -55,7 +55,8 @@ class Application(Gtk.Application):
         _LOG.debug("init Application")
         GLib.set_application_name(_(APP_NAME))
         super().__init__(*args, application_id=application_id(APP_ID),
-                         flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
+                         flags=(Gio.ApplicationFlags.HANDLES_COMMAND_LINE |
+                                (Gio.ApplicationFlags.NON_UNIQUE if service_trial() else Gio.ApplicationFlags.FLAGS_NONE)),
                          **kwargs)
         if FanProfile.select().count() == 0:
             load_fan_db_default_data()
@@ -85,6 +86,10 @@ class Application(Gtk.Application):
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
+
+    def do_shutdown(self) -> None:
+        self._presenter.on_shutdown()
+        Gtk.Application.do_shutdown(self)
 
     def do_command_line(self, command_line: Gio.ApplicationCommandLine) -> int:
 

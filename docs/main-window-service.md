@@ -1,0 +1,106 @@
+# Main-window NVML service trials
+
+The existing GWE main window now has an opt-in fan-service integration. It reuses the read-only NVML
+telemetry repository, backup reader, bounded `FanGuiSession` and private diagnostic logger. The normal
+X11 application and installed Flatpak retain their previous entry points. This is a source trial, not a
+production release or continuous controller.
+
+## Isolation and profile preservation
+
+Use `scripts/run_service_gui.py`; it sets up local resources and configuration before application/DI imports.
+Runtime state lives under `build/service-gui/`, configuration uses `gwe-service-trial`, and the GTK identity
+ends in `.ServiceTrial`. The application's local preference/database initialization only touches that
+separate namespace. An explicitly selected backup is read with the existing read-only reader; its curves
+stay in memory and are not copied into the application's database. See [backup guidance](configuration-backup.md).
+
+Startup never selects or applies a profile. Saved autoload/current-profile settings are ignored. The
+selector contains the saved profiles, with no add/edit action; invalid/manual-limit-incompatible curves
+remain blocked. Names are escaped for GTK markup. Curve points, saved hysteresis and firmware silent mode
+are preserved. The main plot uses the saved hysteresis and endpoint duty rather than the historical
+chart's forced 100% endpoint; firmware automatic operation below a silent threshold is not plotted as
+a manual duty. The selected curve's hysteresis/silent flag are also shown in the Apply tooltip.
+
+The service mode always forces the repository's direct-write guard, even if `GWE_MONITOR_ONLY` is unset.
+Its telemetry status remains `read_only`: fan writes belong to the independent service, never the
+repository. Power and overclock controls are disabled, and presenter action handlers also reject them.
+Historical fan updates, autoload, profile persistence and settings actions are bypassed. The regular
+monitor launcher explicitly clears an inherited service flag and continues to block all control.
+
+## Preview
+
+With the prepared Python 3.12 GTK environment active and a chosen backup path:
+
+```bash
+python scripts/run_service_gui.py --database "$BACKUP_DB"
+```
+
+Select a curve in the existing fan-profile selector. The chart and current NVML telemetry are visible;
+control buttons remain disabled in preview. There is no service connection or GPU write on startup.
+
+## Prepared hardware procedure (main-window writes pending)
+
+Keep installed GWE closed and avoid loads. Use the already installed bounded unit and the same recovery
+procedure as the separate GUI trial:
+
+```bash
+(
+    cleanup() {
+        if sudo systemctl stop gwe-fan-service.service &&
+           sudo test ! -e /run/gwe-fan-service/owned.json; then
+            sudo systemctl start coolercontrold.service
+        else
+            echo 'Recovery pending; CoolerControl remains stopped'
+        fi
+    }
+    trap cleanup EXIT
+    sudo systemctl stop coolercontrold.service || exit
+    sudo systemctl start gwe-fan-service.service || exit
+    python scripts/run_service_gui.py --database "$BACKUP_DB" --allow-control
+)
+```
+
+Select a compatible curve and press **Run curve for 10 seconds**. The existing Edit button becomes
+**Restore automatic**, which releases only this client's trial. The information bar distinguishes starting,
+active service ownership, restoration in progress, verified automatic recovery and faults. Selection is
+locked while a request/trial is pending. No success is inferred merely from an accepted acquisition.
+
+Ten seconds from acquisition trigger release; the installed unit still has a sixty-second total lifetime
+and its existing temperature ceiling. UI work and socket I/O are separate. Only fresh GTK ticks schedule
+renewals; stale UI ticks cannot resurrect a lease. Missing/erroring UI telemetry disables new acquisitions
+and releases an existing trial. The service also validates its own fresh GPU telemetry independently.
+
+Closing the main window quits this trial instead of minimizing to the tray. Window deletion, application
+shutdown and SIGINT/SIGTERM close the serialized client connection; service-side recovery remains
+independent. Socket disconnect is not displayed as verified restoration. See the
+[service recovery evidence](fan-service.md) for live daemon/worker fault tests and remaining limits.
+
+The private bounded log is `build/service-gui/logs/trial.log` with one rotated `.1` file. It uses the same
+allowlisted fields, UTC timestamps and 0600 permissions as the [separate GUI log](fan-gui.md). No source
+profile contents, UUIDs or raw exceptions are persisted. No service reinstall is required.
+
+## Validation: 2026-10-01
+
+244 automated tests pass on both Python 3.12 and 3.14, with the existing Reactivex warning. New tests cover
+startup without selection/acquisition, profile preservation, markup escaping, explicit preview gating,
+missing/lost telemetry, incompatible limits, locked selection, verified release, stale UI ticks, idempotent
+close, isolated identities and direct-write rejection even without the monitor environment flag.
+
+Python 3.12/X11 graphical checks passed:
+
+```bash
+python scripts/run_service_gui.py --database "$BACKUP_DB" --smoke-test
+python scripts/run_service_gui.py --demo --smoke-service
+python scripts/run_monitor.py --smoke-test
+```
+
+The private-backup check selected a saved curve with control disabled and no socket connection. The
+simulated-service check exercised the actual main-window buttons through a temporary local socket:
+apply/release, another acquisition with automatic ten-second completion, then closing while a third lease
+was active. All three simulated ownerships were released. Its fan backend has no NVML calls; main-window
+telemetry still performs real read-only NVML queries. A test assertion initially checked GTK close before
+its asynchronous delete event; the check was corrected to inspect shutdown after the main loop exits.
+The original monitor smoke check also passed. No GPU writes were performed for this integration.
+
+The main-window-to-installed-service hardware trial is pending. The earlier separate GTK trial successes
+do not substitute for it. Wayland, Python 3.14 GTK, suspend/resume, continuous operation and private-profile
+migration remain unvalidated. The prior unexplained standalone GUI failure remains documented.

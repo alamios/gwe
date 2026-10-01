@@ -13,6 +13,9 @@ backup. Its read-only GTK preview passes; a saved-curve GUI hardware trial succe
 attempt with automatic recovery, followed by two consecutive successful trials accepted provisionally.
 The first failure remains unexplained; local GUI diagnostics are retained. See the GUI result record.
 
+An [opt-in main-window client](main-window-service.md) now reuses the same bounded session and protocol.
+Its preview and simulated GTK control checks pass; main-window hardware writes remain pending.
+
 ## Protocol and asynchronous states
 
 Linux UNIX sequenced-packet sockets carry JSON requests of at most 4096 bytes. Kernel peer credentials

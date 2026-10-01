@@ -3,7 +3,8 @@
 An experimental GTK3 window reads existing fan curves and can explicitly submit a ten-second trial to
 the installed supervised service. This is a separate preparation tool, not integration into the historical
 main presenter or a replacement for the installed Flatpak. Its application ID ends in `.FanTrial`.
-It does not import application database initialization or legacy GPU writers.
+It does not import application database initialization or legacy GPU writers. A subsequent
+[main-window integration](main-window-service.md) reuses this client while keeping its own state isolated.
 
 ## Preserve profiles before control
 

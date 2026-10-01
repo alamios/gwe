@@ -12,3 +12,11 @@ def test_monitor_mode_is_explicit_and_isolates_state(monkeypatch, value, enabled
     assert config_namespace("gwe") == ("gwe-monitor" if enabled else "gwe")
     assert application_id("com.leinardi.gwe") == (
         "com.leinardi.gwe.Monitor" if enabled else "com.leinardi.gwe")
+
+
+def test_service_trial_always_blocks_direct_writes_and_isolates_state(monkeypatch):
+    monkeypatch.setenv('GWE_SERVICE_TRIAL', '1')
+    monkeypatch.setenv('GWE_MONITOR_ONLY', '0')
+    assert monitor_only()
+    assert config_namespace('gwe') == 'gwe-service-trial'
+    assert application_id('com.leinardi.gwe') == 'com.leinardi.gwe.ServiceTrial'

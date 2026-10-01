@@ -33,7 +33,7 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - NVML is the proposed application interface, not an integrated replacement yet. The standalone probe uses
   nvidia-ml-py 13.615.71; live read compatibility is verified on the current driver.
 - Implemented: local client/protocol connected to a nonblocking NVML process adapter with independent
-  recovery, ownership recording and lease expiry in both service and worker. 231 tests pass per interpreter,
+  recovery, ownership recording and lease expiry in both service and worker. 244 tests pass per interpreter,
   including real socket/process failures with simulated devices. See [service implementation](fan-service.md).
 - Prepared: isolated root-owned installation bundle, desktop socket provisioning and a 60-second systemd
   trial unit with watchdog/post-stop recovery. The owner installed the reviewed bundle; hashes, root
@@ -49,9 +49,13 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   curves and settings without autoload, editing or migration. Preview passed on Python 3.12/X11; explicit
   ten-second GUI trial succeeded on the second attempt with automatic recovery. The first failure is
   unexplained; improved redacted diagnostics and a bounded private local log are implemented. Two later
-  consecutive successful GUI trials were accepted provisionally by the owner. Historical main-window integration remains
-  pending. See
+  consecutive successful GUI trials were accepted provisionally by the owner. See
   [GUI service-client preparation](fan-gui.md).
+- Implemented: opt-in service integration in the historical main window, with separate state, in-memory
+  backup profiles, explicit Apply/Restore actions, no autoload and direct-write rejection. Read-only
+  private-backup and simulated-service GTK checks passed, including explicit release, timed release and
+  close during ownership. Main-window hardware control remains pending. See
+  [main-window service validation](main-window-service.md).
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 

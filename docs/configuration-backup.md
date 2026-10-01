@@ -60,3 +60,7 @@ initialization, migrations or database writes. It preserves saved points, hyster
 reports incompatibilities and ignores autoload/current-profile preferences. Reading a backup is not
 restoring or migrating it. Prefer a fresh verified online snapshot if profiles have changed since the
 recorded backup. Review low-duty points against the live manual minimum before enabling a trial.
+
+The [main-window service mode](main-window-service.md) also keeps backup profiles in memory. Its local
+application preference database is separate and does not receive those private profiles. Startup ignores
+saved selection/autoload and never acquires a fan lease.

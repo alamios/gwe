@@ -88,3 +88,10 @@ Wayland remains untested; see the bounded procedure and result record in that gu
 The owner subsequently accepted two consecutive successful bounded GUI trials provisionally. Future
 GUI launches retain private, bounded diagnostics under `build/fan-gui/`; see [log retention](fan-gui.md).
 This does not establish continuous fan control or integration into the historical main window.
+
+## Main-window service integration
+
+The [new opt-in main-window launcher](main-window-service.md) passed Python 3.12/X11 read-only preview
+with a private backup and simulated-service control via the actual buttons. Explicit release, automatic
+ten-second completion and close during ownership were checked. The original monitor smoke test still
+passes. No GPU writes occurred in these checks; main-window hardware control and Wayland remain pending.

@@ -27,6 +27,7 @@ from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCan
 from gwe.interactor.settings_interactor import SettingsInteractor
 from gwe.model.status import Status
 from gwe.model.fan_profile import FanProfile
+from gwe.runtime_mode import service_trial
 _LOG = logging.getLogger(__name__)
 
 try:  # AppIndicator3 may not be installed
@@ -230,9 +231,12 @@ class MainView(MainViewInterface):
         if status:
             gpu_status = status.gpu_status_list[gpu_index]
             if status.read_only:
-                self._window.set_title("GreenWithEnvy — Monitor only")
-                self._fan_warning_label.set_text("Fan control is disabled in monitor-only mode.")
-                self._overclock_warning_label.set_text("Overclocking is disabled in monitor-only mode.")
+                self._window.set_title("GreenWithEnvy — Service trial" if service_trial()
+                                       else "GreenWithEnvy — Monitor only")
+                self._fan_warning_label.set_text("Explicit ten-second service trials; no startup application."
+                                                 if service_trial() else "Fan control is disabled in monitor-only mode.")
+                self._overclock_warning_label.set_text("Overclocking is disabled during service trials."
+                                                       if service_trial() else "Overclocking is disabled in monitor-only mode.")
             if self._first_refresh or status.read_only:
                 self._first_refresh = False
                 self._set_entry_text(self._info_name_entry, gpu_status.info.name)
@@ -251,7 +255,7 @@ class MainView(MainViewInterface):
                                        "<span size=\"large\">{}</span> °C", gpu_status.temp.shutdown)
                 self._overclock_frame.set_sensitive(gpu_status.overclock.available)
                 self._overclock_warning_label.set_visible(not gpu_status.overclock.available)
-                self._fan_profile_frame.set_sensitive(gpu_status.fan.control_allowed)
+                self._fan_profile_frame.set_sensitive(service_trial() or gpu_status.fan.control_allowed)
                 self._fan_warning_label.set_visible(not gpu_status.fan.control_allowed)
                 self._remove_level_bar_offsets(self._info_gpu_usage_levelbar)
                 self._remove_level_bar_offsets(self._info_memory_usage_levelbar)
@@ -390,6 +394,35 @@ class MainView(MainViewInterface):
     def set_edit_fan_profile_button_enabled(self, enabled: bool) -> None:
         self._fan_edit_button.set_sensitive(enabled)
 
+    def prepare_service_controls(self) -> None:
+        self._fan_profile_frame.set_sensitive(True)
+        self._fan_apply_button.set_use_stock(False)
+        self._fan_edit_button.set_use_stock(False)
+        self._fan_apply_button.set_label('Run curve for 10 seconds')
+        self._fan_edit_button.set_label('Restore automatic')
+        self._fan_apply_button.set_tooltip_text('Explicit bounded trial through the supervised service')
+        self._fan_edit_button.set_tooltip_text('Release this window\'s active trial')
+        self._overclock_frame.set_sensitive(False)
+        self._power_limit_apply_button.set_sensitive(False)
+        self._power_limit_scale.set_sensitive(False)
+
+    def set_service_selection_enabled(self, enabled: bool) -> None:
+        self._fan_combobox.set_sensitive(enabled)
+
+    def refresh_service_curve(self, curve) -> None:
+        if curve is None:
+            self._plot_chart({}, hysteresis=0)
+            return
+        data = dict(curve.points)
+        maximum = max(100, curve.points[-1][0])
+        if not curve.vbios_silent:
+            data.setdefault(0, curve.points[0][1])
+        data.setdefault(maximum, curve.points[-1][1])
+        self._fan_axis.set_xbound(0, maximum)
+        self._plot_chart(data, hysteresis=curve.hysteresis)
+        self._fan_apply_button.set_tooltip_text(
+            f'Hysteresis: {curve.hysteresis} C; firmware silent mode: {curve.vbios_silent}')
+
     def set_apply_overclock_profile_button_enabled(self, enabled: bool) -> None:
         self._overclock_apply_button.set_sensitive(enabled)
 
@@ -417,11 +450,12 @@ class MainView(MainViewInterface):
             self._fan_axis
         )
 
-    def _plot_chart(self, data: Dict[int, int]) -> None:
+    def _plot_chart(self, data: Dict[int, int], hysteresis=None) -> None:
         sorted_data = OrderedDict(sorted(data.items()))
         temperature_list = list(sorted_data.keys())
         duty_list = list(sorted_data.values())
-        hysteresis = self._settings_interactor.get_int('settings_hysteresis')
+        if hysteresis is None:
+            hysteresis = self._settings_interactor.get_int('settings_hysteresis')
         self._fan_growing_line.set_xdata(temperature_list)
         self._fan_growing_line.set_ydata(duty_list)
         self._fan_decreasing_line.set_xdata([t - hysteresis for t in temperature_list])
