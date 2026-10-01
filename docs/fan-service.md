@@ -9,7 +9,8 @@ extended operation and driver/host failure validation remain pending. The defaul
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
 The [isolated GUI client](fan-gui.md) is prepared for explicit ten-second trials of curves read from a
-backup. Its read-only GTK preview passes; GUI-to-installed-service hardware control remains pending.
+backup. Its read-only GTK preview passes; a saved-curve GUI hardware trial succeeded on its second
+attempt with automatic recovery. The first failure remains unexplained; see the GUI result record.
 
 ## Protocol and asynchronous states
 

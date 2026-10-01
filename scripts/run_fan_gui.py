@@ -84,8 +84,8 @@ def main(argv=None):
             pending[0] = None
             try:
                 future.result()
-            except Exception:
-                session._fail()
+            except Exception as error:
+                session._fail(error)
             refresh()
         now = boot_time()
         if pending[0] is None and session.client is not None and now >= next_tick[0]:

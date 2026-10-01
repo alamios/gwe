@@ -82,4 +82,5 @@ profile migration and all GPU control writes remain unvalidated. The installed G
 The [isolated GTK service-client preparation](fan-gui.md) uses only GTK3 and the existing service protocol.
 Its synthetic and private-backup read-only preview smoke checks passed on Python 3.12/X11. It creates no
 application database and does not replace the monitor launcher or historical main window. Explicit
-GUI-to-service hardware control and Wayland remain untested; use the bounded procedure in that guide.
+GUI-to-service control succeeded on its second hardware attempt; the first failure remains unexplained.
+Wayland remains untested; see the bounded procedure and result record in that guide.

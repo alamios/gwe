@@ -172,3 +172,48 @@ def test_real_socket_lifecycle_uses_service_verification(tmp_path):
         stop.set()
         worker.join(2)
         service.close()
+
+
+@pytest.mark.parametrize('error,code', [
+    (FileNotFoundError('private path'), 'service_connection_unavailable'),
+    (PermissionError('private identity'), 'socket_permission_denied'),
+    (TimeoutError('private socket details'), 'socket_timeout'),
+])
+def test_connection_errors_identify_operation_without_exposing_details(error, code):
+    def unavailable(path):
+        raise error
+    instance = FanGuiSession('unused', factory=unavailable)
+    instance.begin(CURVE, (30, 100))
+    assert instance.state == 'fault'
+    assert instance.last_error == code and instance.last_operation == 'connect'
+    assert code in instance.message and 'private' not in instance.message
+
+
+@pytest.mark.parametrize('code,expected', [('busy', 'service_busy'),
+                                         ('private identity', 'request_refused')])
+def test_rejected_acquire_uses_only_known_error_codes(session, code, expected):
+    instance, client, now = session
+    original = client.request
+    client.request = lambda operation, **fields: ({'ok': False, 'error': code}
+                         if operation == 'acquire' else original(operation, **fields))
+    instance.begin(CURVE, (30, 100))
+    assert instance.last_error == expected and instance.last_operation == 'acquire'
+    assert 'private' not in instance.message and client.closed
+
+
+def test_ui_stall_has_a_distinct_diagnostic(session):
+    instance, client, now = session
+    instance.begin(CURVE, (30, 100))
+    now[0] = 4
+    instance.tick(4)
+    assert instance.last_error == 'ui_heartbeat_expired'
+    assert instance.last_operation == 'ui_tick' and client.closed
+
+
+def test_backend_fault_is_not_reported_as_socket_failure(session):
+    instance, client, now = session
+    instance.begin(CURVE, (30, 100))
+    client.state = 'fault'
+    instance.tick(0)
+    assert instance.last_error == 'service_fault'
+    assert instance.last_operation == 'status' and client.closed

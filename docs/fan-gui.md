@@ -48,7 +48,7 @@ python scripts/run_fan_gui.py --demo --smoke-test
 The three-second smoke test checks a selected profile, disabled controls and no service connection.
 Demo, smoke-test and inspect-only cannot be combined with control.
 
-## Prepared supervised GUI trial (hardware pending)
+## Bounded supervised GUI trial
 
 Keep GWE closed and avoid loads. The GUI does not run sudo or manage system services. With the prepared
 Python environment active, use the existing installed trial service and this cleanup procedure:
@@ -99,5 +99,36 @@ and checks acquisition and verified recovery; no hardware writes occur in automa
 
 The synthetic GTK preview and private-backup read-only GTK preview passed on Python 3.12/X11. Read-only
 validation of that backup against current NVML limits also succeeded. Private contents are not recorded
-here. GUI-to-installed-service hardware control, Python 3.14 GUI, Wayland, continuous operation, editing,
-profile migration and integration into the historical main window remain pending.
+here. The subsequent GUI hardware result is recorded below. Python 3.14 GUI, Wayland, continuous
+operation, editing, profile migration and historical main-window integration remain pending.
+
+## Saved-curve GUI hardware trial: 2026-10-01
+
+The owner used the GTK client from `c2426a1` against the unchanged installed service bundle (`626c8ae`)
+and selected the compatible saved curve from the private backup. The owner reported a failed first
+attempt and a successful second attempt: fan acceleration was audible, followed by the window message
+`Both fans restored to automatic; recovery verified by the service.` No duty trace, temperature trace
+or elapsed timing was captured, and the cause/stage of the first failure is unknown. This is a successful
+second run with an unresolved first failure, not evidence of uniformly reliable GUI operation.
+
+Independent read-only follow-up confirmed both NVML policies zero (automatic), temperature 54 C,
+power limit 250 W, service inactive/static with `Result=success`, `ExecMainStatus=0`, `ControlPID=0`,
+no ownership record and CoolerControl active again. Recent filtered service events showed two clean
+shutdowns but no cause for the first GUI failure. Do not infer a temperature rejection, service-lifetime
+expiry or UI stall without evidence. No private profile names/points are recorded here and no profiles
+were edited or migrated.
+
+## Diagnostic follow-up
+
+The GUI now includes a bounded local diagnostic code and operation in failure messages. Known service
+refusals, non-idle service state, socket absence/permissions/timeouts, stale GTK ticks, lost ownership,
+backend fault and unverified recovery can be distinguished. Unknown protocol text and exception messages
+are not shown. The controller still closes on failure, stops renewals and requires review/relaunch; this
+change does not automatically retry or bypass recovery. Existing generic failure messages cannot be
+retrospectively diagnosed from the second successful run.
+
+Seven new simulated tests check connection-error redaction, allowed/refused protocol codes, UI-stall
+classification and backend-fault classification. Full regression now passes 224 tests on both Python
+versions, with the existing Reactivex warning. The synthetic GTK preview smoke check also passes.
+These diagnostics have not yet been exercised in another GPU-writing GUI trial. The installation bundle
+needs no update because only the unprivileged repository client changed.
