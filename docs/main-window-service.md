@@ -211,3 +211,19 @@ deadline, followed by `recovery_verified` and window close in idle state. Indepe
 found both policies automatic, both reported speeds zero, the trial service inactive with success result,
 CoolerControl active, and power limit still 250 W. No settings were changed during follow-up.
 Closing the main window while ownership is active remains the next hardware acceptance check.
+
+
+## Close-during-control hardware result: 2026-10-01
+
+The owner performed the prepared procedure and closed the main window during active ownership.
+The redacted log shows `active`, then `disconnected` and `window_closed` about 3.8 seconds later,
+without an explicit release request or a client-side `recovery_verified` claim after closure.
+Independent follow-up found both NVML policies automatic, both fans at 0% and 0 RPM, temperature
+56 C and unchanged 250 W power limit. The service was inactive with success result, its ownership
+marker absent, and CoolerControl active again. No settings were changed during verification.
+
+This passes the complete documented window-close procedure, including its shell cleanup. It does not
+isolate socket-disconnect recovery from the shell's service-stop/post-stop recovery path or measure
+restoration latency. Earlier service client-disconnection tests provide separate evidence for that path.
+Normal timed release, explicit early release and window close with cleanup now have current-host hardware
+evidence. Continuous operation, suspend/resume and target Wayland/OS validation remain pending.

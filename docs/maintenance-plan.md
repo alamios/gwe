@@ -57,7 +57,9 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   close during ownership. Main-window ten-second hardware trials now have logged verified release and independent follow-up
   automatic-policy reads. A connection loss near the service lifetime was reported without a false
   recovery claim; its exact instantaneous policy was not captured. Explicit early release subsequently passed with logged verified recovery and independent automatic/zero-speed
-  readings. Closing during active ownership still needs a separate hardware result. See
+  readings. Closing during active ownership with the documented shell cleanup also passed: both fans
+  automatic and zero RPM, service inactive, ownership marker absent and CoolerControl restarted.
+  This combined procedure does not isolate disconnect recovery from service-stop recovery. See
   [main-window service validation](main-window-service.md).
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
