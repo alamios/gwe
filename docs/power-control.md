@@ -223,3 +223,19 @@ No power request is retried automatically.
 rejection, verifies its visible explanation, explicitly retries through the button and verifies the visible
 success message. All write requests in that check go to the simulated backend. Real GUI acceptance
 remains pending and requires no installed-service update for these source UI changes.
+
+## Visible guarded GUI acceptance: 2026-10-01
+
+After the diagnostic change, the owner confirmed seeing the verified result. The final real GUI session
+logged two `power_verified` events from status polling, followed by normal window closure, with no
+failure events in that session. Requests were constrained by the 240/250 W trial guard. The redacted
+log does not retain numeric transaction values, so it cannot independently establish their order.
+
+Independent read-only follow-up found 250 W, both fan policies automatic, temperature 57 C, the service
+inactive with success and CoolerControl active. No GPU settings were changed during follow-up. This
+validates visible main-window power verification and the complete guarded shutdown procedure on the
+current Python 3.12/X11 host. The earlier unexplained failures remain historical limitations; the injected
+`trial_guard_active` event from the simulated GTK check is not evidence of their cause.
+
+Real power-worker crash/stall recovery, continuous operation, suspend/resume, reboot persistence and
+target-OS/Wayland acceptance remain unvalidated. Keep the bounded diagnostic log for future failures.

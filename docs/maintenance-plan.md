@@ -158,6 +158,12 @@ This can be planned alongside GPU work, but GWE compatibility does not establish
 
 ## Validation record
 
+Guarded power acceptance on 2026-10-01 now includes the terminal 250→240→250 W trial and a real
+main-window session with two verified transactions and an owner-confirmed visible result. Independent
+follow-up found 250 W, automatic fan policies and clean service shutdown. Earlier GUI failures remain
+unexplained. Real power-worker fault recovery and continuous operation remain pending; see
+[power-control validation](power-control.md).
+
 For each future run, record date, commit, GPU model, driver, kernel, OS, X11/Wayland session, packaging/runtime,
 scenario, expected behavior, observed result and recovery outcome. Avoid personal paths, GPU UUIDs and profile
 contents in shared reports. Mark unperformed scenarios as untested, not passed.

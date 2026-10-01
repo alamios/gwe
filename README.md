@@ -76,13 +76,11 @@ backend/GUI checks pass; the first bundle update stopped at its installation-pat
 power trial. The corrected `build/power-service-v2` bundle was subsequently installed, preserving its
 configuration and rollback copy. A missing-runtime preparation failure was corrected in the trial wrapper;
 the protected 250→240→250 W hardware trial passed using its `--installed` mode, including independent
-readback, retention after client disconnect and verified cleanup back at 250 W. A real main-window Power
-Apply logged a verified transaction, but the owner could not see its result. Power status now precedes
-optional fan instructions in a wrapped notice; focused tests and a simulated GTK check verify its visibility.
-The protected `--gui` acceptance still needs the owner to confirm visible results for both requested limits.
-Another real GUI attempt reported an unavailable/rejected result; its original log did not retain the cause.
-Allowlisted request diagnostics now distinguish trial restrictions, stale power, transport failures and
-verification errors. A simulated GTK rejection and explicit retry pass; real acceptance remains pending.
+readback, retention after client disconnect and verified cleanup back at 250 W. After notice visibility and
+allowlisted diagnostics were improved, the owner confirmed a visible verified result in the guarded main
+window. Its final session logged two verified transactions and independent follow-up confirmed 250 W,
+automatic fan policies and clean shutdown. Earlier GUI failures remain unexplained. Power-worker fault
+recovery on real hardware, continuous service and target-OS/Wayland validation remain pending.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

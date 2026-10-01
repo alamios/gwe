@@ -236,4 +236,6 @@ evidence. Continuous operation, suspend/resume and target Wayland/OS validation 
 The main window can now route explicit Power Apply actions through the updated privileged service using
 `--allow-power-control`. It neither enables fan trials nor bypasses monitor repository guards. The ordinary
 preview/smoke commands above still keep power disabled. See [power-control.md](power-control.md) for
-transaction semantics, previous-value recovery, bundle update and the pending guarded hardware trial.
+transaction semantics, previous-value recovery, bundle update and the successful guarded terminal and
+main-window trials. The owner confirmed visible verification; independent follow-up confirmed 250 W,
+automatic fan policies and clean service shutdown. Continuous operation remains pending.
