@@ -207,7 +207,7 @@ def test_verified_apply_and_rollback_status_are_reported(setup):
     settle(controller)
     assert controller.operation_id is None and not controller.remote_busy
     assert 'Power verified: 240 W (previous 250 W)' in controller.message
-    assert ('power_verified', {}) in events
+    assert ('power_verified', {'operation': 'power_status'}) in events
 
 
 def test_rollback_status_is_reported(setup):
@@ -225,7 +225,7 @@ def test_rollback_status_is_reported(setup):
     settle(controller)
     assert controller.operation_id is None and not controller.remote_busy
     assert 'previous limit restored and verified' in controller.message
-    assert ('power_rolled_back', {}) in events
+    assert ('power_rolled_back', {'operation': 'power_status'}) in events
 
 
 @pytest.mark.parametrize('response', [
@@ -247,7 +247,7 @@ def test_success_ack_must_match_gpu_and_exact_transaction_values(setup, response
     service.handler = lambda operation, fields: response
     controller.pulse()
     settle(controller)
-    assert ('power_verified', {}) not in events
+    assert not any(event == 'power_verified' for event, fields in events)
     assert 'Power verified' not in controller.message
     assert controller.operation_id is None
     assert not controller.available
@@ -265,7 +265,7 @@ def test_error_timeout_and_raw_service_message_are_redacted_without_retry(setup)
     assert 'secret' not in controller.message and 'GPU identity' not in controller.message
     assert 'no automatic retry' in controller.message
     assert len([op for op, _ in service.calls[calls_before:] if op == 'power_apply']) == 1
-    assert ('power_failed', {}) in events
+    assert ('power_failed', {'operation': 'power_apply', 'error': 'socket_timeout'}) in events
 
 
 def test_close_preserves_applied_limit_and_sends_no_reset(setup):
@@ -288,3 +288,55 @@ def test_close_preserves_applied_limit_and_sends_no_reset(setup):
 def test_to_mw_rejects_invalid_values(value):
     with pytest.raises(ValueError):
         to_mw(value)
+
+
+@pytest.mark.parametrize('code', ['trial_guard_active', 'stale_power', 'outside_limits',
+                                 'power_busy', 'recovery_pending', 'identity_mismatch',
+                                 'private path and UUID', None, ['private']])
+def test_rejected_apply_displays_and_logs_only_allowlisted_reason(setup, code):
+    controller, view, service, now, events = setup
+    make_available(controller)
+    service.handler = lambda operation, fields: {'ok': False, 'error': code}
+    controller.apply()
+    settle(controller)
+    expected = code if isinstance(code, str) and code in {
+        'trial_guard_active', 'stale_power', 'outside_limits', 'power_busy',
+        'recovery_pending', 'identity_mismatch'} else 'request_refused'
+    assert f'[{expected}]' in controller.message
+    assert ('power_failed', {'operation': 'power_apply', 'error': expected}) in events
+    assert 'private' not in controller.message
+    assert not controller.available and controller.operation_id is None
+    if code == 'trial_guard_active':
+        assert 'only 240 W or 250 W' in controller.message
+
+
+def test_recovered_startup_connection_clears_obsolete_error_without_apply(setup):
+    controller, view, service, now, events = setup
+    service.handler = lambda operation, fields: (_ for _ in ()).throw(FileNotFoundError('private'))
+    controller.pulse()
+    settle(controller)
+    assert controller.last_error == 'service_connection_unavailable'
+    service.handler = service.default
+    now[0] += 2.1
+    controller.telemetry(gpu())
+    controller.pulse()
+    settle(controller)
+    assert controller.available and controller.last_error is None
+    assert controller.message.startswith('Power service connected.')
+    assert all(op == 'power_status' for op, fields in service.calls)
+
+
+def test_idle_status_does_not_erase_trial_rejection_instructions(setup):
+    controller, view, service, now, events = setup
+    make_available(controller)
+    service.handler = lambda operation, fields: {'ok': False, 'error': 'trial_guard_active'}
+    controller.apply()
+    settle(controller)
+    service.handler = service.default
+    now[0] += 2.1
+    controller.telemetry(gpu())
+    controller.pulse()
+    settle(controller)
+    assert controller.available
+    assert 'only 240 W or 250 W' in controller.message
+    assert [op for op, fields in service.calls].count('power_apply') == 1

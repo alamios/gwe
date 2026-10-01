@@ -80,6 +80,9 @@ readback, retention after client disconnect and verified cleanup back at 250 W. 
 Apply logged a verified transaction, but the owner could not see its result. Power status now precedes
 optional fan instructions in a wrapped notice; focused tests and a simulated GTK check verify its visibility.
 The protected `--gui` acceptance still needs the owner to confirm visible results for both requested limits.
+Another real GUI attempt reported an unavailable/rejected result; its original log did not retain the cause.
+Allowlisted request diagnostics now distinguish trial restrictions, stale power, transport failures and
+verification errors. A simulated GTK rejection and explicit retry pass; real acceptance remains pending.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

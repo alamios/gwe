@@ -7,6 +7,35 @@ import time
 from gwe.fan_service import FanClient
 
 
+POWER_ERRORS = {
+    'trial_guard_active': 'The trial accepts only 240 W or 250 W. Select one and press Apply.',
+    'stale_power': 'The live limit changed. Wait for telemetry before pressing Apply again.',
+    'outside_limits': 'The requested power is outside the live GPU limits.',
+    'power_busy': 'The service is busy; wait before pressing Apply again.',
+    'busy': 'Fan control is active; release it before changing power.',
+    'recovery_pending': 'Recovery is pending. Check the service before another trial.',
+    'recovery_failed': 'Recovery is not verified. Check the service.',
+    'worker_unavailable': 'The service could not start its power worker.',
+    'worker_lost': 'The power worker ended without a verified result.',
+    'worker_stuck': 'The power worker stalled. Check service recovery.',
+    'driver_error': 'The driver rejected the power operation; check the service.',
+    'verification_failed': 'The driver readback did not match the requested limit.',
+    'identity_mismatch': 'The service GPU does not match telemetry.',
+    'invalid_response': 'The service returned an invalid or mismatched power result.',
+    'request_refused': 'The service rejected the power request.',
+    'service_connection_unavailable': 'The power service is unavailable. Close and rerun the guarded trial.',
+    'socket_timeout': 'The power service did not respond in time. Check the live limit and service.',
+    'socket_permission_denied': 'Permission to connect to the power service was denied.',
+    'client_error': 'Power result unavailable. Check the live limit and service.',
+}
+
+
+class PowerResponseError(ValueError):
+    def __init__(self, code):
+        self.code = code if isinstance(code, str) and code in POWER_ERRORS else 'request_refused'
+        super().__init__(self.code)
+
+
 def to_mw(watts):
     if isinstance(watts, bool) or not isinstance(watts, (int, float)) or not math.isfinite(watts):
         raise ValueError('Invalid power')
@@ -23,6 +52,8 @@ class PowerController:
         self.factory, self.clock, self.fan_busy, self.event_sink = factory, clock, fan_busy, event_sink
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.pending = None
+        self.pending_operation = 'power_status'
+        self.last_error = None
         self.closed = False
         self.available = False
         self.remote_busy = False
@@ -86,6 +117,7 @@ class PowerController:
         self.message = 'Applying power limit; awaiting service verification.'
         self.pending = self.executor.submit(self._request, 'power_apply', limit_mw=requested,
                                             expected_mw=expected, expected_uuid=gpu.info.uuid)
+        self.pending_operation = 'power_apply'
         self.refresh()
 
     def pulse(self):
@@ -93,58 +125,75 @@ class PowerController:
             return
         if self.pending is not None and self.pending.done():
             future, self.pending = self.pending, None
+            operation = self.pending_operation
             try:
                 result = future.result()
-                if not isinstance(result, dict) or result.get('ok') is not True:
-                    raise ValueError('Service unavailable or rejected request')
+                if not isinstance(result, dict):
+                    raise PowerResponseError('invalid_response')
+                if result.get('ok') is not True:
+                    raise PowerResponseError(result.get('error'))
                 # Status identity is checked before enabling any write action.
                 if not self.snapshot or result.get('gpu_uuid') != self.snapshot.info.uuid:
-                    raise ValueError('Service identity mismatch')
+                    raise PowerResponseError('identity_mismatch')
                 self.service_uuid = result['gpu_uuid']
                 self.available = True
                 state = result.get('state')
                 if state not in ('idle', 'busy', 'applied', 'rolled_back', 'failed', 'fault'):
-                    raise ValueError('Invalid power state')
+                    raise PowerResponseError('invalid_response')
                 if type(result.get('operation_id')) is not int or result['operation_id'] < 0:
-                    raise ValueError('Invalid operation identifier')
+                    raise PowerResponseError('invalid_response')
                 if state == 'fault':
-                    raise ValueError('Power recovery fault')
+                    raise PowerResponseError(result.get('error', 'recovery_failed'))
                 self.remote_busy = state == 'busy'
                 if self.operation_id == -1:
                     self.operation_id = result.get('operation_id')
                 if self.operation_id is not None:
                     if result.get('operation_id') != self.operation_id:
-                        raise ValueError('Operation changed')
+                        raise PowerResponseError('invalid_response')
                     if state == 'applied':
                         previous, applied = result['previous_mw'], result['applied_mw']
                         if (type(previous) is not int or type(applied) is not int
                                 or previous != self.expected or applied != self.requested):
-                            raise ValueError('Power result mismatch')
+                            raise PowerResponseError('invalid_response')
                         self.message = f'Power verified: {applied / 1000:g} W (previous {previous / 1000:g} W). Closing preserves this limit.'
                         self.operation_id = None
-                        self.event_sink('power_verified')
+                        self.event_sink('power_verified', operation=operation)
                     elif state == 'rolled_back':
                         if (type(result.get('applied_mw')) is not int or result['applied_mw'] != self.expected
                                 or result.get('previous_mw') != self.expected):
-                            raise ValueError('Rollback result mismatch')
+                            raise PowerResponseError('invalid_response')
                         self.message = 'Power operation failed; previous limit restored and verified.'
                         self.operation_id = None
-                        self.event_sink('power_rolled_back')
+                        self.event_sink('power_rolled_back', operation=operation)
                     elif state in ('failed', 'fault'):
-                        raise ValueError('Power result failed')
-                if not self.available:
-                    self.message = 'Power control unavailable: service GPU does not match telemetry.'
-            except Exception:
+                        raise PowerResponseError(result.get('error'))
+                if (self.last_error in ('service_connection_unavailable', 'socket_timeout')
+                        and self.operation_id is None and state == 'idle'):
+                    self.message = 'Power service connected. Select a limit and press Apply; startup changes nothing.'
+                self.last_error = None
+            except Exception as error:
+                if isinstance(error, PowerResponseError):
+                    code = error.code
+                elif isinstance(error, TimeoutError):
+                    code = 'socket_timeout'
+                elif isinstance(error, PermissionError):
+                    code = 'socket_permission_denied'
+                elif isinstance(error, (ConnectionError, FileNotFoundError)):
+                    code = 'service_connection_unavailable'
+                else:
+                    code = 'client_error'
                 self.available = False
                 self.remote_busy = False
                 self.operation_id = None
-                self.message = 'Power result unavailable or rejected. Check live limit and service; no automatic retry.'
-                self.event_sink('power_failed')
+                self.last_error = code
+                self.message = f'Power: {POWER_ERRORS[code]} [{code}]; no automatic retry.'
+                self.event_sink('power_failed', operation=operation, error=code)
             self.next_poll = self.clock() + (.2 if self.remote_busy else 2)
         if (self.allowed and self.pending is None and self.valid() and not self.fan_busy()
                 and self.clock() >= self.next_poll):
             self.next_poll = self.clock() + 2
             self.pending = self.executor.submit(self._request, 'power_status')
+            self.pending_operation = 'power_status'
         self.refresh()
 
     def close(self):

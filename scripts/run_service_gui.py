@@ -67,12 +67,17 @@ def main(argv=None):
         class SimulatedPower:
             uuid = None
             calls = []
+            rejections = 0
             result = {'state': 'idle', 'operation_id': 0}
             def poll(self):
                 pass
             def status(self):
                 return {'ok': True, 'gpu_uuid': self.uuid, **self.result}
             def start(self, requested, expected):
+                # Exercise a guarded rejection before the explicit successful retry.
+                if not self.rejections:
+                    self.rejections += 1
+                    return {'ok': False, 'error': 'trial_guard_active'}
                 self.calls.append((requested, expected))
                 self.result = dict(state='applied', operation_id=len(self.calls),
                                    previous_mw=expected, applied_mw=requested)
@@ -139,7 +144,14 @@ def main(argv=None):
                         return GLib.SOURCE_CONTINUE
                     view._power_limit_apply_button.clicked()
                     phase[0] = 1
-                elif phase[0] == 1 and power.operation_id is None and simulated_power.calls:
+                elif phase[0] == 1 and simulated_power.rejections and power.operation_id is None:
+                    if simulated_power.calls or 'only 240 W or 250 W' not in view._main_infobar_label.get_text():
+                        return finish(False)
+                    if not view._power_limit_apply_button.get_sensitive():
+                        return GLib.SOURCE_CONTINUE
+                    view._power_limit_apply_button.clicked()
+                    phase[0] = 2
+                elif phase[0] == 2 and power.operation_id is None and simulated_power.calls:
                     expected = round(gpu.power.limit * 1000)
                     wanted = round(max(gpu.power.minimum, gpu.power.limit - 10) * 1000)
                     return finish(simulated_power.calls == [(wanted, expected)]

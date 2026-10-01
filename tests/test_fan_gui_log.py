@@ -54,3 +54,14 @@ def test_symlink_cannot_overwrite_another_file(tmp_path):
     with pytest.raises(OSError):
         FanGuiLog(path)
     assert source.read_text() == 'keep'
+
+
+def test_power_rejection_preserves_safe_operation_and_reason(tmp_path):
+    path = tmp_path / 'trial.log'
+    log = FanGuiLog(path)
+    log.record('power_failed', operation='power_apply', error='trial_guard_active',
+               uuid='private identity', exception='private exception')
+    row = json.loads(path.read_text())
+    assert row['operation'] == 'power_apply'
+    assert row['error'] == 'trial_guard_active'
+    assert 'private' not in path.read_text()

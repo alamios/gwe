@@ -203,3 +203,23 @@ automatic, the service inactive with a success result and CoolerControl active a
 
 Repeat the guarded GUI command above to confirm both messages visibly. These are source UI changes;
 the installed service does not need an update. The private diagnostic log is retained.
+
+## Rejected GUI attempt and diagnostic coverage
+
+The owner's next attempt reported the generic unavailable/rejected message. The local log recorded two
+`power_failed` events without operation or error codes, so the cause cannot be reconstructed. Independent
+read-only follow-up confirmed 250 W, both fan policies automatic, the service inactive with success and
+CoolerControl active. This is not a successful GUI acceptance result.
+
+Power diagnostics now preserve allowlisted operation/error codes in the private bounded log and show
+actionable messages without raw exceptions, identities or paths. In particular, `trial_guard_active`
+explains that the guarded trial accepts exactly 240 W or 250 W; `stale_power` asks for fresh telemetry;
+transport errors distinguish timeout, unavailable connection and denied permission. These are possible
+diagnoses, not an established cause of the owner's failure. A recovered initial connection clears its
+obsolete connection warning; rejected Apply instructions remain visible through subsequent idle reads.
+No power request is retried automatically.
+
+61 focused tests pass on each interpreter. The Python 3.12 GTK smoke check now injects a guarded
+rejection, verifies its visible explanation, explicitly retries through the button and verifies the visible
+success message. All write requests in that check go to the simulated backend. Real GUI acceptance
+remains pending and requires no installed-service update for these source UI changes.
