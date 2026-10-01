@@ -59,7 +59,7 @@ raw exceptions, UUIDs and profile data are not written there.
 Stage a fresh bundle with the prepared environment; staging installs nothing:
 
 ```bash
-python scripts/stage_fan_service.py build/power-service-v1
+python scripts/stage_fan_service.py build/power-service-v2
 ```
 
 The bundle's `update.sh` requires an inactive existing service, no unresolved journals and no existing
@@ -72,7 +72,7 @@ still needs manual review; no atomic whole-system upgrade claim is made.
 With installed GWE and development windows closed, no heavy load and the service inactive:
 
 ```bash
-bash scripts/validate_power_service.sh /path/to/prepared/python3.12 build/power-service-v1
+bash scripts/validate_power_service.sh /path/to/prepared/python3.12 build/power-service-v2
 ```
 
 This single wrapper authenticates sudo, updates the bundle, remembers CoolerControl's original active
@@ -102,7 +102,7 @@ and restore the saved code/unit; never deploy the old fan-only recovery while po
 
 The complete suite passes **379 tests on Python 3.12 and 3.14**, with the existing Reactivex datetime
 deprecation warning. Monitor, simulated fan-service and simulated power GTK checks pass on Python 3.12/X11.
-The staged `build/power-service-v1` bundle has 18 verified hashes; all three shell scripts and its systemd
+The staged `build/power-service-v2` bundle has 18 verified hashes; all three shell scripts and its systemd
 unit pass syntax validation. No updated service has been installed or real power setter invoked.
 
 Automated tests use simulated NVML and processes. They cover strict protocol fields, peer boundary reuse,
@@ -119,3 +119,18 @@ The prepared privileged trial has not run: noninteractive sudo requires the owne
 References: [NVIDIA power-limit setter](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlDeviceCommands.html)
 and [main-window fan acceptance](main-window-service.md). API documentation establishes requirements,
 not hardware acceptance on this host.
+
+
+## Updater preflight correction: 2026-10-01
+
+The owner's first privileged attempt passed every bundle checksum but stopped with the entry-point
+installation-path guard. The updater called `entry.py check` from `.next`; the strict entry point only
+accepts `/opt/gwe-fan-service`. No power trial ran. Read-only follow-up found the original installation
+still present, no `.next`/`.previous` residue, the service inactive, CoolerControl active and power at 250 W.
+Fan policies were manual at that later observation, so competing controllers must be closed before retry.
+
+The updater now swaps the prepared code into the final path before checking configuration, while its
+rollback trap remains active. The entry-point trust guard is unchanged. Regression fixtures now exercise
+the final-path requirement, and both configuration-check and unit-install failures verify rollback.
+The focused updater/bundle/trial-client suite passes 26 tests on each Python version. A fresh corrected
+bundle is staged at `build/power-service-v2`, with checksums verified. Privileged retry remains pending.

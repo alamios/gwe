@@ -37,6 +37,13 @@ def make_update_tree(tmp_path):
     (paths['code'] / 'old-code.txt').write_text('old code\n')
     paths['unit'].write_text('old service unit\n')
     paths['config'].write_text('{"gpu_uuid":"GPU-test"}\n')
+    # Exercise the entry point's final-location requirement, which an empty
+    # entry stub previously missed. The real entry additionally requires root.
+    (bundle / 'entry.py').write_text(
+        'import os\nfrom pathlib import Path\n'
+        f'assert Path(__file__).parent == Path({str(paths["code"])!r}), "Wrong installation path"\n'
+        'if os.environ.get("UPDATE_FAIL_CHECK") == "1":\n'
+        '    raise SystemExit(74)\n')
 
     script = UPDATE.read_text()
     script = script.replace('/opt/gwe-fan-service', str(paths['code']))
@@ -164,12 +171,13 @@ def test_update_preserves_config_and_retains_old_code_and_unit(tmp_path):
     assert 'not started or enabled' in result.stdout
 
 
-def test_update_rolls_back_code_and_unit_after_post_swap_install_failure(tmp_path):
+@pytest.mark.parametrize('failure', ['UPDATE_FAIL_UNIT', 'UPDATE_FAIL_CHECK'])
+def test_update_rolls_back_code_and_unit_after_post_swap_failure(tmp_path, failure):
     _, updater, paths = make_update_tree(tmp_path)
     bindir = mock_commands(tmp_path)
     original_config = paths['config'].read_bytes()
 
-    result = run_update(updater, bindir, paths, UPDATE_FAIL_UNIT='1')
+    result = run_update(updater, bindir, paths, **{failure: '1'})
 
     assert result.returncode != 0
     assert (paths['code'] / 'old-code.txt').read_text() == 'old code\n'

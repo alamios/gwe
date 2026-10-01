@@ -40,10 +40,12 @@ install -o root -g root -m 0644 lib/pynvml.py /opt/gwe-fan-service.next/lib/pynv
 for name in entry.py COPYING.txt BINDING_VERSION uninstall.sh; do
     install -o root -g root -m 0644 "$name" "/opt/gwe-fan-service.next/$name"
 done
-/usr/bin/python3 -I -B /opt/gwe-fan-service.next/entry.py check
 install -o root -g root -m 0644 /etc/systemd/system/gwe-fan-service.service /opt/gwe-fan-service/unit.before-update
 mv /opt/gwe-fan-service /opt/gwe-fan-service.previous
 mv /opt/gwe-fan-service.next /opt/gwe-fan-service
+# The entry point accepts only the final trusted installation path. Validate
+# after the swap while the rollback trap still protects the previous code/unit.
+/usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py check
 install -o root -g root -m 0644 gwe-fan-service.service /etc/systemd/system/gwe-fan-service.service
 systemctl daemon-reload
 committed=1
