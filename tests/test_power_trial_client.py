@@ -333,3 +333,24 @@ def test_wrapper_installed_mode_creates_missing_runtime_before_guard(tmp_path):
     assert runtime.stat().st_mode & 0o777 == 0o711
     assert 'entry recover' in log
     assert not (runtime / 'power-trial.json').exists()
+
+
+def test_gui_wrapper_uses_explicit_backup_and_power_flag_with_guarded_cleanup(tmp_path):
+    _, wrapper, _bundle, _installed, runtime = make_wrapper_fixture(tmp_path)
+    bindir, _fake_python, trial_python = make_wrapper_commands(tmp_path)
+    database = tmp_path / 'backup.db'
+    database.write_text('test-only placeholder')
+    trial_python.write_text('#!/bin/sh\necho "gui_args $*" >> "$TRIAL_LOG"\n')
+    log = tmp_path / 'gui-wrapper.log'
+    result = subprocess.run(
+        ['bash', str(wrapper), str(trial_python), '--installed', '--gui', str(database)],
+        env={**os.environ, 'PATH': f'{bindir}:{os.environ["PATH"]}',
+             'TRIAL_LOG': str(log), 'TRIAL_RUNTIME': str(runtime)},
+        capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    events = log.read_text()
+    assert f'gui_args scripts/run_service_gui.py --database {database} --allow-power-control' in events
+    assert '--allow-control' not in events
+    assert events.index('entry prepare-power-trial') < events.index('gui_args') < events.index('entry recover')
+    assert 'systemctl start coolercontrold.service' in events
+    assert not (runtime / 'power-trial.json').exists()

@@ -170,3 +170,19 @@ zero at 54 C. The power limit was 250 W. No load was added or hardware settings 
 This validates real one-shot power writes, readback, disconnect semantics and normal guarded cleanup
 on the current driver/X11 host. It does not establish real power-worker crash/stall recovery, main-window
 Power Apply interaction, reboot persistence, continuous service or Wayland/target-OS acceptance.
+
+
+## Guarded main-window acceptance command
+
+The same wrapper can open the real window instead of running the terminal trial:
+
+```bash
+bash scripts/validate_power_service.sh /path/to/prepared/python3.12 --installed --gui "$BACKUP_DB"
+```
+
+It uses the explicit backup read-only and enables only power controls. The independent trial guard still
+limits requests to 240/250 W and restores 250 W at shutdown; this is acceptance behavior, not the normal
+committed-power retention policy. Select 240 W, press Apply, wait for the verified message, then apply
+250 W and close the window. Complete within the unit's 60-second lifetime; if it expires, close and rerun.
+The wrapper's simulated tests verify argument routing, guard-before-window ordering, and cleanup after
+window exit. A real GUI result remains pending.
