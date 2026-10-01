@@ -108,8 +108,11 @@ The owner used the GTK client from `c2426a1` against the unchanged installed ser
 and selected the compatible saved curve from the private backup. The owner reported a failed first
 attempt and a successful second attempt: fan acceleration was audible, followed by the window message
 `Both fans restored to automatic; recovery verified by the service.` No duty trace, temperature trace
-or elapsed timing was captured, and the cause/stage of the first failure is unknown. This is a successful
-second run with an unresolved first failure, not evidence of uniformly reliable GUI operation.
+or elapsed timing was captured. The owner subsequently identified the first failure message as
+`Trial stopped. Automatic recovery is not verified; check the service.` This identifies a failure in the
+GUI control session rather than profile-reader startup; its cause and exact operation remain unknown.
+The message does not prove restoration failed: the client had not verified it. This is a successful second
+run with an unresolved first failure, not evidence of uniformly reliable GUI operation.
 
 Independent read-only follow-up confirmed both NVML policies zero (automatic), temperature 54 C,
 power limit 250 W, service inactive/static with `Result=success`, `ExecMainStatus=0`, `ControlPID=0`,

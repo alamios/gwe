@@ -55,7 +55,7 @@ automatic. Suspend/resume, extended operation and driver/host failure recovery r
 migration is enabled.
 An isolated GTK profile-review window reads an explicit backup without modifying it and prepares opt-in
 ten-second service trials. A saved-curve GUI hardware trial succeeded on Python 3.12/X11 with verified
-automatic recovery on the second attempt; an unexplained first failure remains under investigation.
+automatic recovery on the second attempt; the first GUI-session failure remains unexplained.
 Main-window integration and continuous operation remain pending. See the profile-review guide.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
