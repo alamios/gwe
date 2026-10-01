@@ -180,3 +180,21 @@ A selected curve/chart also does not establish active service ownership. After t
 lifetime expires, close the window and rerun the full procedure before another acquisition. Main-window
 normal timed release now has hardware evidence; explicit early release and closing during active ownership
 still require separately identified hardware results. Wayland and continuous operation remain pending.
+
+
+## Read-only zero-RPM investigation: 2026-10-01
+
+Following the owner's report that the original automatic behavior was zero RPM at similar GPU
+temperatures, CoolerControl configuration was inspected with authorization. Its `device-settings`
+map was empty; no saved modes or active mode were present. `apply_on_boot` was enabled but no saved
+channel settings were found to apply. Profiles existing in the file are not evidence of assignment.
+The recent service journal contained a saved-settings application event but no setting-error events.
+This disk inspection is not proof that no transient runtime control ever occurred.
+
+A subsequent 60-second NVML observation (13 samples, five seconds apart) found both fans continuously
+at 0% and 0 RPM, both policies automatic, and GPU temperature 50 C. Observed power draw was about
+31–34 W. X11 GPUFanControlState was also zero. CoolerControl remained running. No setter, reset,
+service restart, load or reboot was performed by the assistant during this investigation. No current
+retained manual curve was observed. The transition back to zero was not captured; whether the owner
+intervened between observations was asked separately. The cause and duration of the prior spinning
+interval remain undetermined; do not present hysteresis or CoolerControl interference as established.
