@@ -158,3 +158,25 @@ All 254 tests pass in each environment (the existing Reactivex deprecation warni
 3.12/X11 GTK preview smoke check compares the added information, PCIe and thermal fields with the model
 and verifies the power slider remains insensitive at the reported limit. No service connection or GPU
 write occurred. Reopen the source window to load the changes; installed Flatpak/service updates are not needed.
+
+
+## Main-window hardware follow-up: 2026-10-01
+
+The owner ran the installed-service procedure with a saved curve, then reported fans remaining near 30%
+after the service lifetime and reopening the UI. The redacted client log contains four ten-second
+acquisitions followed by `recovery_verified`. Another acquisition near the end of the first service
+lifetime lost its status connection and correctly reported `service_connection_unavailable`, without
+claiming recovery for that attempt. Exact fan policy at that instant was not independently captured.
+
+Two subsequent independent, read-only NVML snapshots showed automatic policy (0) on both fans, speeds
+31%/32%, and temperatures 44 C then 43 C. The power limit was still 250 W. The trial service was inactive
+with success result, its ownership marker was absent, and CoolerControl was active. These observations
+do not support a currently retained manual curve. They do not identify why firmware continued spinning
+the fans or exclude an earlier transient. No fan reset, service change or load was performed during this
+investigation. Screenshots and raw private logs remain excluded from Git.
+
+Automatic policy is not a promise of zero RPM: verify policy and ownership separately from fan speed.
+A selected curve/chart also does not establish active service ownership. After the 60-second service
+lifetime expires, close the window and rerun the full procedure before another acquisition. Main-window
+normal timed release now has hardware evidence; explicit early release and closing during active ownership
+still require separately identified hardware results. Wayland and continuous operation remain pending.

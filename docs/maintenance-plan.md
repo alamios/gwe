@@ -54,7 +54,10 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 - Implemented: opt-in service integration in the historical main window, with separate state, in-memory
   backup profiles, explicit Apply/Restore actions, no autoload and direct-write rejection. Read-only
   private-backup and simulated-service GTK checks passed, including explicit release, timed release and
-  close during ownership. Main-window hardware control remains pending. See
+  close during ownership. Main-window ten-second hardware trials now have logged verified release and independent follow-up
+  automatic-policy reads. A connection loss near the service lifetime was reported without a false
+  recovery claim; its exact instantaneous policy was not captured. Explicit early release and closing
+  during active ownership still need separate hardware results. See
   [main-window service validation](main-window-service.md).
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
