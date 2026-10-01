@@ -73,8 +73,9 @@ substituted with zero.
 Explicit power-limit control is implemented behind a separate launch flag, with UUID/range validation,
 readback verification, an interrupted-transaction journal and rollback to the previous value. Simulated
 backend/GUI checks pass; the first bundle update stopped at its installation-path validation before any
-power trial. The corrected `build/power-service-v2` bundle is prepared; real 250→240→250 W acceptance
-remains pending.
+power trial. The corrected `build/power-service-v2` bundle was subsequently installed, preserving its
+configuration and rollback copy. A missing-runtime preparation failure was corrected in the trial wrapper;
+real 250→240→250 W acceptance remains pending using its `--installed` mode.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

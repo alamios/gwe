@@ -225,6 +225,11 @@ fi
 if [ "$1" = stop ] || [ "$1" = start ]; then exit 0; fi
 exit 91
 ''',
+        'install': '''#!/bin/sh
+echo "install $*" >> "$TRIAL_LOG"
+mkdir -p "$TRIAL_RUNTIME"
+chmod 0711 "$TRIAL_RUNTIME"
+''',
     }
     for name, body in commands.items():
         path = bindir / name
@@ -236,6 +241,7 @@ exit 91
 action=${@: -1}
 echo "entry $action" >> "$TRIAL_LOG"
 case "$action" in
+    check) exit 0 ;;
     prepare-power-trial)
         touch "$TRIAL_RUNTIME/power-trial.json"
         exit "${FAIL_PREPARE:-0}" ;;
@@ -312,3 +318,18 @@ def test_wrapper_runs_recovery_even_when_trial_command_fails(tmp_path):
     assert result.returncode == 17
     assert 'trial' in log and 'entry recover' in log
     assert 'sudo systemctl start coolercontrold.service' in log
+
+
+def test_wrapper_installed_mode_creates_missing_runtime_before_guard(tmp_path):
+    _, wrapper, _bundle, _installed, runtime = make_wrapper_fixture(tmp_path)
+    runtime.rmdir()
+    bindir, _fake_python, trial_python = make_wrapper_commands(tmp_path)
+    result, log = run_wrapper(tmp_path, wrapper, '--installed', runtime, bindir, trial_python)
+    assert result.returncode == 0, result.stderr
+    assert '\nupdate\n' not in '\n' + log
+    assert 'entry check' in log
+    assert log.index('install -d') < log.index('entry prepare-power-trial')
+    assert log.index('entry prepare-power-trial') < log.index('systemctl start gwe-fan-service.service')
+    assert runtime.stat().st_mode & 0o777 == 0o711
+    assert 'entry recover' in log
+    assert not (runtime / 'power-trial.json').exists()

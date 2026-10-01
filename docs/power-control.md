@@ -134,3 +134,24 @@ rollback trap remains active. The entry-point trust guard is unchanged. Regressi
 the final-path requirement, and both configuration-check and unit-install failures verify rollback.
 The focused updater/bundle/trial-client suite passes 26 tests on each Python version. A fresh corrected
 bundle is staged at `build/power-service-v2`, with checksums verified. Privileged retry remains pending.
+
+
+## Trial runtime correction: 2026-10-01
+
+The second owner attempt installed the corrected bundle successfully, preserving the configuration and
+previous code/unit, but `prepare-power-trial` failed with FileNotFoundError. The runtime directory did not
+exist: systemd normally creates it when the service starts, whereas preparation must create the recovery
+guard before starting the service. No power writes ran. Follow-up found service inactive, CoolerControl
+active, both fans automatic and the power limit unchanged at 250 W.
+
+The wrapper now creates a missing runtime directory as root with mode 0711, without replacing or changing
+an existing path. It also accepts `--installed` to check and use the already updated installation, preserving
+the rollback copy instead of attempting another update:
+
+```bash
+bash scripts/validate_power_service.sh /path/to/prepared/python3.12 --installed
+```
+
+Close installed GWE and development controllers before running. The focused wrapper/updater suite passes
+20 tests in each Python environment, including the formerly missing-directory case, ordering of guard
+preparation before startup, cleanup and the absence of an update in installed mode. Hardware retry is pending.

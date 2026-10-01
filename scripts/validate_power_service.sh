@@ -4,12 +4,21 @@
 set -euo pipefail
 cd -- "$(dirname -- "$0")/.."
 trial_python=${1:?Provide the prepared Python 3.12 interpreter}
-bundle=${2:?Provide the reviewed staged service bundle}
+bundle=${2:?Provide the reviewed staged service bundle or --installed}
 [ "$(systemctl show gwe-fan-service.service -p ActiveState --value)" = inactive ] || {
     echo 'Installed service must be inactive before this update'; exit 1;
 }
 sudo -v
-sudo sh "$bundle/update.sh"
+if [ "$bundle" = --installed ]; then
+    sudo /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py check
+else
+    sudo sh "$bundle/update.sh"
+fi
+# The trial guard precedes service startup, so systemd has not necessarily
+# created RuntimeDirectory yet. Never replace or chmod an existing path.
+if sudo test ! -e /run/gwe-fan-service && sudo test ! -L /run/gwe-fan-service; then
+    sudo install -d -o root -g root -m 0711 /run/gwe-fan-service
+fi
 cooler_was_active=0
 if systemctl is-active --quiet coolercontrold.service; then cooler_was_active=1; fi
 cleanup() {
