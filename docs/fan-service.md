@@ -388,3 +388,14 @@ pending. The installed unit is still a sixty-second manual trial, is not enabled
 replace the installed GWE application. No private profiles were migrated.
 This update records results only; no code changed and no automated tests were rerun. The last full
 regression remains 186 passing tests per interpreter on Python 3.12 and 3.14.
+
+
+## Source extension: explicit power transactions
+
+The source bundle now includes an opt-in main-window power client and isolated transactional power worker.
+The currently installed historical fan bundle must be updated before using these operations. The new
+source service adds strict `power_status`/`power_apply` requests, independent power journals and post-stop
+recovery; successful committed limits are retained rather than reset on ordinary shutdown. The unit still
+has no boot enablement and a 60-second lifetime; its stop timeout is now 25 seconds to accommodate all
+independent recovery attempts. Existing fan acceptance records above describe the older installed bundle.
+See [power-control.md](power-control.md) for the reversible update and guarded hardware trial, still pending.

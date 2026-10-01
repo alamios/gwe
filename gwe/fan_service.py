@@ -10,6 +10,7 @@ import struct
 import time
 
 from gwe.fan_curve import FanCurve
+from gwe.nvml_power import milliwatts
 
 MAX_PACKET = 4096
 
@@ -34,8 +35,18 @@ def decode(packet):
         raise ValueError('Unsupported protocol')
     op = request.get('op')
     fields = {'version', 'op', 'points', 'hysteresis', 'vbios_silent'} if op == 'acquire' else {'version', 'op'}
-    if op not in ('status', 'acquire', 'renew', 'release') or set(request) != fields:
+    if op == 'power_apply':
+        fields |= {'limit_mw', 'expected_mw', 'expected_uuid'}
+    if op not in ('status', 'acquire', 'renew', 'release', 'power_status', 'power_apply') or set(request) != fields:
         raise ValueError('Unknown operation or fields')
+    if op == 'power_apply':
+        if not isinstance(request['expected_uuid'], str) or not request['expected_uuid'].startswith('GPU-'):
+            raise ValueError('Invalid expected identity')
+        try:
+            milliwatts(request['limit_mw'])
+            milliwatts(request['expected_mw'])
+        except RuntimeError as error:
+            raise ValueError('Invalid power request') from error
     if op == 'acquire':
         points = request['points']
         if not isinstance(points, list) or not 1 <= len(points) <= 32:
@@ -117,7 +128,7 @@ class FanService:
     Caller owns lifecycle/event-loop scheduling. Production root-to-user socket
     provisioning uses an explicitly supplied root-owned runtime directory.
     """
-    def __init__(self, path, backend, *, allowed_uid, clock=boot_time, provision=False):
+    def __init__(self, path, backend, *, allowed_uid, clock=boot_time, provision=False, power=None):
         self.path = Path(path)
         parent = self.path.parent.stat()
         if type(allowed_uid) is not int or allowed_uid < 0:
@@ -129,6 +140,7 @@ class FanService:
             raise ValueError('Socket directory ownership or mode mismatch')
         self.allowed_uid = allowed_uid
         self.lease = Lease(backend, clock)
+        self.power = power
         self.selector = selectors.DefaultSelector()
         self.listener = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
         try:
@@ -153,6 +165,8 @@ class FanService:
         client.close()
 
     def step(self, timeout=0.1):
+        if self.power is not None:
+            self.power.poll()
         self.lease.expire()
         for key, _ in self.selector.select(min(max(timeout, 0), 0.1)):
             self.lease.expire()
@@ -174,7 +188,7 @@ class FanService:
                     continue
                 try:
                     request = decode(packet)
-                    response = self.lease.request(client, request)
+                    response = self.request(client, request)
                 except (ValueError, TypeError, OverflowError, RecursionError):
                     # Malformed owner traffic terminates its lease, not just the request.
                     self.lease.disconnect(client)
@@ -186,6 +200,25 @@ class FanService:
                 if client in self.clients:
                     self._drop(client)
         self.lease.expire()
+
+    def request(self, client, request):
+        """Power is one-shot, mutually exclusive with every fan lease."""
+        if request['op'].startswith('power_'):
+            if self.power is None:
+                return {'ok': False, 'error': 'power_unavailable'}
+            if request['op'] == 'power_status':
+                return self.power.status()
+            if request['expected_uuid'] != self.power.uuid:
+                return {'ok': False, 'error': 'identity_mismatch'}
+            self.lease.expire()
+            if self.lease.owner is not None or self.lease.state != 'idle':
+                return {'ok': False, 'error': 'busy'}
+            return self.power.start(request['limit_mw'], request['expected_mw'])
+        if request['op'] == 'acquire' and self.power is not None:
+            status = self.power.status()
+            if status['state'] in ('busy', 'fault') or status.get('trial_active') is True:
+                return {'ok': False, 'error': 'power_busy'}
+        return self.lease.request(client, request)
 
     def close(self):
         for client in tuple(self.clients):

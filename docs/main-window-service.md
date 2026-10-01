@@ -22,7 +22,8 @@ a manual duty. The selected curve's hysteresis/silent flag are also shown in the
 
 The service mode always forces the repository's direct-write guard, even if `GWE_MONITOR_ONLY` is unset.
 Its telemetry status remains `read_only`: fan writes belong to the independent service, never the
-repository. Power and overclock controls are disabled, and presenter action handlers also reject them.
+repository. Power controls are disabled unless the separate opt-in service power path is configured; overclock
+controls and all direct repository write handlers remain disabled. See [power control](power-control.md).
 Historical fan updates, autoload, profile persistence and settings actions are bypassed. The regular
 monitor launcher explicitly clears an inherited service flag and continues to block all control.
 
@@ -48,7 +49,8 @@ The telemetry adapter populates these fields when NVML returns a reading:
 | Fan | Each fan's speed percentage and RPM |
 
 An empty, insensitive field means that the adapter has no reading for it; it is not a control permission
-indicator. Power/overclock setters remain disabled independently of telemetry availability. Preview also
+indicator. Direct repository power/overclock setters remain disabled independently of telemetry availability.
+A separate `--allow-power-control` option enables reviewed service transactions; see [power control](power-control.md). Preview also
 disables curve Apply/Restore, while the profile selector and chart remain usable. Do not enable control
 merely to populate missing telemetry fields.
 
@@ -227,3 +229,11 @@ isolate socket-disconnect recovery from the shell's service-stop/post-stop recov
 restoration latency. Earlier service client-disconnection tests provide separate evidence for that path.
 Normal timed release, explicit early release and window close with cleanup now have current-host hardware
 evidence. Continuous operation, suspend/resume and target Wayland/OS validation remain pending.
+
+
+## Power extension
+
+The main window can now route explicit Power Apply actions through the updated privileged service using
+`--allow-power-control`. It neither enables fan trials nor bypasses monitor repository guards. The ordinary
+preview/smoke commands above still keep power disabled. See [power-control.md](power-control.md) for
+transaction semantics, previous-value recovery, bundle update and the pending guarded hardware trial.

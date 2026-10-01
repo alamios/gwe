@@ -61,6 +61,10 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   automatic and zero RPM, service inactive, ownership marker absent and CoolerControl restarted.
   This combined procedure does not isolate disconnect recovery from service-stop recovery. See
   [main-window service validation](main-window-service.md).
+- Implemented: explicit power-limit service transactions and isolated GUI Apply, with live bounds/UUID
+  validation, compare-and-set, exact readback and interrupted-operation recovery. Simulated core, process,
+  protocol, GUI and package-update tests pass; installation and real power-write acceptance are pending
+  the guarded trial. Continuous service/autostart remain unimplemented. See [power control](power-control.md).
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 

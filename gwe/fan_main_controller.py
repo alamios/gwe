@@ -21,7 +21,7 @@ def create_controller(view):
 
 
 class FanMainController:
-    def __init__(self, view, profiles, limits, session, *, allow_control=False, clock=boot_time):
+    def __init__(self, view, profiles, limits, session, *, allow_control=False, clock=boot_time, power=None):
         self.view, self.profiles, self.limits = view, profiles, limits
         self.session, self.allow_control, self.clock = session, allow_control, clock
         self.executor = ThreadPoolExecutor(max_workers=1)
@@ -30,6 +30,9 @@ class FanMainController:
         self.next_tick = 0
         self.closed = False
         self.telemetry_available = False
+        self.power = power
+        if power is not None:
+            power.fan_busy = lambda: self.pending is not None or self.session.state != 'idle'
 
     def start(self):
         self.view.prepare_service_controls()
@@ -57,6 +60,7 @@ class FanMainController:
 
     def refresh(self):
         busy = self.pending is not None or self.session.state != 'idle' or self.closed
+        busy = busy or (self.power is not None and self.power.busy)
         self.view.set_service_selection_enabled(not busy)
         self.view.set_apply_fan_profile_button_enabled(bool(
             self.allow_control and self.telemetry_available and not busy and not self.problem()))
@@ -69,6 +73,8 @@ class FanMainController:
                 message += ' Preview only.'
         if self.session.log_failed:
             message += ' Local diagnostic log unavailable.'
+        if self.power is not None:
+            message += ' ' + self.power.message
         self.view.show_main_infobar_message(message)
 
     def _submit(self, operation, *arguments):
@@ -79,6 +85,7 @@ class FanMainController:
 
     def apply(self):
         if (self.allow_control and self.telemetry_available and self.session.state == 'idle'
+                and not (self.power is not None and self.power.busy)
                 and not self.problem()):
             self._submit(self.session.begin, self.selected.curve, self.limits)
 
@@ -92,6 +99,9 @@ class FanMainController:
     def pulse(self):
         if self.closed:
             return False
+        if self.power is not None:
+            self.power.pulse()
+            self.refresh()
         if self.pending is not None and self.pending.done():
             task, self.pending = self.pending, None
             try:
@@ -112,6 +122,8 @@ class FanMainController:
         if self.closed:
             return
         self.closed = True
+        if self.power is not None:
+            self.power.close()
         self.executor.submit(self.session.close)
         self.executor.shutdown(wait=True)
         self.session._emit('window_closed')

@@ -69,3 +69,12 @@ period. [Temperature threshold enums](https://docs.nvidia.com/deploy/nvml-api/la
 distinguish GPU_MAX (potential throttling below base clock), slowdown and hardware-protection shutdown.
 The adapter preserves the historical Critical-to-GPU_MAX mapping. Support was checked on the current
 Ampere GPU; this does not validate thermal-query support for other architectures.
+
+
+## Power control reference: 2026-10-01
+
+[NVML Device Commands](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlDeviceCommands.html)
+documents `nvmlDeviceSetPowerManagementLimit` in milliwatts, requiring administrator permissions and
+values within queried constraints. Limits do not survive reboot or driver unload. The implementation adds
+its own UUID check, compare-and-set, exact readback and recovery journal; those guarantees are application
+behavior tested separately, not guarantees inferred from API presence. See [power control](power-control.md).

@@ -21,13 +21,15 @@ def main(argv=None):
     source.add_argument('--database', type=Path, help='Explicit backup opened read-only')
     source.add_argument('--demo', action='store_true', help='Use a synthetic curve; telemetry still uses read-only NVML')
     parser.add_argument('--allow-control', action='store_true', help='Enable explicit ten-second service trials')
+    parser.add_argument('--allow-power-control', action='store_true', help='Enable explicit service power-limit Apply')
     checks = parser.add_mutually_exclusive_group()
     checks.add_argument('--smoke-test', action='store_true', help='Check the real main window in preview mode')
     checks.add_argument('--smoke-service', action='store_true', help='Exercise main-window buttons with a simulated service')
+    checks.add_argument('--smoke-power', action='store_true', help='Exercise power Apply with a simulated service only')
     args = parser.parse_args(argv)
-    if args.allow_control and (args.demo or args.smoke_test or args.smoke_service):
+    if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power):
         parser.error('Real control cannot be combined with demo or smoke checks')
-    if args.smoke_service and not args.demo:
+    if (args.smoke_service or args.smoke_power) and not args.demo:
         parser.error('Simulated service smoke test requires --demo')
 
     build = prepare_environment(ROOT, 'service-gui')
@@ -50,7 +52,7 @@ def main(argv=None):
     endpoint = '/run/gwe-fan-service/control.sock'
     stop = threading.Event()
     worker = service = temporary = backend = None
-    if args.smoke_service:
+    if args.smoke_service or args.smoke_power:
         from gwe.fan_service import FanService
         class SimulatedBackend:
             starts = 0
@@ -62,15 +64,34 @@ def main(argv=None):
         backend = SimulatedBackend()
         temporary = tempfile.TemporaryDirectory(prefix='gwe-service-gui-')
         endpoint = str(Path(temporary.name) / 'control.sock')
-        service = FanService(endpoint, backend, allowed_uid=os.geteuid())
+        class SimulatedPower:
+            uuid = None
+            calls = []
+            result = {'state': 'idle', 'operation_id': 0}
+            def poll(self):
+                pass
+            def status(self):
+                return {'ok': True, 'gpu_uuid': self.uuid, **self.result}
+            def start(self, requested, expected):
+                self.calls.append((requested, expected))
+                self.result = dict(state='applied', operation_id=len(self.calls),
+                                   previous_mw=expected, applied_mw=requested)
+                return self.status()
+        simulated_power = SimulatedPower() if args.smoke_power else None
+        service = FanService(endpoint, backend, allowed_uid=os.geteuid(), power=simulated_power)
         def serve():
             while not stop.is_set():
                 service.step(.01)
         worker = threading.Thread(target=serve, daemon=True)
         worker.start()
     session = FanGuiSession(endpoint, event_sink=log.record)
-    configure_factory(lambda view: FanMainController(
-        view, profiles, limits, session, allow_control=args.allow_control or args.smoke_service))
+    def factory(view):
+        from gwe.power_gui import PowerController
+        power = PowerController(view, endpoint, allowed=True, event_sink=log.record) if (
+            args.allow_power_control or args.smoke_power) else None
+        return FanMainController(view, profiles, limits, session,
+                                 allow_control=args.allow_control or args.smoke_service, power=power)
+    configure_factory(factory)
 
     import gi
     for namespace, version in (('Gtk', '3.0'), ('Gdk', '3.0'), ('Dazzle', '1.0'), ('Notify', '0.7')):
@@ -81,8 +102,9 @@ def main(argv=None):
     resource._register()
     from gwe import __main__ as entry
     passed, phase = [], [0]
+    power_edit_started = [0]
     deadline = time.monotonic() + 30
-    if args.smoke_test or args.smoke_service:
+    if args.smoke_test or args.smoke_service or args.smoke_power:
         def check():
             app = entry.INJECTOR.get(entry.Application)
             presenter, view = app._presenter, app._view
@@ -95,6 +117,33 @@ def main(argv=None):
             if time.monotonic() >= deadline or session.state == 'fault':
                 return finish(False)
             if controller is None or not controller.telemetry_available:
+                return GLib.SOURCE_CONTINUE
+            if args.smoke_power:
+                power = controller.power
+                gpu = presenter._latest_status.gpu_status_list[0]
+                simulated_power.uuid = gpu.info.uuid
+                if view._overclock_frame.get_sensitive() or not presenter._latest_status.read_only:
+                    return finish(False)
+                if phase[0] == 0 and view._power_limit_apply_button.get_sensitive():
+                    if simulated_power.calls:
+                        return finish(False)
+                    wanted = max(gpu.power.minimum, gpu.power.limit - 10)
+                    view._power_limit_adjustment.set_value(wanted)
+                    power_edit_started[0] = time.monotonic()
+                    phase[0] = -1
+                elif phase[0] == -1 and time.monotonic() - power_edit_started[0] >= 3:
+                    wanted = max(gpu.power.minimum, gpu.power.limit - 10)
+                    if view._power_limit_adjustment.get_value() != wanted:
+                        return finish(False)
+                    if not view._power_limit_apply_button.get_sensitive():
+                        return GLib.SOURCE_CONTINUE
+                    view._power_limit_apply_button.clicked()
+                    phase[0] = 1
+                elif phase[0] == 1 and power.operation_id is None and simulated_power.calls:
+                    expected = round(gpu.power.limit * 1000)
+                    wanted = round(max(gpu.power.minimum, gpu.power.limit - 10) * 1000)
+                    return finish(simulated_power.calls == [(wanted, expected)]
+                                  and 'Power verified:' in power.message and backend.starts == 0)
                 return GLib.SOURCE_CONTINUE
             if (view._overclock_frame.get_sensitive() or view._power_limit_apply_button.get_sensitive()
                     or not presenter._latest_status.read_only):
@@ -193,14 +242,14 @@ def main(argv=None):
         if service is not None:
             # Let the simulated server process socket EOF before checking window-close recovery.
             expires = time.monotonic() + 2
-            while backend.stops < 3 and time.monotonic() < expires:
+            while args.smoke_service and backend.stops < 3 and time.monotonic() < expires:
                 time.sleep(.01)
             stop.set()
             worker.join(2)
             service.close()
             temporary.cleanup()
-    if args.smoke_test or args.smoke_service:
-        return 0 if passed == [True] and (backend is None or backend.starts == backend.stops == 3) else 1
+    if args.smoke_test or args.smoke_service or args.smoke_power:
+        return 0 if passed == [True] and (not args.smoke_service or backend.starts == backend.stops == 3) else 1
     return result
 
 

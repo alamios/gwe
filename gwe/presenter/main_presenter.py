@@ -184,6 +184,8 @@ class MainPresenter:
 
     def on_power_limit_apply_button_clicked(self, *_: Any) -> None:
         if service_trial():
+            if self._service_controller is not None and self._service_controller.power is not None:
+                self._service_controller.power.apply()
             return
         self._composite_disposable.add(self._set_power_limit_interactor.execute(*self.main_view.get_power_limit()).pipe(
             operators.subscribe_on(self._scheduler),
@@ -370,6 +372,9 @@ class MainPresenter:
                 self.main_view.refresh_status(status, self._gpu_index)
                 self._historical_data_presenter.add_status(status, self._gpu_index)
             if self._service_controller is not None:
+                if self._service_controller.power is not None:
+                    self._service_controller.power.telemetry(
+                        status.gpu_status_list[self._gpu_index] if status is not None else None)
                 self._service_controller.telemetry(
                     status is not None and status.gpu_status_list[self._gpu_index].temp.gpu is not None)
             return

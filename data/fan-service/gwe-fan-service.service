@@ -1,5 +1,5 @@
 [Unit]
-Description=GWE experimental supervised fan control (60 second trial)
+Description=GWE experimental supervised fan and power control (60 second trial)
 After=multi-user.target
 
 [Service]
@@ -14,7 +14,7 @@ RuntimeMaxSec=60s
 WatchdogSec=10s
 WatchdogSignal=SIGKILL
 TimeoutStartSec=10s
-TimeoutStopSec=15s
+TimeoutStopSec=25s
 KillMode=control-group
 Restart=no
 UMask=0077

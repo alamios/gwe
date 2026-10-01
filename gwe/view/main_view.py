@@ -270,7 +270,11 @@ class MainView(MainViewInterface):
                         and minimum != maximum):
                     self._power_limit_adjustment.set_lower(minimum)
                     self._power_limit_adjustment.set_upper(maximum)
-                    self._power_limit_adjustment.set_value(limit)
+                    power_snapshot = (gpu_status.info.uuid, minimum, maximum, limit)
+                    if not (service_trial() and getattr(self, '_service_power_has_control', False)
+                            and getattr(self, '_service_power_snapshot', None) == power_snapshot):
+                        self._power_limit_adjustment.set_value(limit)
+                    self._service_power_snapshot = power_snapshot
                     self._power_limit_scale.clear_marks()
                     self._power_limit_scale.add_mark(default, Gtk.PositionType.BOTTOM, f"{default:.0f}")
                     self._power_limit_scale.set_sensitive(not status.read_only)
@@ -408,6 +412,14 @@ class MainView(MainViewInterface):
 
     def set_service_selection_enabled(self, enabled: bool) -> None:
         self._fan_combobox.set_sensitive(enabled)
+
+    def set_service_power_enabled(self, enabled: bool, message: str) -> None:
+        self._service_power_enabled = enabled
+        if enabled:
+            self._service_power_has_control = True
+        self._power_limit_scale.set_sensitive(enabled)
+        self._power_limit_apply_button.set_sensitive(enabled)
+        self._power_limit_apply_button.set_tooltip_text(message)
 
     def refresh_service_curve(self, curve) -> None:
         if curve is None:

@@ -23,7 +23,7 @@ trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
 # Refuse unknown files: install only the reviewed fixed file set.
 install -d -o root -g root -m 0755 /opt/gwe-fan-service/lib/gwe
-for module in fan_curve fan_service fan_process fan_daemon nvml_fan_control __init__; do
+for module in fan_curve fan_service fan_process fan_daemon nvml_fan_control nvml_power power_process power_trial __init__; do
     install -o root -g root -m 0644 "lib/gwe/$module.py" "/opt/gwe-fan-service/lib/gwe/$module.py"
 done
 install -o root -g root -m 0644 lib/pynvml.py /opt/gwe-fan-service/lib/pynvml.py

@@ -15,6 +15,8 @@ import time
 
 from gwe.fan_process import ProcessBackend, nvml_factory, recover_worker
 from gwe.fan_service import FanService, boot_time
+from gwe.nvml_power import PowerRecord
+from gwe.power_process import PowerBackend, recovery_worker as power_recovery_worker
 
 RUNTIME = Path('/run/gwe-fan-service')
 UUID_PATTERN = re.compile(r'GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}')
@@ -99,9 +101,40 @@ def recover_record(path):
     path.unlink()
 
 
+def recover_power_record(trial=False):
+    from gwe.power_trial import TrialRecord
+    journal = (TrialRecord if trial else PowerRecord)(RUNTIME)
+    path = journal.pending
+    if not path.exists():
+        return
+    trusted(path)
+    record = journal.read(path)
+    if not UUID_PATTERN.fullmatch(record['gpu_uuid']):
+        raise ValueError('Invalid recovery identity')
+    context = multiprocessing.get_context('spawn')
+    parent, child = context.Pipe(duplex=False)
+    process = context.Process(target=power_recovery_worker,
+                              args=(child, nvml_factory, str(RUNTIME), record['gpu_uuid'], trial))
+    try:
+        process.start()
+        child.close()
+        process.join(5)
+        if process.is_alive():
+            process.kill()
+            process.join(2)
+            raise RuntimeError('Power recovery timed out')
+        if process.exitcode != 0 or path.exists():
+            raise RuntimeError('Power recovery failed')
+    finally:
+        parent.close()
+        child.close()
+        if process.pid is not None and not process.is_alive():
+            process.close()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('run', 'recover', 'check'))
+    parser.add_argument('action', choices=('run', 'recover', 'check', 'prepare-power-trial'))
     parser.add_argument('--config', default='/etc/gwe-fan-service.json')
     args = parser.parse_args(argv)
     if os.geteuid() != 0:
@@ -114,11 +147,25 @@ def main(argv=None):
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         if args.action == 'recover':
             # Called only after systemd has stopped the entire service cgroup.
-            recover_record(RUNTIME / 'owned.json')
+            failures = []
+            for operation in (lambda: recover_record(RUNTIME / 'owned.json'), recover_power_record,
+                              lambda: recover_power_record(trial=True)):
+                try:
+                    operation()
+                except Exception as error:
+                    failures.append(error)
+            if failures:
+                raise RuntimeError('Post-stop recovery failed')
             return 0
         config = load_config(args.config)
         if args.action == 'check':
             print('Configuration valid; no NVML calls performed')
+            return 0
+        if args.action == 'prepare-power-trial':
+            from gwe.power_trial import prepare
+            trusted(RUNTIME)
+            prepare(nvml_factory(), RUNTIME, config['gpu_uuid'])
+            print('Trial guard prepared: 250 -> 240 -> 250 W; no GPU settings changed')
             return 0
         trusted(RUNTIME)
         if stat.S_IMODE(RUNTIME.stat().st_mode) != 0o711:
@@ -137,7 +184,7 @@ def main(argv=None):
                 if name in ('gwe', 'fancontrol', 'nvfancontrol'):
                     raise RuntimeError('Another fan controller is running')
         record = OwnershipRecord(RUNTIME / 'owned.json', config['gpu_uuid'])
-        if record.path.exists():
+        if record.path.exists() or (RUNTIME / 'power-pending.json').exists():
             raise RuntimeError('Unresolved recovery record; refusing new control')
         endpoint = RUNTIME / 'control.sock'
         if endpoint.exists():
@@ -145,7 +192,8 @@ def main(argv=None):
                 raise RuntimeError('Unexpected existing endpoint')
             endpoint.unlink()  # Root-owned parent, only after an old service has stopped.
         backend = ProcessBackend(config['gpu_uuid'], record=record.record, clear=record.clear)
-        service = FanService(endpoint, backend, allowed_uid=config['allowed_uid'], provision=True)
+        power = PowerBackend(config['gpu_uuid'], RUNTIME)
+        service = FanService(endpoint, backend, allowed_uid=config['allowed_uid'], provision=True, power=power)
         stopping = False
         def stop(signum, frame):
             nonlocal stopping
@@ -158,15 +206,20 @@ def main(argv=None):
             last_notify = 0
             while not stopping and boot_time() < expires:
                 service.step()
-                if backend.state == 'recovery_failed':
+                if backend.state == 'recovery_failed' or power.result['state'] == 'fault':
                     raise RuntimeError('Backend recovery failed')
                 if boot_time() - last_notify >= 1:
                     notify('WATCHDOG=1')
                     last_notify = boot_time()
         finally:
-            service.close()
-            if not backend.close():
-                raise RuntimeError('Backend shutdown recovery failed')
+            try:
+                service.close()
+            finally:
+                try:
+                    power.close()
+                finally:
+                    if not backend.close():
+                        raise RuntimeError('Backend shutdown recovery failed')
         return 0
     except Exception as error:
         # Do not expose private configuration, UUID or underlying driver messages.

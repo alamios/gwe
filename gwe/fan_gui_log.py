@@ -8,7 +8,8 @@ import stat
 import threading
 
 EVENTS = {'preview_opened', 'control_window_opened', 'acquire_requested', 'starting', 'active',
-          'release_requested', 'stopping', 'recovery_verified', 'failed', 'disconnected', 'window_closed'}
+          'release_requested', 'stopping', 'recovery_verified', 'failed', 'disconnected', 'window_closed',
+          'power_verified', 'power_rolled_back', 'power_failed'}
 STATES = {'idle', 'starting', 'active', 'stopping', 'fault'}
 OPERATIONS = {'preview', 'connect', 'status', 'acquire', 'renew', 'release', 'ui_tick'}
 ERRORS = {'invalid_response', 'request_refused', 'service_busy', 'service_fault',

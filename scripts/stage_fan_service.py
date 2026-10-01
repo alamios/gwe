@@ -7,7 +7,7 @@ from importlib import metadata, util
 from pathlib import Path
 import shutil
 
-MODULES = ('fan_curve', 'fan_service', 'fan_process', 'fan_daemon', 'nvml_fan_control')
+MODULES = ('fan_curve', 'fan_service', 'fan_process', 'fan_daemon', 'nvml_fan_control', 'nvml_power', 'power_process', 'power_trial')
 
 
 def stage(destination):
@@ -24,7 +24,7 @@ def stage(destination):
         shutil.copyfile(root / 'gwe' / f'{name}.py', destination / 'lib' / 'gwe' / f'{name}.py')
     shutil.copyfile(source, destination / 'lib' / 'pynvml.py')  # Retain NVIDIA's complete license header.
     shutil.copyfile(root / 'COPYING.txt', destination / 'COPYING.txt')
-    for name in ('entry.py', 'gwe-fan-service.service', 'config.example.json', 'install.sh', 'uninstall.sh'):
+    for name in ('entry.py', 'gwe-fan-service.service', 'config.example.json', 'install.sh', 'update.sh', 'uninstall.sh'):
         shutil.copyfile(root / 'data' / 'fan-service' / name, destination / name)
     (destination / 'BINDING_VERSION').write_text(binding.version + '\n')
     lines = []
