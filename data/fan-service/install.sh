@@ -30,6 +30,9 @@ install -o root -g root -m 0644 lib/pynvml.py /opt/gwe-fan-service/lib/pynvml.py
 for name in entry.py COPYING.txt BINDING_VERSION uninstall.sh; do
     install -o root -g root -m 0644 "$name" "/opt/gwe-fan-service/$name"
 done
+if [ -f continuous.conf ]; then
+    install -o root -g root -m 0644 continuous.conf /opt/gwe-fan-service/continuous.conf
+fi
 install -o root -g root -m 0600 config.example.json /etc/gwe-fan-service.json
 install -o root -g root -m 0644 gwe-fan-service.service /etc/systemd/system/gwe-fan-service.service
 systemctl daemon-reload

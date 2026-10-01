@@ -36,6 +36,7 @@ class FanMainController:
 
     def start(self):
         self.view.prepare_service_controls()
+        self.view.set_service_continuous(self.session.continuous)
         self.view.refresh_fan_profile_combobox(
             [(profile.identifier, escape(profile.name)) for profile in self.profiles], None)
         self.refresh()

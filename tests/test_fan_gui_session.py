@@ -255,3 +255,31 @@ def test_failed_log_write_cannot_prevent_release_and_disconnect(session):
     instance.tick(0)
     assert instance.state == 'idle' and client.closed
     assert 'private' not in instance.message
+
+
+def test_continuous_session_renews_past_trial_deadline_until_explicit_release(session):
+    instance, client, now = session
+    instance.continuous = True
+    instance.begin(CURVE, (30, 100))
+    assert instance.deadline is None
+    for instant in range(1, 181):
+        now[0] = instant
+        instance.tick(instant)
+    assert instance.state == 'active'
+    assert [op for op, fields in client.calls].count('renew') == 180
+    instance.release()
+    client.state, client.owned = 'idle', False
+    instance.tick(now[0])
+    assert instance.state == 'idle' and client.closed
+    assert 'recovery verified' in instance.message
+
+
+def test_continuous_ui_stall_still_disconnects_without_rearming(session):
+    instance, client, now = session
+    instance.continuous = True
+    instance.begin(CURVE, (30, 100))
+    instance.tick(0)
+    now[0] = 4
+    instance.tick(4)
+    assert instance.state == 'fault' and client.closed
+    assert instance.last_error == 'ui_heartbeat_expired'

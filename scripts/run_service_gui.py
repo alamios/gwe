@@ -22,11 +22,14 @@ def main(argv=None):
     source.add_argument('--demo', action='store_true', help='Use a synthetic curve; telemetry still uses read-only NVML')
     parser.add_argument('--allow-control', action='store_true', help='Enable explicit ten-second service trials')
     parser.add_argument('--allow-power-control', action='store_true', help='Enable explicit service power-limit Apply')
+    parser.add_argument('--continuous', action='store_true', help='Keep an explicitly applied curve until release/close')
     checks = parser.add_mutually_exclusive_group()
     checks.add_argument('--smoke-test', action='store_true', help='Check the real main window in preview mode')
     checks.add_argument('--smoke-service', action='store_true', help='Exercise main-window buttons with a simulated service')
     checks.add_argument('--smoke-power', action='store_true', help='Exercise power Apply with a simulated service only')
     args = parser.parse_args(argv)
+    if args.continuous and not (args.allow_control or args.smoke_service):
+        parser.error('--continuous requires --allow-control or --smoke-service')
     if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power):
         parser.error('Real control cannot be combined with demo or smoke checks')
     if (args.smoke_service or args.smoke_power) and not args.demo:
@@ -89,7 +92,7 @@ def main(argv=None):
                 service.step(.01)
         worker = threading.Thread(target=serve, daemon=True)
         worker.start()
-    session = FanGuiSession(endpoint, event_sink=log.record)
+    session = FanGuiSession(endpoint, event_sink=log.record, continuous=args.continuous)
     def factory(view):
         from gwe.power_gui import PowerController
         power = PowerController(view, endpoint, allowed=True, event_sink=log.record) if (
@@ -229,7 +232,13 @@ def main(argv=None):
                 view._fan_apply_button.clicked()
                 phase[0] = 3
             elif phase[0] == 3 and session.state == 'active' and controller.pending is None:
+                power_edit_started[0] = time.monotonic()
                 phase[0] = 4
+            elif (phase[0] == 4 and args.continuous and session.state == 'active'
+                  and controller.pending is None and time.monotonic() - power_edit_started[0] >= 11):
+                if view._fan_apply_button.get_label() != 'Apply selected curve':
+                    return finish(False)
+                view._fan_edit_button.clicked()
             elif phase[0] == 4 and session.state == 'idle' and controller.pending is None:
                 if backend.stops != 2 or 'recovery verified' not in session.message:
                     return finish(False)

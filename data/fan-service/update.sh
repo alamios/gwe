@@ -40,6 +40,9 @@ install -o root -g root -m 0644 lib/pynvml.py /opt/gwe-fan-service.next/lib/pynv
 for name in entry.py COPYING.txt BINDING_VERSION uninstall.sh; do
     install -o root -g root -m 0644 "$name" "/opt/gwe-fan-service.next/$name"
 done
+if [ -f continuous.conf ]; then
+    install -o root -g root -m 0644 continuous.conf /opt/gwe-fan-service.next/continuous.conf
+fi
 install -o root -g root -m 0644 /etc/systemd/system/gwe-fan-service.service /opt/gwe-fan-service/unit.before-update
 mv /opt/gwe-fan-service /opt/gwe-fan-service.previous
 mv /opt/gwe-fan-service.next /opt/gwe-fan-service

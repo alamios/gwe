@@ -132,11 +132,28 @@ def recover_power_record(trial=False):
             process.close()
 
 
+def serve(service, backend, power, stopping, *, continuous=False):
+    """Keep watchdog and recovery checks identical in trial and manual sessions."""
+    notify('READY=1')
+    expires = None if continuous else boot_time() + 60
+    last_notify = 0
+    while not stopping() and (expires is None or boot_time() < expires):
+        service.step()
+        if backend.state == 'recovery_failed' or power.result['state'] == 'fault':
+            raise RuntimeError('Backend recovery failed')
+        if boot_time() - last_notify >= 1:
+            notify('WATCHDOG=1')
+            last_notify = boot_time()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('run', 'recover', 'check', 'prepare-power-trial'))
     parser.add_argument('--config', default='/etc/gwe-fan-service.json')
+    parser.add_argument('--continuous', action='store_true', help='Manual session without the trial lifetime')
     args = parser.parse_args(argv)
+    if args.continuous and args.action != 'run':
+        parser.error('--continuous is valid only for run')
     if os.geteuid() != 0:
         parser.error('This installed service requires root')
     lock = None
@@ -184,6 +201,8 @@ def main(argv=None):
                 if name in ('gwe', 'fancontrol', 'nvfancontrol'):
                     raise RuntimeError('Another fan controller is running')
         record = OwnershipRecord(RUNTIME / 'owned.json', config['gpu_uuid'])
+        if args.continuous and (RUNTIME / 'power-trial.json').exists():
+            raise RuntimeError('Acceptance guard must be recovered before a continuous session')
         if record.path.exists() or (RUNTIME / 'power-pending.json').exists():
             raise RuntimeError('Unresolved recovery record; refusing new control')
         endpoint = RUNTIME / 'control.sock'
@@ -201,16 +220,7 @@ def main(argv=None):
         for sig in (signal.SIGTERM, signal.SIGINT):
             signal.signal(sig, stop)
         try:
-            notify('READY=1')
-            expires = boot_time() + 60
-            last_notify = 0
-            while not stopping and boot_time() < expires:
-                service.step()
-                if backend.state == 'recovery_failed' or power.result['state'] == 'fault':
-                    raise RuntimeError('Backend recovery failed')
-                if boot_time() - last_notify >= 1:
-                    notify('WATCHDOG=1')
-                    last_notify = boot_time()
+            serve(service, backend, power, lambda: stopping, continuous=args.continuous)
         finally:
             try:
                 service.close()

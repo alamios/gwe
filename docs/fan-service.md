@@ -398,4 +398,13 @@ source service adds strict `power_status`/`power_apply` requests, independent po
 recovery; successful committed limits are retained rather than reset on ordinary shutdown. The unit still
 has no boot enablement and a 60-second lifetime; its stop timeout is now 25 seconds to accommodate all
 independent recovery attempts. Existing fan acceptance records above describe the older installed bundle.
-See [power-control.md](power-control.md) for the reversible update and guarded hardware trial, still pending.
+See [power-control.md](power-control.md) for the reversible update and accepted guarded hardware trials.
+
+## Manual continuous-session extension
+
+The daemon now accepts `run --continuous` for explicit manual sessions. Other actions reject that
+flag. The default daemon and installed unit still retain the historical 60-second trial behavior.
+A staged runtime override can remove that lifetime while retaining the watchdog and post-stop recovery.
+Existing fan leases, worker supervision and power transaction semantics are unchanged. This is
+prepared and simulated-tested, not yet installed or accepted for extended hardware use. See
+[continuous session](continuous-session.md), including its retained 60 C ceiling and rollback handling.

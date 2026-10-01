@@ -9,7 +9,7 @@ class GuiTrialError(RuntimeError):
 
 class FanGuiSession:
     """Serialize calls in one I/O worker. Renew only in response to fresh UI ticks."""
-    def __init__(self, path, *, factory=FanClient, clock=boot_time, event_sink=None):
+    def __init__(self, path, *, factory=FanClient, clock=boot_time, event_sink=None, continuous=False):
         self.path, self.factory, self.clock = path, factory, clock
         self.client = None
         self.state = 'idle'
@@ -19,6 +19,7 @@ class FanGuiSession:
         self.last_operation = 'preview'
         self.event_sink = event_sink
         self.log_failed = False
+        self.continuous = continuous
 
     def _emit(self, event):
         if self.event_sink is not None:
@@ -74,9 +75,10 @@ class FanGuiSession:
             self._request('acquire', points=[list(point) for point in curve.points],
                           hysteresis=curve.hysteresis, vbios_silent=curve.vbios_silent)
             self.last_tick = self.clock()
-            self.deadline = self.last_tick + 10
+            self.deadline = None if self.continuous else self.last_tick + 10
             self.state = 'starting'
-            self.message = 'Starting a ten-second trial; waiting for verified control.'
+            self.message = ('Starting the selected curve; waiting for verified control.' if self.continuous
+                            else 'Starting a ten-second trial; waiting for verified control.')
             self._emit('starting')
         except Exception as error:
             self._fail(error)
@@ -103,7 +105,7 @@ class FanGuiSession:
                 self.last_operation = 'ui_tick'
                 raise GuiTrialError('ui_heartbeat_expired')
             self.last_tick = now
-            if self.state in ('starting', 'active') and now >= self.deadline:
+            if self.state in ('starting', 'active') and self.deadline is not None and now >= self.deadline:
                 self.release()
             if self.client is None:
                 return
@@ -119,7 +121,7 @@ class FanGuiSession:
                     raise GuiTrialError('recovery_not_verified')
             elif state in ('starting', 'active') and status.get('owned') is True:
                 # Native/socket delays must not extend the ten-second trial.
-                if self.clock() >= self.deadline:
+                if self.deadline is not None and self.clock() >= self.deadline:
                     self.release()
                 else:
                     self._request('renew')

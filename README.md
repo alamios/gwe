@@ -25,6 +25,7 @@
 - [Isolated fan-profile review and GUI service client](docs/fan-gui.md)
 - [Main-window NVML service integration](docs/main-window-service.md)
 - [Explicit power-limit control and guarded acceptance](docs/power-control.md)
+- [Experimental manual continuous session](docs/continuous-session.md)
 - [Development monitor-only integration](docs/monitor-mode.md)
 - [Preparing the development GUI](docs/gui-development.md)
 - [Configuration backup and restore](docs/configuration-backup.md)
@@ -38,7 +39,8 @@ current X11 host with administrator privileges. Recovery after worker SIGTERM, S
 stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-420 tests pass on both Python versions, including the socket-to-process service, client loss and recovery. The isolated Python
+436 automated tests pass on both Python versions, including the socket-to-process service, client loss
+and recovery. The isolated Python
 3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
 fans at 55–56 C and verified automatic restoration; CoolerControl is running again. Unprivileged reset
@@ -85,6 +87,10 @@ An optional single-command service recovery check now combines SIGKILL and watch
 automatic guarded restoration and independent readback. Both hardware scenarios passed on 2026-10-02,
 restoring 250 W and automatic fan policies with no pending records. The final watchdog failure state is
 expected; CoolerControl is active again.
+An experimental manual continuous session is prepared with explicit Apply/Restore, renewable ownership
+and the existing watchdog/post-stop recovery. Automated and simulated GTK checks pass. Its bundle is
+staged, not installed; extended hardware use remains pending. The conservative 60 C fan-control ceiling
+is retained for initial light-load use. See the continuous-session guide for its single-command launcher.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

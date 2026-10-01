@@ -233,8 +233,11 @@ class MainView(MainViewInterface):
             if status.read_only:
                 self._window.set_title("GreenWithEnvy — Service trial" if service_trial()
                                        else "GreenWithEnvy — Monitor only")
-                self._fan_warning_label.set_text("Explicit ten-second service trials; no startup application."
-                                                 if service_trial() else "Fan control is disabled in monitor-only mode.")
+                self._fan_warning_label.set_text(
+                    ("Explicit curve control; closing restores automatic."
+                     if getattr(self, '_service_continuous', False)
+                     else "Explicit ten-second service trials; no startup application.")
+                    if service_trial() else "Fan control is disabled in monitor-only mode.")
                 self._overclock_warning_label.set_text("Overclocking is disabled during service trials."
                                                        if service_trial() else "Overclocking is disabled in monitor-only mode.")
             if self._first_refresh or status.read_only:
@@ -415,6 +418,12 @@ class MainView(MainViewInterface):
 
     def set_service_selection_enabled(self, enabled: bool) -> None:
         self._fan_combobox.set_sensitive(enabled)
+
+    def set_service_continuous(self, enabled: bool) -> None:
+        self._service_continuous = enabled
+        if enabled:
+            self._fan_apply_button.set_label('Apply selected curve')
+            self._fan_apply_button.set_tooltip_text('Runs while this window renews its service lease')
 
     def set_service_power_enabled(self, enabled: bool, message: str) -> None:
         self._service_power_enabled = enabled
