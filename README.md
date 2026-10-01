@@ -38,7 +38,7 @@ current X11 host with administrator privileges. Recovery after worker SIGTERM, S
 stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-379 tests pass on both Python versions, including the socket-to-process service, client loss and recovery. The isolated Python
+420 tests pass on both Python versions, including the socket-to-process service, client loss and recovery. The isolated Python
 3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
 fans at 55–56 C and verified automatic restoration; CoolerControl is running again. Unprivileged reset
@@ -81,6 +81,8 @@ allowlisted diagnostics were improved, the owner confirmed a visible verified re
 window. Its final session logged two verified transactions and independent follow-up confirmed 250 W,
 automatic fan policies and clean shutdown. Earlier GUI failures remain unexplained. Power-worker fault
 recovery on real hardware, continuous service and target-OS/Wayland validation remain pending.
+An optional single-command service recovery check now combines SIGKILL and watchdog scenarios with
+automatic guarded restoration and independent readback; its real execution remains pending.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

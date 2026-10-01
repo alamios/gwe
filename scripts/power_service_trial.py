@@ -54,7 +54,7 @@ def apply_and_wait(uuid, desired, expected):
     raise RuntimeError('Power operation timed out')
 
 
-def main():
+def main(*, hold=False):
     uuid, previous = reading()
     if previous != 250000:
         raise RuntimeError('Baseline must be 250 W')
@@ -71,7 +71,9 @@ def main():
         if reading(uuid)[1] != 240000:
             raise RuntimeError('Committed limit changed after disconnect')
         print('Verified committed limit survives client disconnect', flush=True)
-        apply_and_wait(uuid, 250000, 240000)
+        if not hold:
+            apply_and_wait(uuid, 250000, 240000)
+        return uuid
     finally:
         # Uncertain results are not blindly retried. The wrapper stops the unit;
         # its independent trial guard then restores the original baseline.

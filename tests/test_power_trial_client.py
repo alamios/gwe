@@ -142,6 +142,13 @@ def test_client_refusal_is_not_retried(monkeypatch):
     assert len([call for call in trial.calls if call[0] == 'power_apply']) == 1
 
 
+def test_recovery_trial_hold_commits_only_240_for_independent_guard(monkeypatch):
+    trial = TrialHarness(monkeypatch)
+    assert trial.module.main(hold=True) == trial.gpu_uuid
+    assert trial.current_mw == 240000
+    assert [fields['limit_mw'] for op, fields in trial.calls if op == 'power_apply'] == [240000]
+
+
 @pytest.mark.parametrize('status', [
     {'ok': True, 'gpu_uuid': 'GPU-other', 'state': 'idle'},
     {'ok': True, 'gpu_uuid': 'GPU-trial-test', 'state': 'busy'},
@@ -352,5 +359,23 @@ def test_gui_wrapper_uses_explicit_backup_and_power_flag_with_guarded_cleanup(tm
     assert f'gui_args scripts/run_service_gui.py --database {database} --allow-power-control' in events
     assert '--allow-control' not in events
     assert events.index('entry prepare-power-trial') < events.index('gui_args') < events.index('entry recover')
+    assert 'systemctl start coolercontrold.service' in events
+    assert not (runtime / 'power-trial.json').exists()
+
+
+@pytest.mark.parametrize('trial_exit', ['0', '17'])
+def test_recovery_wrapper_routes_one_command_and_always_cleans_up(tmp_path, trial_exit):
+    _, wrapper, _bundle, _installed, runtime = make_wrapper_fixture(tmp_path)
+    bindir, _fake_python, trial_python = make_wrapper_commands(tmp_path)
+    trial_python.write_text('#!/bin/sh\necho "recovery_args $*" >> "$TRIAL_LOG"\nexit "$TRIAL_EXIT"\n')
+    log = tmp_path / 'recovery-wrapper.log'
+    result = subprocess.run(['bash', str(wrapper), str(trial_python), '--installed', '--recovery'],
+                            env={**os.environ, 'PATH': f'{bindir}:{os.environ["PATH"]}',
+                                 'TRIAL_LOG': str(log), 'TRIAL_RUNTIME': str(runtime),
+                                 'TRIAL_EXIT': trial_exit}, capture_output=True, text=True)
+    assert result.returncode == int(trial_exit), result.stderr
+    events = log.read_text()
+    assert 'recovery_args scripts/power_recovery_trial.py' in events
+    assert events.index('entry prepare-power-trial') < events.index('recovery_args') < events.index('entry recover')
     assert 'systemctl start coolercontrold.service' in events
     assert not (runtime / 'power-trial.json').exists()

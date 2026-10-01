@@ -3,7 +3,7 @@
 Implemented in source on 2026-10-01. This extends the manually started experimental service; it does
 not enable boot startup, replace the installed Flatpak, enable overclocking or change drivers/packages.
 The default X11 controller and isolated monitor remain unchanged. The reviewed service bundle is installed and the guarded 250→240→250 W hardware trial passed.
-Real main-window Power Apply interaction remains pending.
+Visible main-window Power Apply verification has also passed on the current host.
 
 ## Semantics and boundary
 
@@ -239,3 +239,30 @@ current Python 3.12/X11 host. The earlier unexplained failures remain historical
 
 Real power-worker crash/stall recovery, continuous operation, suspend/resume, reboot persistence and
 target-OS/Wayland acceptance remain unvalidated. Keep the bounded diagnostic log for future failures.
+
+## Single-command service recovery check
+
+With GWE and development windows closed and no heavy load, run from the repository:
+
+```bash
+bash scripts/validate_power_service.sh /path/to/prepared/python3.12 --installed --recovery
+```
+
+No service update or GUI interaction is needed. The wrapper checks the installed configuration, arranges
+controller exclusivity and prepares the same independent 250 W recovery guard. The runner commits and
+independently verifies 240 W, kills the complete service with SIGKILL and checks its post-stop recovery.
+Only after verifying 250 W, the same GPU, both automatic fan policies and absence of pending records
+does it prepare the second guard, restart the service and repeat with SIGSTOP/watchdog termination.
+Each stop has a 25-second polling deadline and subprocess calls are bounded. Unexpected results abort
+the sequence. The wrapper always attempts cleanup and restores CoolerControl's previous state only
+after successful recovery. Both scenarios print PASS or the command fails; no load or clock writes occur.
+
+This checks systemd recovery of the acceptance guard after a committed reduction. It does not force a
+real NVML worker to fail between its setter and journal commit. That interrupted-transaction boundary
+is tested automatically with spawned simulated NVML workers: SIGKILL and SIGSTOP after the simulated
+hardware change both restore the previous value through the independent recovery worker. No privileged
+fault hook has been added to the installed service. Real execution of the combined command is pending.
+
+Validation on 2026-10-02: the complete automated suite passes with 420 tests on each of Python 3.12 and
+3.14, including both worker signals, recovery-runner failure/deadline/identity checks and shell cleanup
+after successful or failed recovery runs. The existing Reactivex datetime deprecation warning remains.

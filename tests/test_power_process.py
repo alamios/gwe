@@ -2,6 +2,7 @@
 """Power process adapter tests with an isolated, shared NVML double."""
 import multiprocessing
 import os
+import signal
 import time
 
 import pytest
@@ -41,6 +42,10 @@ class FakeNvml:
             self.current.value = value
             os._exit(17)
         if value == 250000 and self.setter_mode.value == 2:
+            self.release.wait(30)
+        # 4 holds after the simulated hardware changed, before commit/readback.
+        if value == 250000 and self.setter_mode.value == 4:
+            self.current.value = value
             self.release.wait(30)
         # 3 makes recovery fail, preserving the pending journal.
         if value == 200000 and self.setter_mode.value == 3:
@@ -160,3 +165,18 @@ def test_trial_guard_restricts_other_power_requests_before_spawn(tmp_path):
     assert backend.start(300000, 250000) == {'ok': False, 'error': 'trial_guard_active'}
     assert backend.start(240000, 300000) == {'ok': False, 'error': 'trial_guard_active'}
     assert not backend.busy
+
+
+@pytest.mark.parametrize('fault', [signal.SIGKILL, signal.SIGSTOP])
+def test_signal_after_hardware_change_restores_uncommitted_power(tmp_path, fault):
+    nvml, backend = make_backend(tmp_path, mode=4, timeout=1)
+    try:
+        backend.start(250000, 200000)
+        until(backend, lambda: nvml.current.value == 250000)
+        assert (tmp_path / 'power-pending.json').exists()
+        os.kill(backend.process.pid, fault)
+        until(backend, lambda: backend.result['state'] == 'rolled_back')
+        assert nvml.current.value == 200000
+        assert not (tmp_path / 'power-pending.json').exists()
+    finally:
+        backend.close()

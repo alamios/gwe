@@ -6,13 +6,16 @@ cd -- "$(dirname -- "$0")/.."
 trial_python=${1:?Provide the prepared Python 3.12 interpreter}
 bundle=${2:?Provide the reviewed staged service bundle or --installed}
 trial_database=
+recovery_trial=0
 if [ "${3:-}" = --gui ]; then
     trial_database=${4:?Provide the explicit read-only backup database}
     [ "$#" -eq 4 ] && [ -f "$trial_database" ] || {
         echo 'GUI trial requires an existing explicit backup database'; exit 1;
     }
+elif [ "${3:-}" = --recovery ] && [ "$#" -eq 3 ]; then
+    recovery_trial=1
 elif [ "$#" -ne 2 ]; then
-    echo 'Usage: validate_power_service.sh python bundle-or--installed [--gui backup.db]'; exit 1;
+    echo 'Usage: validate_power_service.sh python bundle-or--installed [--gui backup.db | --recovery]'; exit 1;
 fi
 [ "$(systemctl show gwe-fan-service.service -p ActiveState --value)" = inactive ] || {
     echo 'Installed service must be inactive before this update'; exit 1;
@@ -50,7 +53,9 @@ trap 'exit 1' HUP INT TERM
 sudo systemctl stop coolercontrold.service
 sudo /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py prepare-power-trial
 sudo systemctl start gwe-fan-service.service
-if [ -n "$trial_database" ]; then
+if [ "$recovery_trial" = 1 ]; then
+    "$trial_python" scripts/power_recovery_trial.py
+elif [ -n "$trial_database" ]; then
     "$trial_python" scripts/run_service_gui.py --database "$trial_database" --allow-power-control
 else
     "$trial_python" scripts/power_service_trial.py
