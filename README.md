@@ -48,9 +48,9 @@ NVML process adapter. Service/worker failures and recovery are tested with simul
 root-owned package and 60-second systemd trial unit have been installed and configured for the local
 user/GPU. Normal release, client disconnection and lease-expiry hardware trials passed with an
 unprivileged client, verified automatic recovery and clean service shutdown. A complete-service SIGKILL
-hardware trial also passed with systemd post-stop recovery and both fans automatic. A synchronized
-watchdog/stall trial client is prepared but has not run on hardware. Watchdog/stall,
-suspend/resume and driver/host failure recovery remain unvalidated. No production service or profile
+hardware trial also passed with systemd post-stop recovery and both fans automatic. Freezing the complete
+service with SIGSTOP also passed: watchdog termination and post-stop recovery restored both fans to
+automatic. Suspend/resume, extended operation and driver/host failure recovery remain unvalidated. No production service or profile
 migration is enabled.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.

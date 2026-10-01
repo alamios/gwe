@@ -4,7 +4,8 @@ The local protocol is now connected to `ProcessBackend`, which executes the NVML
 in separate processes. A root-owned installation bundle, a 60-second systemd trial unit and an unprivileged
 test client are prepared. The owner has installed the reviewed bundle and passed normal-release, client-disconnection and lease-expiry hardware
 trials with an unprivileged client. Complete-service SIGKILL post-stop recovery also passed on hardware.
-It is stopped after testing; watchdog/stall hardware validation remains pending. The default
+Complete-service SIGSTOP/watchdog recovery also passed. It is stopped after testing; suspend/resume,
+extended operation and driver/host failure validation remain pending. The default
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
 ## Protocol and asynchronous states
@@ -57,8 +58,8 @@ This does not restore automatic control while the host is asleep: suspend integr
 The trial systemd unit kills the complete service cgroup on teardown. Its `ExecStopPost` performs a separate
 bounded recovery using the retained ownership record, after writers have stopped. With no record it makes
 no NVML calls. A runtime lock excludes concurrent service/recovery instances. An unresolved record prevents
-new control. The ten-second systemd watchdog covers a stuck main event loop; its hardware test remains
-pending. Complete-service SIGKILL post-stop recovery is validated in the result record below. Worker EOF/lease recovery has been tested using a killed/frozen simulated service.
+new control. The ten-second systemd watchdog covers a stuck main event loop. Complete-service SIGKILL
+and SIGSTOP/watchdog post-stop recovery passed the hardware trials recorded below. Worker EOF/lease recovery has been tested using a killed/frozen simulated service.
 
 ## Prepared installation
 
@@ -343,7 +344,39 @@ state is expected after this deliberate stall.
 
 Five additional simulated tests cover complete-unit SIGSTOP, refusal of unexpected watchdog configuration,
 rejection of an ordinary signal result, retained recovery records and the bounded extended wait.
-Hardware execution is pending.
+The subsequent hardware result is recorded below.
 
 Full regression: 186 tests pass per interpreter on Python 3.12 and 3.14, with the existing
 Reactivex deprecation warning. No real fault signals or GPU writes occurred during these automated tests.
+
+## Complete-service SIGSTOP/watchdog hardware trial: 2026-10-01
+
+The owner ran `--scenario service-watchdog` from repository commit `79802cb` against the unchanged
+installed service bundle (`626c8ae`). After confirming active control, the client sent SIGSTOP to the
+complete service and its control processes. It observed the required watchdog failure followed by
+completed post-stop recovery: both fan policies zero (automatic), no ownership record, temperature
+56 C and power limit 250 W. The client accepted `Result=watchdog` and `ExecMainStatus=9`; an ordinary
+signal failure would have failed this scenario. The output contains no elapsed timestamps, so an exact
+recovery duration is not claimed.
+
+Independent read-only follow-up confirmed:
+
+- Unit failed/static, `Result=watchdog`, `ExecMainStatus=9`, `ControlPID=0`.
+- Ownership record absent and CoolerControl active again.
+- Both NVML policies automatic, temperature 55 C and power limit unchanged at 250 W.
+
+| Installed-service scenario | Fault or client behavior | Verified final recovery |
+| --- | --- | --- |
+| Normal | Explicit release | Automatic policies, clean shutdown |
+| Disconnect | Owner socket closes without release | Automatic policies, clean shutdown |
+| Expire | Open owner connection stops renewing | Automatic policies, clean shutdown |
+| Service kill | SIGKILL to complete service | Automatic policies, post-stop recovery, signal result |
+| Service watchdog | SIGSTOP to complete service | Automatic policies, post-stop recovery, watchdog result |
+
+This completes the initial bounded client-lifecycle and service-failure hardware matrix on the current
+X11 host. It establishes recovery while systemd and the NVIDIA driver remain responsive. Suspend/resume,
+extended continuous operation, driver/host failures, Wayland and GUI/private-profile integration remain
+pending. The installed unit is still a sixty-second manual trial, is not enabled at boot and does not
+replace the installed GWE application. No private profiles were migrated.
+This update records results only; no code changed and no automated tests were rerun. The last full
+regression remains 186 passing tests per interpreter on Python 3.12 and 3.14.
