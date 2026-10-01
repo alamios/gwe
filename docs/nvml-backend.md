@@ -68,3 +68,20 @@ changed. The full simulated suite passed 251 tests on each interpreter; new case
 clock-domain isolation, indexed RPM, zero values, optional API absence, partial errors and stale-value
 clearing. Python 3.12/X11 main-window preview also verified displayed values and disabled write controls.
 See the [API references](technical-references.md) and [main-window guide](main-window-service.md).
+
+
+## Information and thermal fields: 2026-10-01
+
+Further additive schema-2 readings include `vbios`, `cuda_cores`, `memory_bus_width_bits`,
+`pcie_current_generation`, `pcie_max_generation`, `pcie_current_link`, `pcie_max_link`,
+`encoder_utilization`, `decoder_utilization` and `temperature_thresholds_c`.
+Each video-engine result holds `percent` and `sampling_period_us`; the UI displays only percent.
+Each thermal threshold (`maximum`, `slowdown`, `shutdown`) has an independent status and Celsius value.
+`maximum` uses NVML_TEMPERATURE_THRESHOLD_GPU_MAX to preserve the historical Critical field semantics.
+Missing constants/functions and unsupported reads remain unavailable/unsupported, with no invented zero,
+model-name lookup or retained old reading. These metadata reads confer no control capability.
+
+All additions returned successfully on the current host in both Python environments. The full suite now
+passes 254 tests per interpreter, including independent thermal failures, engine permission errors,
+unit/field mapping and clearing absent information on a later snapshot. The GTK preview check also passes;
+see the [screenshot comparison and validation](main-window-service.md#remaining-screenshot-differences-2026-10-01).

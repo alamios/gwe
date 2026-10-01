@@ -265,7 +265,7 @@ class MainView(MainViewInterface):
                 maximum = gpu_status.power.maximum
                 default = gpu_status.power.default
                 limit = gpu_status.power.limit
-                if (not status.read_only and minimum is not None and maximum is not None
+                if (minimum is not None and maximum is not None
                         and default is not None and limit is not None
                         and minimum != maximum):
                     self._power_limit_adjustment.set_lower(minimum)
@@ -273,8 +273,8 @@ class MainView(MainViewInterface):
                     self._power_limit_adjustment.set_value(limit)
                     self._power_limit_scale.clear_marks()
                     self._power_limit_scale.add_mark(default, Gtk.PositionType.BOTTOM, f"{default:.0f}")
-                    self._power_limit_scale.set_sensitive(True)
-                    self._power_limit_apply_button.set_sensitive(True)
+                    self._power_limit_scale.set_sensitive(not status.read_only)
+                    self._power_limit_apply_button.set_sensitive(not status.read_only)
                 else:
                     self._power_limit_scale.set_sensitive(False)
                     self._power_limit_apply_button.set_sensitive(False)

@@ -26,7 +26,8 @@ set, not the existing GTK application's requirements or a complete transitive de
 JSON includes the interpreter and binding versions, driver version, device count, model names, temperature
 in Celsius, fan count, manual fan range, individual speeds in percent, memory in bytes, utilization in percent
 and power in watts. Additive schema version 2 fields also include power-limit metadata, current/maximum
-clocks in MHz and per-fan RPM. See the [extended telemetry record](nvml-backend.md#extended-telemetry-2026-10-01). The CLI does not query UUIDs, serial
+clocks in MHz, per-fan RPM, VBIOS, PCIe links, CUDA core count, memory bus width, encoder/decoder
+utilization with sampling periods, and thermal thresholds in Celsius. See the [extended telemetry record](nvml-backend.md#extended-telemetry-2026-10-01). The CLI does not query UUIDs, serial
 numbers, process lists or personal profiles. Device indices only identify entries in that snapshot.
 
 Each reading has a status: `ok`, `unsupported`, `unavailable` (missing binding constant, helper or driver function), or `error`.

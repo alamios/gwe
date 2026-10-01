@@ -120,9 +120,28 @@ def main(argv=None):
                 fans_ok = all(matches(view._fan_duty[index], percent, '{} %')
                               and matches(view._fan_rpm[index], rpm, '{} RPM')
                               for index, (percent, rpm) in enumerate(gpu.fan.fan_list or []))
-                if not power_ok or not clocks_ok or not fans_ok:
+                info_ok = all(matches(getattr(view, f'_info_{widget}_entry'),
+                                      getattr(gpu.info, field), template)
+                              for field, widget, template in (
+                                  ('vbios', 'vbios', '{}'), ('cuda_cores', 'cuda', '{}'),
+                                  ('memory_interface', 'memory_interface', '{} bit'),
+                                  ('encoder_usage', 'encoder_usage', '{}%'),
+                                  ('decoder_usage', 'decoder_usage', '{}%')))
+                pcie = (gpu.info.pcie_max_link, gpu.info.pcie_max_generation,
+                        gpu.info.pcie_current_link, gpu.info.pcie_current_generation)
+                pcie_text = '{}x Gen{} @ {}x Gen{}'.format(*pcie) if None not in pcie else None
+                info_ok = info_ok and matches(view._info_pcie_entry, pcie_text, '{}')
+                temp_ok = all(matches(getattr(view, widget), getattr(gpu.temp, field), '{} °C')
+                              for field, widget in (('maximum', '_temp_max_gpu_value'),
+                                                    ('slowdown', '_temp_slowdown_value'),
+                                                    ('shutdown', '_temp_shutdown_value')))
+                scale_ok = not view._power_limit_scale.get_sensitive()
+                if all(value is not None for value in (gpu.power.minimum, gpu.power.maximum,
+                                                       gpu.power.default, gpu.power.limit)):
+                    scale_ok = scale_ok and view._power_limit_adjustment.get_value() == gpu.power.limit
+                if not all((power_ok, clocks_ok, fans_ok, info_ok, temp_ok, scale_ok)):
                     return finish(False)
-                print('Main-window telemetry display: power, clocks and both fan units match backend', flush=True)
+                print('Main-window telemetry display: info, temperature, power, clocks and fans match backend', flush=True)
                 selected_index = next((index for index, profile in enumerate(profiles)
                                        if profile.curve is not None), 0)
                 view._fan_combobox.set_active(selected_index)

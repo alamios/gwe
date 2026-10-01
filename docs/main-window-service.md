@@ -41,6 +41,8 @@ The telemetry adapter populates these fields when NVML returns a reading:
 
 | Panel | Read-only fields |
 | --- | --- |
+| Info | VBIOS, PCIe current/maximum links, CUDA core count, memory bus width, memory/GPU and encoder/decoder utilization |
+| Temp | Current temperature and critical, slowdown and shutdown thresholds |
 | Power | Draw, limit, default, enforced, minimum and maximum (watts) |
 | Clocks | Current and maximum graphics, SM, memory and video clocks (MHz) |
 | Fan | Each fan's speed percentage and RPM |
@@ -137,3 +139,22 @@ no service connection, profile migration or GPU write was needed. Reopen the sou
 the updated adapter; no installed-service or Flatpak update is required. Missing readings still appear
 blank and insensitive, while valid zero readings remain visible. Main-window hardware control acceptance
 and Wayland validation remain pending.
+
+
+## Remaining screenshot differences: 2026-10-01
+
+Comparison of the owner's original and updated private screenshots identified missing VBIOS, PCIe,
+CUDA core count, memory bus width, encoder/decoder utilization and thermal thresholds. These now use
+independent optional NVML reads and populate the existing UI models. The insensitive power slider also
+reflects the reported range and current limit; displaying it does not enable writes. Preview curve actions
+and overclock controls remain intentionally disabled. The original screenshots are preserved outside Git.
+
+Live reads succeeded in Python 3.12 and 3.14 on driver 580.178.04: 10,752 CUDA cores, 384-bit memory bus,
+maximum PCIe x16 Gen4, encoder/decoder 0%, and thermal thresholds 92/94/97 C. Current PCIe generation
+was Gen1 in the recorded snapshot; current link state can differ between snapshots. Values are queried,
+not copied from the reference image. The historical Critical label uses GPU_MAX, not shutdown temperature.
+
+All 254 tests pass in each environment (the existing Reactivex deprecation warning remains). The Python
+3.12/X11 GTK preview smoke check compares the added information, PCIe and thermal fields with the model
+and verifies the power slider remains insensitive at the reported limit. No service connection or GPU
+write occurred. Reopen the source window to load the changes; installed Flatpak/service updates are not needed.

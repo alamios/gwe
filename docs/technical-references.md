@@ -61,3 +61,11 @@ the [maintenance plan](maintenance-plan.md) defines what remains to validate.
 
 Consulted on 2026-10-01. Current-host support was tested separately from API documentation; see
 [nvml-backend.md](nvml-backend.md#extended-telemetry-2026-10-01).
+
+
+The same device-query reference also defines VBIOS, current/maximum PCIe generation and width,
+GPU core count, memory bus width in bits, and encoder/decoder utilization with a microsecond sampling
+period. [Temperature threshold enums](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlDeviceEnums.html)
+distinguish GPU_MAX (potential throttling below base clock), slowdown and hardware-protection shutdown.
+The adapter preserves the historical Critical-to-GPU_MAX mapping. Support was checked on the current
+Ampere GPU; this does not validate thermal-query support for other architectures.

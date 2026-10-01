@@ -96,3 +96,28 @@ def test_extended_telemetry_maps_and_clears_without_enabling_writes():
     cleared = monitor.get_status().gpu_status_list[0]
     assert cleared.power.limit is None and cleared.clocks.memory_max is None
     assert cleared.fan.fan_list[0][1] is None
+
+
+def test_info_and_threshold_mapping_clears_missing_fields():
+    backend = Backend()
+    device = backend.result['gpus'][0]
+    fields = dict(vbios='test-vbios', cuda_cores=10000, memory_bus_width_bits=384,
+                  pcie_current_generation=1, pcie_max_generation=4,
+                  pcie_current_link=8, pcie_max_link=16)
+    device.update({key: ok(value) for key, value in fields.items()})
+    device.update(encoder_utilization=ok({'percent': 0, 'sampling_period_us': 50000}),
+                  decoder_utilization=ok({'percent': 20, 'sampling_period_us': 60000}),
+                  temperature_thresholds_c={'maximum': ok(92), 'shutdown': ok(97),
+                                            'slowdown': {'status': 'unsupported'}})
+    monitor = NvmlMonitor(backend)
+    gpu = monitor.get_status().gpu_status_list[0]
+    for field, value in fields.items():
+        assert getattr(gpu.info, 'memory_interface' if field == 'memory_bus_width_bits' else field) == value
+    assert gpu.info.encoder_usage == 0 and gpu.info.decoder_usage == 20
+    assert gpu.temp.maximum == 92 and gpu.temp.slowdown is None and gpu.temp.shutdown == 97
+    backend.result = snapshot()
+    gpu = monitor.get_status().gpu_status_list[0]
+    for field in fields:
+        assert getattr(gpu.info, 'memory_interface' if field == 'memory_bus_width_bits' else field) is None
+    assert gpu.info.encoder_usage is None and gpu.info.decoder_usage is None
+    assert gpu.temp.maximum is None and gpu.temp.shutdown is None

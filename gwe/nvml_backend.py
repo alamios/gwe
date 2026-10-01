@@ -39,6 +39,11 @@ _READS = frozenset({
     "nvmlDeviceGetPowerManagementLimit", "nvmlDeviceGetPowerManagementDefaultLimit",
     "nvmlDeviceGetEnforcedPowerLimit", "nvmlDeviceGetPowerManagementLimitConstraints",
     "nvmlDeviceGetClockInfo", "nvmlDeviceGetMaxClockInfo", "nvmlDeviceGetFanSpeedRPM",
+    "nvmlDeviceGetVbiosVersion", "nvmlDeviceGetNumGpuCores", "nvmlDeviceGetMemoryBusWidth",
+    "nvmlDeviceGetCurrPcieLinkGeneration", "nvmlDeviceGetMaxPcieLinkGeneration",
+    "nvmlDeviceGetCurrPcieLinkWidth", "nvmlDeviceGetMaxPcieLinkWidth",
+    "nvmlDeviceGetEncoderUtilization", "nvmlDeviceGetDecoderUtilization",
+    "nvmlDeviceGetTemperatureThreshold",
 })
 
 
@@ -139,6 +144,28 @@ def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
             if gpu_uuid is not None:
                 current_index = read("nvmlDeviceGetIndex", handle)
                 gpu["index"] = current_index.get("value")
+            for field, function in (
+                    ("vbios", "nvmlDeviceGetVbiosVersion"),
+                    ("cuda_cores", "nvmlDeviceGetNumGpuCores"),
+                    ("memory_bus_width_bits", "nvmlDeviceGetMemoryBusWidth"),
+                    ("pcie_current_generation", "nvmlDeviceGetCurrPcieLinkGeneration"),
+                    ("pcie_max_generation", "nvmlDeviceGetMaxPcieLinkGeneration"),
+                    ("pcie_current_link", "nvmlDeviceGetCurrPcieLinkWidth"),
+                    ("pcie_max_link", "nvmlDeviceGetMaxPcieLinkWidth")):
+                gpu[field] = read(function, handle)
+            for engine, function in (("encoder", "nvmlDeviceGetEncoderUtilization"),
+                                     ("decoder", "nvmlDeviceGetDecoderUtilization")):
+                gpu[f"{engine}_utilization"] = read(
+                    function, handle, convert=lambda sample: {
+                        "percent": sample[0], "sampling_period_us": sample[1]})
+            thresholds = gpu["temperature_thresholds_c"] = {}
+            for field, constant in (("maximum", "NVML_TEMPERATURE_THRESHOLD_GPU_MAX"),
+                                     ("slowdown", "NVML_TEMPERATURE_THRESHOLD_SLOWDOWN"),
+                                     ("shutdown", "NVML_TEMPERATURE_THRESHOLD_SHUTDOWN")):
+                threshold = getattr(nvml, constant, None)
+                thresholds[field] = (
+                    read("nvmlDeviceGetTemperatureThreshold", handle, threshold) if threshold is not None
+                    else {"status": "unavailable", "reason": "binding_constant_missing"})
             gpu["memory_bytes"] = read(
                 "nvmlDeviceGetMemoryInfo", handle,
                 convert=lambda memory: {"total": memory.total, "used": memory.used, "free": memory.free})

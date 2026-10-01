@@ -45,10 +45,19 @@ class NvmlMonitor:
                     for fan in device.get("fans", [])]
         constraints = reading(device, "power_constraints_w") or {}
         clocks = device.get("clocks_mhz", {})
+        thresholds = device.get("temperature_thresholds_c", {})
         # Missing values remain None, not zero or previous readings. Control
         # capability is deliberately false, even when manual limits are readable.
         info = Info(
             name=reading(device, "name"), uuid=self._uuid,
+            vbios=reading(device, "vbios"), cuda_cores=reading(device, "cuda_cores"),
+            memory_interface=reading(device, "memory_bus_width_bits"),
+            pcie_current_generation=reading(device, "pcie_current_generation"),
+            pcie_max_generation=reading(device, "pcie_max_generation"),
+            pcie_current_link=reading(device, "pcie_current_link"),
+            pcie_max_link=reading(device, "pcie_max_link"),
+            encoder_usage=(reading(device, "encoder_utilization") or {}).get("percent"),
+            decoder_usage=(reading(device, "decoder_utilization") or {}).get("percent"),
             driver=reading(snapshot, "driver"),
             memory_total=memory["total"] // (1024 * 1024) if "total" in memory else None,
             memory_used=memory["used"] // (1024 * 1024) if "used" in memory else None,
@@ -59,7 +68,8 @@ class NvmlMonitor:
                 draw=reading(device, "power_w"), limit=reading(device, "power_limit_w"),
                 default=reading(device, "power_default_w"), enforced=reading(device, "power_enforced_w"),
                 minimum=constraints.get("minimum"), maximum=constraints.get("maximum")),
-            temp=Temp(gpu=reading(device, "temperature_c")),
+            temp=Temp(gpu=reading(device, "temperature_c"), maximum=reading(thresholds, "maximum"),
+                      slowdown=reading(thresholds, "slowdown"), shutdown=reading(thresholds, "shutdown")),
             fan=Fan(fan_list=fan_list, control_allowed=False),
             clocks=Clocks(**{f"{domain}_{kind}": reading(clocks, f"{domain}_{kind}")
                              for domain in ("graphic", "sm", "memory", "video")

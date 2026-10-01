@@ -156,3 +156,48 @@ def test_indexed_rpm_and_partial_errors(identified, error):
     assert fans[1]['speed_percent']['value'] == 31
     assert result['status'] == ('error' if error == pynvml.NVML_ERROR_NO_PERMISSION else 'ok')
     assert identified.calls[-1] == 'nvmlShutdown'
+
+
+def test_info_and_threshold_units_with_independent_optional_reads(identified):
+    for name, value in (
+            ('nvmlDeviceGetVbiosVersion', b'test-vbios'), ('nvmlDeviceGetNumGpuCores', 10000),
+            ('nvmlDeviceGetMemoryBusWidth', 384), ('nvmlDeviceGetCurrPcieLinkGeneration', 1),
+            ('nvmlDeviceGetMaxPcieLinkGeneration', 4), ('nvmlDeviceGetCurrPcieLinkWidth', 8),
+            ('nvmlDeviceGetMaxPcieLinkWidth', 16), ('nvmlDeviceGetEncoderUtilization', (0, 100000)),
+            ('nvmlDeviceGetDecoderUtilization', (25, 200000))):
+        setattr(identified, name, lambda h, value=value: value)
+    for field in ('GPU_MAX', 'SLOWDOWN', 'SHUTDOWN'):
+        setattr(identified, f'NVML_TEMPERATURE_THRESHOLD_{field}',
+                getattr(pynvml, f'NVML_TEMPERATURE_THRESHOLD_{field}'))
+    def threshold(handle, kind):
+        if kind == pynvml.NVML_TEMPERATURE_THRESHOLD_SLOWDOWN:
+            raise pynvml.NVMLError(pynvml.NVML_ERROR_NOT_SUPPORTED)
+        return {pynvml.NVML_TEMPERATURE_THRESHOLD_GPU_MAX: 92,
+                pynvml.NVML_TEMPERATURE_THRESHOLD_SHUTDOWN: 97}[kind]
+    identified.nvmlDeviceGetTemperatureThreshold = threshold
+    result = NvmlBackend(identified).read_snapshot()
+    gpu = result['gpus'][0]
+    assert result['status'] == 'ok'
+    assert gpu['vbios']['value'] == 'test-vbios'
+    assert gpu['cuda_cores']['value'] == 10000
+    assert gpu['memory_bus_width_bits']['value'] == 384
+    assert [gpu[f'pcie_{kind}']['value'] for kind in (
+        'current_generation', 'max_generation', 'current_link', 'max_link')] == [1, 4, 8, 16]
+    assert gpu['encoder_utilization']['value'] == {'percent': 0, 'sampling_period_us': 100000}
+    assert gpu['decoder_utilization']['value'] == {'percent': 25, 'sampling_period_us': 200000}
+    assert gpu['temperature_thresholds_c']['maximum']['value'] == 92
+    assert gpu['temperature_thresholds_c']['slowdown']['status'] == 'unsupported'
+    assert gpu['temperature_thresholds_c']['shutdown']['value'] == 97
+    assert gpu['temperature_c']['value'] == 45
+
+
+def test_info_failure_does_not_suppress_other_telemetry(identified):
+    identified.nvmlDeviceGetEncoderUtilization = fail(pynvml.NVML_ERROR_NO_PERMISSION)
+    result = NvmlBackend(identified).read_snapshot()
+    gpu = result['gpus'][0]
+    assert result['status'] == 'error'
+    assert gpu['encoder_utilization']['status'] == 'error'
+    assert gpu['decoder_utilization']['status'] == 'unavailable'
+    assert gpu['temperature_thresholds_c']['maximum']['reason'] == 'binding_constant_missing'
+    assert gpu['temperature_c']['value'] == 45
+    assert identified.calls[-1] == 'nvmlShutdown'

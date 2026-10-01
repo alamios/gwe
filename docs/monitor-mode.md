@@ -9,6 +9,8 @@ do not update or install the existing Flatpak. See [GUI development](gui-develop
 
 - The startup check skips NV-CONTROL and checks NVML in this mode.
 - The repository maps temperature, memory, utilization, power draw/limits, current/maximum clocks and per-fan percentages/RPM to existing UI models.
+- VBIOS, PCIe links, CUDA core count, memory bus width, encoder/decoder utilization and thermal thresholds
+  also map to the existing fields when readable. The disabled power slider reflects the queried limit/range.
 - The first successfully identified GPU is selected by UUID for the session. Device loss clears readings;
   a replacement GPU at the old index is not selected automatically.
 - Fan, overclock and power-limit writes are rejected by the repository. Exit cleanup does not reset fans.
