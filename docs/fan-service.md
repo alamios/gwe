@@ -280,7 +280,27 @@ or nonautomatic policy is a failed test. Paste the result before proceeding to a
 
 Six new orchestration tests pass on both Python versions using simulated subprocesses and telemetry. They
 cover fixed-unit targeting, stale ownership records, unexpected failure results, inactive-unit refusal,
-privilege failure and timeout. The hardware scenario has not been executed yet.
+privilege failure and timeout. The subsequent hardware result is recorded below.
 
 The full regression suite now passes on both Python 3.12 and 3.14: 181 tests per interpreter,
 with the existing Reactivex deprecation warning. This includes the configuration-helper tests.
+
+## Complete-service SIGKILL hardware trial: 2026-10-01
+
+The owner ran `--scenario service-kill` from repository commit `c525ef3` against the unchanged installed
+service bundle (`626c8ae`). The client confirmed active control before sending SIGKILL to the service and
+its control processes. It then verified completed systemd post-stop recovery, no pending ownership record,
+and both NVML policies zero (automatic), at 57 C with a 250 W power limit. The unit reported the expected
+`Result=signal` and `ExecMainStatus=9`; its failed state records the deliberate termination.
+
+Independent read-only follow-up confirmed:
+
+- Unit failed/static, `Result=signal`, `ExecMainStatus=9`, `ControlPID=0`.
+- Ownership record absent and CoolerControl active again.
+- Both NVML policies automatic, temperature 57 C and power limit still 250 W.
+
+This validates post-stop recovery after killing the complete service while the driver and systemd remain
+responsive. It does not establish recovery from a stalled service, watchdog expiry, suspend/resume or
+an unresponsive driver/host. Those scenarios, extended operation, Wayland and GUI/profile integration
+remain pending. The installed service remains a bounded trial and is not enabled at boot.
+This update records hardware results only; no code changed and no automated tests were rerun.

@@ -40,7 +40,9 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   ownership and inactive/static service state were independently verified. The owner completed private
   user/GPU configuration on 2026-10-01. The normal installed-service/unprivileged-client hardware trial
   client-disconnection and lease-expiry scenarios passed with automatic recovery, clean shutdown and
-  CoolerControl restarted. No boot enablement has occurred; service-failure hardware tests remain pending.
+  CoolerControl restarted. The complete-service SIGKILL hardware trial also passed: systemd post-stop
+  recovery restored both fans to automatic, removed the ownership record and left the expected signal
+  failure result. No boot enablement has occurred; watchdog/stall and other failure hardware tests remain pending.
 - Public hosting, application rename, distribution format and release version are undecided.
 - Preserve upstream authorship and history. No publication or system modification is part of repository preparation.
 

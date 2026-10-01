@@ -47,9 +47,10 @@ driver/host failures remain pending. The local protocol and renewable lease now 
 NVML process adapter. Service/worker failures and recovery are tested with simulated devices. A standalone
 root-owned package and 60-second systemd trial unit have been installed and configured for the local
 user/GPU. Normal release, client disconnection and lease-expiry hardware trials passed with an
-unprivileged client, verified automatic recovery and clean service shutdown. Service-failure hardware
-validation remains pending. No production
-service or profile migration is enabled.
+unprivileged client, verified automatic recovery and clean service shutdown. A complete-service SIGKILL
+hardware trial also passed with systemd post-stop recovery and both fans automatic. Watchdog/stall,
+suspend/resume and driver/host failure recovery remain unvalidated. No production service or profile
+migration is enabled.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 
