@@ -61,7 +61,9 @@ this bounded GUI trial provisionally; the first failure remains unexplained. A p
 retains future state changes and redacted diagnostics.
 An opt-in integration now uses the existing main window with isolated settings and explicit ten-second
 service trials. Read-only and simulated-service GTK checks pass; main-window hardware writes and
-continuous operation remain pending. See the main-window service guide.
+continuous operation remain pending. Telemetry currently includes power draw and fan percentages;
+clock readings, fan RPM and power-limit metadata are not yet connected in the NVML UI adapter.
+See the main-window service guide.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 

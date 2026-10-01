@@ -102,6 +102,16 @@ def main(argv=None):
             if phase[0] == 0:
                 if session.client is not None or session.state != 'idle' or presenter._fan_profile_applied is not None:
                     return finish(False)
+                gpu = presenter._latest_status.gpu_status_list[0]
+                draw = gpu.power.draw
+                draw_ok = (view._power_draw_entry.get_sensitive() == (draw is not None)
+                           and view._power_draw_entry.get_text() == (f'{draw:.2f} W' if draw is not None else ''))
+                fans_ok = all(view._fan_duty[index].get_sensitive() == (percent is not None)
+                              and view._fan_duty[index].get_text() == (f'{percent} %' if percent is not None else '')
+                              for index, (percent, _) in enumerate(gpu.fan.fan_list or []))
+                if not draw_ok or not fans_ok:
+                    return finish(False)
+                print('Main-window telemetry display: power and fan readings match backend', flush=True)
                 selected_index = next((index for index, profile in enumerate(profiles)
                                        if profile.curve is not None), 0)
                 view._fan_combobox.set_active(selected_index)

@@ -37,6 +37,19 @@ python scripts/run_service_gui.py --database "$BACKUP_DB"
 Select a curve in the existing fan-profile selector. The chart and current NVML telemetry are visible;
 control buttons remain disabled in preview. There is no service connection or GPU write on startup.
 
+The current telemetry adapter is deliberately incomplete:
+
+| Panel | Populated read-only fields | Fields not yet connected |
+| --- | --- | --- |
+| Power | Draw (watts) | Limit, default, enforced, minimum and maximum |
+| Clocks | None yet | Current and maximum clock readings |
+| Fan | Each fan's speed percentage | RPM |
+
+An empty, insensitive field means that the adapter has no reading for it; it is not a control permission
+indicator. Power/overclock setters remain disabled independently of telemetry availability. Preview also
+disables curve Apply/Restore, while the profile selector and chart remain usable. Do not enable control
+merely to populate missing telemetry fields.
+
 ## Prepared hardware procedure (main-window writes pending)
 
 Keep installed GWE closed and avoid loads. Use the already installed bounded unit and the same recovery
@@ -104,3 +117,12 @@ The original monitor smoke check also passed. No GPU writes were performed for t
 The main-window-to-installed-service hardware trial is pending. The earlier separate GTK trial successes
 do not substitute for it. Wayland, Python 3.14 GTK, suspend/resume, continuous operation and private-profile
 migration remain unvalidated. The prior unexplained standalone GUI failure remains documented.
+
+## Telemetry presentation check: 2026-10-01
+
+Following an owner report of disabled Power/Clocks/Fan panels, read-only inspection confirmed that NVML
+still supplies power draw and both fan percentages. The GTK smoke check was extended to compare those
+fields' displayed text and sensitivity directly with the backend model. It passed using the private
+backup in main-window preview, without a service connection or GPU writes. Clock readings, power-limit
+metadata and fan RPM remain unimplemented in this adapter, not proven unsupported by the hardware.
+No production behavior changed for this verification; the last full suite remains 244 tests per interpreter.
