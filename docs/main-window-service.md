@@ -198,3 +198,16 @@ service restart, load or reboot was performed by the assistant during this inves
 retained manual curve was observed. The transition back to zero was not captured; whether the owner
 intervened between observations was asked separately. The cause and duration of the prior spinning
 interval remain undetermined; do not present hysteresis or CoolerControl interference as established.
+
+
+## Early-release hardware result: 2026-10-01
+
+The owner confirmed no intervention between the earlier near-30% observation and the later zero-RPM
+observation. A spontaneous return to zero is therefore supported, but its internal cause is still unknown.
+
+The owner subsequently reported successful explicit Restore automatic and an immediate return to zero.
+The latest log corroborates a release request about seven seconds after acquisition, before the ten-second
+deadline, followed by `recovery_verified` and window close in idle state. Independent read-only follow-up
+found both policies automatic, both reported speeds zero, the trial service inactive with success result,
+CoolerControl active, and power limit still 250 W. No settings were changed during follow-up.
+Closing the main window while ownership is active remains the next hardware acceptance check.

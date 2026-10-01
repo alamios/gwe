@@ -64,8 +64,8 @@ service trials. Read-only and simulated-service GTK checks pass. Main-window ten
 have logged verified recovery and independent follow-up automatic-policy reads; a connection loss near
 the service lifetime remains documented. A reported post-trial interval near 30% was followed by a
 read-only minute at automatic policy and zero RPM; the transient cause remains undetermined.
-Early-release/close-during-control hardware checks and continuous
-operation remain pending. Telemetry includes power draw and limits, current/maximum clocks, and per-fan percentages and RPM.
+Explicit early release also passed with verified automatic recovery. Closing during active control
+and continuous operation remain pending. Telemetry includes power draw and limits, current/maximum clocks, and per-fan percentages and RPM.
 VBIOS, PCIe links, CUDA core count, memory bus width, encoder/decoder utilization and thermal thresholds
 are also connected. All these reads passed on the current host; unavailable readings remain blank, never
 substituted with zero.
