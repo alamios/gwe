@@ -254,3 +254,33 @@ This completes the initial client-lifecycle hardware matrix. Installed-service c
 recovery, suspend/resume, extended operation and Wayland remain unvalidated. The earlier standalone worker
 fault tests do not replace service-level hardware tests. No code changed or automated tests were rerun
 for this documentation-only result update. GWE integration and private-profile migration remain separate.
+
+## Prepared complete-service SIGKILL trial: 2026-10-01
+
+The repository client now accepts `--scenario service-kill`. It needs no service reinstallation: installed
+service code remains `626c8ae`. After active control and brief renewal, the client requires an active unit
+and an existing ownership record, then runs this fixed command using the operator's cached sudo credentials:
+
+```bash
+sudo -n systemctl kill --kill-whom=all --signal=SIGKILL gwe-fan-service.service
+```
+
+The local systemctl help confirms `--kill-whom` support. The signal targets the complete service cgroup,
+including the controller, preventing ordinary worker/service cleanup. Systemd should then execute the
+installed post-stop recovery. The client waits at most 20 seconds for a terminal unit state and no remaining
+control process, requires `Result=signal`/`ExecMainStatus=9`, verifies that the ownership record is gone, and
+independently reads both NVML policies as automatic. It also reports temperature/power limit without UUIDs.
+The service is expected to be marked failed due to the deliberate signal; that alone is not a recovery
+failure. No recovery command is sent through the dead client socket.
+
+Run with the same stop/start/cleanup shell block above, changing only the client scenario to `service-kill`.
+Keep GWE closed and avoid loads. The cleanup block stops the unit and restarts CoolerControl only if no
+unresolved ownership record remains. A privilege error, unexpected unit result, timeout, remaining record
+or nonautomatic policy is a failed test. Paste the result before proceeding to a watchdog/stall scenario.
+
+Six new orchestration tests pass on both Python versions using simulated subprocesses and telemetry. They
+cover fixed-unit targeting, stale ownership records, unexpected failure results, inactive-unit refusal,
+privilege failure and timeout. The hardware scenario has not been executed yet.
+
+The full regression suite now passes on both Python 3.12 and 3.14: 181 tests per interpreter,
+with the existing Reactivex deprecation warning. This includes the configuration-helper tests.

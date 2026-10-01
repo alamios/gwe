@@ -35,7 +35,7 @@ current X11 host with administrator privileges. Recovery after worker SIGTERM, S
 stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-171 tests pass on both Python versions, including the socket-to-process service, client loss and recovery. The isolated Python
+181 tests pass on both Python versions, including the socket-to-process service, client loss and recovery. The isolated Python
 3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
 fans at 55–56 C and verified automatic restoration; CoolerControl is running again. Unprivileged reset
