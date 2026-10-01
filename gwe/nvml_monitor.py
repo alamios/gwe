@@ -41,7 +41,10 @@ class NvmlMonitor:
                 break
         memory = reading(device, "memory_bytes") or {}
         utilization = reading(device, "utilization_percent") or {}
-        fan_list = [(reading(fan, "speed_percent"), None) for fan in device.get("fans", [])]
+        fan_list = [(reading(fan, "speed_percent"), reading(fan, "speed_rpm"))
+                    for fan in device.get("fans", [])]
+        constraints = reading(device, "power_constraints_w") or {}
+        clocks = device.get("clocks_mhz", {})
         # Missing values remain None, not zero or previous readings. Control
         # capability is deliberately false, even when manual limits are readable.
         info = Info(
@@ -52,8 +55,13 @@ class NvmlMonitor:
             memory_usage=utilization.get("memory"), gpu_usage=utilization.get("gpu"),
         )
         return Status([GpuStatus(
-            index=0, info=info, power=Power(draw=reading(device, "power_w")),
+            index=0, info=info, power=Power(
+                draw=reading(device, "power_w"), limit=reading(device, "power_limit_w"),
+                default=reading(device, "power_default_w"), enforced=reading(device, "power_enforced_w"),
+                minimum=constraints.get("minimum"), maximum=constraints.get("maximum")),
             temp=Temp(gpu=reading(device, "temperature_c")),
             fan=Fan(fan_list=fan_list, control_allowed=False),
-            clocks=Clocks(), overclock=Overclock(available=False),
+            clocks=Clocks(**{f"{domain}_{kind}": reading(clocks, f"{domain}_{kind}")
+                             for domain in ("graphic", "sm", "memory", "video")
+                             for kind in ("current", "max")}), overclock=Overclock(available=False),
         )], read_only=True)

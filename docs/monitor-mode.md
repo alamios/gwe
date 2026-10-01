@@ -8,12 +8,12 @@ do not update or install the existing Flatpak. See [GUI development](gui-develop
 ## Behavior
 
 - The startup check skips NV-CONTROL and checks NVML in this mode.
-- The repository maps temperature, memory, utilization, power draw and fan percentages to existing UI models.
+- The repository maps temperature, memory, utilization, power draw/limits, current/maximum clocks and per-fan percentages/RPM to existing UI models.
 - The first successfully identified GPU is selected by UUID for the session. Device loss clears readings;
   a replacement GPU at the old index is not selected automatically.
 - Fan, overclock and power-limit writes are rejected by the repository. Exit cleanup does not reset fans.
-- UI controls for these operations are disabled. Unimplemented values (including fan RPM and clocks) remain
-  blank. Historical graphs skip missing fan readings rather than converting None to a number.
+- UI controls for these operations are disabled. Missing or unsupported readings remain
+  blank; a reported zero is displayed as zero. Historical graphs skip missing fan readings rather than converting None to a number.
 - Settings use `$XDG_CONFIG_HOME/gwe-monitor/`, keeping the installed profiles separate. GTK uses a distinct
   application ID ending in `.Monitor`, avoiding activation of the installed instance through D-Bus.
 - With the variable absent, the historical X11 control path and configuration namespace remain selected.

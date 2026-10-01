@@ -2,7 +2,7 @@
 
 The standalone probe reads one telemetry snapshot without importing the GTK application, opening an X display,
 loading profiles or changing GPU settings. It uses `nvidia-ml-py` and does not require the CUDA Toolkit.
-It shares the collector with the [read-only backend](nvml-backend.md); the GUI has not yet been migrated.
+It shares the collector with the [read-only backend](nvml-backend.md); opt-in monitor/service-trial windows use it; default control remains historical X11.
 
 ## Run
 
@@ -25,10 +25,11 @@ set, not the existing GTK application's requirements or a complete transitive de
 
 JSON includes the interpreter and binding versions, driver version, device count, model names, temperature
 in Celsius, fan count, manual fan range, individual speeds in percent, memory in bytes, utilization in percent
-and power in watts. Schema version 2 adds these metrics. The CLI does not query UUIDs, serial
+and power in watts. Additive schema version 2 fields also include power-limit metadata, current/maximum
+clocks in MHz and per-fan RPM. See the [extended telemetry record](nvml-backend.md#extended-telemetry-2026-10-01). The CLI does not query UUIDs, serial
 numbers, process lists or personal profiles. Device indices only identify entries in that snapshot.
 
-Each reading has a status: `ok`, `unsupported`, `unavailable` (missing binding/driver function), or `error`.
+Each reading has a status: `ok`, `unsupported`, `unavailable` (missing binding constant, helper or driver function), or `error`.
 Unavailable readings have no numeric value; they are never silently represented as zero.
 The top-level `errors` list records NVML failures, including shutdown failures. Per-field results locate
 failed telemetry. Unexpected programming errors propagate after attempting NVML shutdown.

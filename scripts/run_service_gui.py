@@ -103,15 +103,26 @@ def main(argv=None):
                 if session.client is not None or session.state != 'idle' or presenter._fan_profile_applied is not None:
                     return finish(False)
                 gpu = presenter._latest_status.gpu_status_list[0]
-                draw = gpu.power.draw
-                draw_ok = (view._power_draw_entry.get_sensitive() == (draw is not None)
-                           and view._power_draw_entry.get_text() == (f'{draw:.2f} W' if draw is not None else ''))
-                fans_ok = all(view._fan_duty[index].get_sensitive() == (percent is not None)
-                              and view._fan_duty[index].get_text() == (f'{percent} %' if percent is not None else '')
-                              for index, (percent, _) in enumerate(gpu.fan.fan_list or []))
-                if not draw_ok or not fans_ok:
+                def matches(widget, value, template):
+                    return (widget.get_sensitive() == (value is not None)
+                            and widget.get_text() == (template.format(value) if value is not None else ''))
+                power_ok = all(matches(getattr(view, f'_power_{widget}_entry'),
+                                       getattr(gpu.power, field), template)
+                               for field, widget, template in (
+                                   ('draw', 'draw', '{:.2f} W'), ('limit', 'limit', '{:.0f} W'),
+                                   ('default', 'default', '{:.0f} W'), ('enforced', 'enforced', '{:.0f} W'),
+                                   ('minimum', 'min', '{} W'), ('maximum', 'max', '{} W')))
+                clocks_ok = all(matches(getattr(view, f'_clocks_{widget}_{kind}_entry'),
+                                        getattr(gpu.clocks, f'{domain}_{kind}'), '{} MHz')
+                                for domain, widget in (('graphic', 'graphics'), ('sm', 'sm'),
+                                                       ('memory', 'memory'), ('video', 'video'))
+                                for kind in ('current', 'max'))
+                fans_ok = all(matches(view._fan_duty[index], percent, '{} %')
+                              and matches(view._fan_rpm[index], rpm, '{} RPM')
+                              for index, (percent, rpm) in enumerate(gpu.fan.fan_list or []))
+                if not power_ok or not clocks_ok or not fans_ok:
                     return finish(False)
-                print('Main-window telemetry display: power and fan readings match backend', flush=True)
+                print('Main-window telemetry display: power, clocks and both fan units match backend', flush=True)
                 selected_index = next((index for index, profile in enumerate(profiles)
                                        if profile.curve is not None), 0)
                 view._fan_combobox.set_active(selected_index)

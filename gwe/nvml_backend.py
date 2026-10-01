@@ -2,6 +2,7 @@
 """Read-only NVIDIA telemetry, independent of GTK, X11 and application settings."""
 
 import importlib
+from ctypes import byref
 import threading
 import time
 
@@ -35,7 +36,32 @@ _READS = frozenset({
     "nvmlDeviceGetMinMaxFanSpeed", "nvmlDeviceGetFanSpeed_v2",
     "nvmlDeviceGetUUID", "nvmlDeviceGetHandleByUUID", "nvmlDeviceGetIndex",
     "nvmlDeviceGetMemoryInfo", "nvmlDeviceGetUtilizationRates", "nvmlDeviceGetPowerUsage",
+    "nvmlDeviceGetPowerManagementLimit", "nvmlDeviceGetPowerManagementDefaultLimit",
+    "nvmlDeviceGetEnforcedPowerLimit", "nvmlDeviceGetPowerManagementLimitConstraints",
+    "nvmlDeviceGetClockInfo", "nvmlDeviceGetMaxClockInfo", "nvmlDeviceGetFanSpeedRPM",
 })
+
+
+def _indexed_fan_rpm(nvml):
+    """Use the binding's native structure: its public RPM wrapper fixes fan=0.
+
+    Resolve only this read-only symbol, and never substitute fan zero for another
+    fan. Missing binding helpers leave RPM unavailable without affecting percent.
+    """
+    helpers = ("c_nvmlFanSpeedInfo_t", "nvmlFanSpeedInfo_v1",
+               "_nvmlGetFunctionPointer", "_nvmlCheckReturn")
+    if any(getattr(nvml, name, None) is None for name in helpers):
+        return None
+
+    def read_rpm(handle, fan):
+        info = nvml.c_nvmlFanSpeedInfo_t()
+        info.version = nvml.nvmlFanSpeedInfo_v1
+        info.fan = fan
+        function = nvml._nvmlGetFunctionPointer("nvmlDeviceGetFanSpeedRPM")
+        nvml._nvmlCheckReturn(function(handle, byref(info)))
+        return info.speed
+
+    return read_rpm
 
 
 def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
@@ -54,7 +80,8 @@ def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
         if name not in _READS:
             raise ValueError(f"Not a diagnostic read: {name}")
         try:
-            function = getattr(nvml, name, None)
+            function = (_indexed_fan_rpm(nvml) if name == "nvmlDeviceGetFanSpeedRPM"
+                        else getattr(nvml, name, None))
             if function is None:
                 return {"status": "unavailable", "reason": "binding_function_missing"}
             value = function(*args)
@@ -119,6 +146,23 @@ def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
                 "nvmlDeviceGetUtilizationRates", handle,
                 convert=lambda util: {"gpu": util.gpu, "memory": util.memory})
             gpu["power_w"] = read("nvmlDeviceGetPowerUsage", handle, convert=lambda mw: mw / 1000)
+            for field, function in (
+                    ("limit", "nvmlDeviceGetPowerManagementLimit"),
+                    ("default", "nvmlDeviceGetPowerManagementDefaultLimit"),
+                    ("enforced", "nvmlDeviceGetEnforcedPowerLimit")):
+                gpu[f"power_{field}_w"] = read(function, handle, convert=lambda mw: mw / 1000)
+            gpu["power_constraints_w"] = read(
+                "nvmlDeviceGetPowerManagementLimitConstraints", handle,
+                convert=lambda limits: {"minimum": limits[0] / 1000, "maximum": limits[1] / 1000})
+            clocks = gpu["clocks_mhz"] = {}
+            for domain, constant in (("graphic", "NVML_CLOCK_GRAPHICS"), ("sm", "NVML_CLOCK_SM"),
+                                     ("memory", "NVML_CLOCK_MEM"), ("video", "NVML_CLOCK_VIDEO")):
+                clock_type = getattr(nvml, constant, None)
+                for kind, function in (("current", "nvmlDeviceGetClockInfo"),
+                                       ("max", "nvmlDeviceGetMaxClockInfo")):
+                    clocks[f"{domain}_{kind}"] = (
+                        read(function, handle, clock_type) if clock_type is not None else
+                        {"status": "unavailable", "reason": "binding_constant_missing"})
             gpu["name"] = read("nvmlDeviceGetName", handle)
             gpu["temperature_c"] = read("nvmlDeviceGetTemperature", handle, nvml.NVML_TEMPERATURE_GPU)
             fans = gpu["fan_count"] = read("nvmlDeviceGetNumFans", handle)
@@ -128,6 +172,7 @@ def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
                 for fan in range(fans["value"]):
                     gpu["fans"].append({
                         "index": fan, "speed_percent": read("nvmlDeviceGetFanSpeed_v2", handle, fan),
+                        "speed_rpm": read("nvmlDeviceGetFanSpeedRPM", handle, fan),
                     })
     finally:
         try:
@@ -137,4 +182,3 @@ def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
         if errors:
             report["status"] = "error"
     return report
-

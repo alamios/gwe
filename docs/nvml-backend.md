@@ -26,8 +26,8 @@ exceptions. Calls on one backend instance are serialized. Handles and readings a
 so transient failures cannot return a previous temperature as if it were fresh. Monotonic start/end timestamps
 bound the collection interval; individual NVML calls do not form an atomic hardware snapshot.
 
-Readings include temperature (Celsius), per-fan speed (percent), manual fan limits, memory (bytes), utilization
-(percent) and power (watts, converted from NVML milliwatts). Each query reports its own availability/error.
+Readings include temperature (Celsius), per-fan speed (percent and RPM), manual fan limits, memory (bytes), utilization
+(percent), current/maximum clocks (MHz), and power draw/limits (watts, converted from NVML milliwatts). Each query reports its own availability/error.
 Missing optional metrics do not suppress other readings. There is no inferred permission to write and no setter.
 Consumers must treat failed temperature reads as unusable for future fan control.
 
@@ -45,3 +45,26 @@ This is not a Wayland session or Kubuntu 26.04 UI test.
 The combined suite has 26 passing tests on each interpreter. Added scenarios cover index changes,
 missing selected devices, identity mismatch/unavailability, invalid selection, unit conversion and recovery
 across snapshots without stale readings. Driver calls remain simulated in automated tests.
+
+## Extended telemetry: 2026-10-01
+
+Schema 2 has additive optional fields: `power_limit_w`, `power_default_w`, `power_enforced_w`,
+`power_constraints_w` (minimum/maximum), `clocks_mhz` (graphic/sm/memory/video, current/max), and
+per-fan `speed_rpm`. Every query keeps an independent status. Missing constants or binding helpers
+are unavailable; unsupported driver reads have no value. UI adaptation clears missing values and
+preserves zero, while keeping all direct write capabilities disabled.
+
+The installed binding's public RPM function fixes the fan index at zero. A narrow compatibility
+adapter uses its existing versioned structure and private symbol/error helpers to call only
+`nvmlDeviceGetFanSpeedRPM`, once per fan index. It does not patch the installed binding or copy fan-zero
+readings to other fans. Missing helpers leave RPM unavailable. This private-helper dependency needs
+revalidation when updating the binding. NVIDIA describes these fan readings as intended speed;
+they are not an independent check that a physically obstructed fan is rotating.
+
+Live read-only queries succeeded on Python 3.12 and 3.14 with driver 580.178.04. Observed power limit
+and enforced limit were 250 W, default/maximum 480 W, minimum 100 W. All eight clock fields and both
+RPM fields were readable (both fans reported 0% and 0 RPM in the recorded snapshot). No settings were
+changed. The full simulated suite passed 251 tests on each interpreter; new cases cover unit conversion,
+clock-domain isolation, indexed RPM, zero values, optional API absence, partial errors and stale-value
+clearing. Python 3.12/X11 main-window preview also verified displayed values and disabled write controls.
+See the [API references](technical-references.md) and [main-window guide](main-window-service.md).

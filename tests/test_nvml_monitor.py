@@ -73,3 +73,26 @@ def test_sensor_error_is_not_zero_or_cached_temperature():
     gpu = monitor.get_status().gpu_status_list[0]
     assert gpu.temp.gpu is None
     assert gpu.power.draw == 80
+
+
+def test_extended_telemetry_maps_and_clears_without_enabling_writes():
+    backend = Backend()
+    device = backend.result['gpus'][0]
+    device.update(power_limit_w=ok(250), power_default_w=ok(450), power_enforced_w=ok(250),
+                  power_constraints_w=ok({'minimum': 100, 'maximum': 480}),
+                  clocks_mhz={'graphic_current': ok(0), 'memory_max': ok(10500)})
+    device['fans'][0]['speed_rpm'] = ok(0)
+    device['fans'][1]['speed_rpm'] = ok(1200)
+    monitor = NvmlMonitor(backend)
+    status = monitor.get_status()
+    gpu = status.gpu_status_list[0]
+    assert vars(gpu.power) == dict(draw=80, limit=250, default=450, minimum=100, enforced=250, maximum=480)
+    assert gpu.clocks.graphic_current == 0
+    assert gpu.clocks.memory_max == 10500
+    assert gpu.clocks.sm_current is None
+    assert gpu.fan.fan_list == [(35, 0), (None, 1200)]
+    assert status.read_only and not gpu.fan.control_allowed and not gpu.overclock.available
+    backend.result = snapshot()
+    cleared = monitor.get_status().gpu_status_list[0]
+    assert cleared.power.limit is None and cleared.clocks.memory_max is None
+    assert cleared.fan.fan_list[0][1] is None

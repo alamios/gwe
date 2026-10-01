@@ -39,7 +39,7 @@ The binding version does not establish support for every API on the installed dr
 | File | Relevant behavior |
 | --- | --- |
 | `gwe/interactor/has_nvidia_driver_interactor.py` | Mandatory NV-CONTROL startup gate |
-| `gwe/nvml_backend.py` | New read-only telemetry and UUID selection, not yet integrated into the GUI |
+| `gwe/nvml_backend.py` | Read-only telemetry and UUID selection for opt-in monitor/service-trial windows |
 | `gwe/repository/nvidia_repository.py` | Mixed X11/NVML telemetry, fan writes, power and clock operations |
 | `gwe/presenter/main_presenter.py` | Curve execution, write-result handling, refresh errors and profile reapplication |
 | `gwe/__main__.py` | Signal handling and automatic fan cleanup |
@@ -48,3 +48,16 @@ The binding version does not establish support for every API on the installed dr
 
 The [assessment](setup-compatibility.md) distinguishes observed behavior from proposed changes;
 the [maintenance plan](maintenance-plan.md) defines what remains to validate.
+
+
+## Extended read-only telemetry references
+
+- [NVML device queries](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlDeviceQueries.html):
+  power limits/constraints use milliwatts; clock reads use MHz. Fan percent and RPM report intended speed,
+  not independent evidence of physical rotation. Reads do not establish write permissions.
+- [Fan-speed structure](https://docs.nvidia.com/deploy/nvml-api/latest/api/structnvmlFanSpeedInfo__v1__t.html):
+  version and fan index are inputs; speed in RPM is output. The installed Python RPM wrapper fixes fan=0,
+  so the backend uses the binding's structure/version and native read symbol for each index.
+
+Consulted on 2026-10-01. Current-host support was tested separately from API documentation; see
+[nvml-backend.md](nvml-backend.md#extended-telemetry-2026-10-01).
