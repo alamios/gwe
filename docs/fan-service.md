@@ -2,9 +2,8 @@
 
 The local protocol is now connected to `ProcessBackend`, which executes the NVML controller and recovery
 in separate processes. A root-owned installation bundle, a 60-second systemd trial unit and an unprivileged
-test client are prepared. The owner has installed the reviewed bundle and passed normal-release and client-disconnection hardware
-trials with an unprivileged client. It is stopped after testing; expiry and service-failure hardware
-validation remain pending. The default
+test client are prepared. The owner has installed the reviewed bundle and passed normal-release, client-disconnection and lease-expiry hardware
+trials with an unprivileged client. It is stopped after testing; service-failure hardware validation remains pending. The default
 GWE backend, installed Flatpak and private profiles remain unchanged. This is not an unattended service.
 
 ## Protocol and asynchronous states
@@ -99,7 +98,7 @@ The trial is deliberately limited to 60 seconds, with a 60 C temperature ceiling
 competing process names. Those guards cannot detect every custom controller; the operator must still
 establish exclusive ownership and keep GWE closed. It never stops another service automatically.
 
-## Hardware procedure (normal/disconnect validated; expiry pending)
+## Hardware procedure (normal/disconnect/expire validated)
 
 Only after installation/configuration approval and read-only baseline verification, use the prepared
 Python 3.12 environment in the checkout. The client runs as the ordinary user:
@@ -213,7 +212,7 @@ Independent follow-up confirmed:
 - Driver 580.178.04, temperature 51 C, power limit unchanged at 250 W.
 
 The subsequent `disconnect` scenario closes the owning socket without requesting release and observes
-recovery through another unprivileged connection. Its result is recorded below; lease expiry and
+recovery through another unprivileged connection. Its result and the subsequent lease-expiry result are recorded below;
 service-failure scenarios remain pending. No new code or automated test execution was needed for this result record.
 
 ## Client-disconnection hardware trial: 2026-10-01
@@ -228,7 +227,30 @@ Independent follow-up confirmed service inactive/static with `Result=success` an
 no pending ownership record, CoolerControl active, both NVML policies automatic, reported speeds zero,
 X11 `GPUFanControlState` zero, driver 580.178.04, temperature 53 C and power limit unchanged at 250 W.
 
-Next, run `--scenario expire` separately: the client keeps its connection open and queries status but stops
+The subsequent trial used `--scenario expire` separately: the client keeps its connection open and queries status but stops
 renewing its five-second lease. Successful recovery must occur despite that open connection. Service-failure
 hardware scenarios remain separate pending checks. This update only records results; no code changed or
 additional automated tests ran.
+
+## Lease-expiry hardware trial: 2026-10-01
+
+The owner ran `--scenario expire` from repository commit `696ae7e` against the unchanged installed service
+bundle (`626c8ae`). The client reported an active curve and then idle after verified automatic recovery.
+Unlike disconnect, it retained the owning connection and continued status queries, but stopped renewing
+its five-second lease. This validates recovery despite an open client connection; status traffic does not
+extend ownership. The output does not contain elapsed timestamps or a per-tick telemetry trace.
+
+Independent follow-up confirmed service inactive/static, `Result=success`, `ExecMainStatus=0`, no pending
+ownership record and CoolerControl active. Both NVML policies and X11 `GPUFanControlState` were zero,
+reported speeds were zero, driver remained 580.178.04, temperature was 56 C and power limit remained 250 W.
+
+| Installed-service scenario | Client behavior | Independently checked final result |
+| --- | --- | --- |
+| Normal | Explicit release | Both fans automatic, clean shutdown |
+| Disconnect | Close owner socket without release | Both fans automatic, clean shutdown |
+| Expire | Keep socket open without renewal | Both fans automatic, clean shutdown |
+
+This completes the initial client-lifecycle hardware matrix. Installed-service crash/watchdog/post-stop
+recovery, suspend/resume, extended operation and Wayland remain unvalidated. The earlier standalone worker
+fault tests do not replace service-level hardware tests. No code changed or automated tests were rerun
+for this documentation-only result update. GWE integration and private-profile migration remain separate.
