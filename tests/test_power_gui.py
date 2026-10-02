@@ -340,3 +340,23 @@ def test_idle_status_does_not_erase_trial_rejection_instructions(setup):
     assert controller.available
     assert 'only 240 W or 250 W' in controller.message
     assert [op for op, fields in service.calls].count('power_apply') == 1
+
+
+@pytest.mark.parametrize('capability', [None, False, 'true', True])
+def test_power_with_active_curve_requires_explicit_service_capability(setup, capability):
+    controller, view, service, now, events = setup
+    controller.fan_active = lambda: True
+    def reply(operation, fields):
+        result = service.default(operation, fields)
+        result['power_with_fan'] = capability
+        return result
+    service.handler = reply
+    make_available(controller)
+    assert view.enabled[-1][0] == (capability is True)
+    view.value = 320
+    controller.apply()
+    settle(controller)
+    applies = [fields for op, fields in service.calls if op == 'power_apply']
+    assert bool(applies) == (capability is True)
+    if applies:
+        assert applies[0]['limit_mw'] == 320000

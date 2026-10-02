@@ -152,3 +152,48 @@ def test_power_backend_receives_validated_values_without_real_device():
     assert service.request(object(), command) == {
         'ok': True, 'operation_id': 0, 'gpu_uuid': 'GPU-test', 'state': 'busy'}
     assert service.power.starts == [(250000, 200000)]
+
+
+@pytest.mark.parametrize('state,owned,allowed', [
+    ('active', True, True), ('active', False, False), ('starting', True, False),
+    ('stopping', False, False), ('fault', False, False), ('recovery_failed', False, False),
+])
+def test_continuous_power_requires_stable_owned_curve(state, owned, allowed):
+    from gwe.fan_service import Lease
+    service = object.__new__(FanService)
+    service.power_with_fan = True
+    service.power = PowerBackend()
+    fan = FanBackend()
+    service.lease = Lease(fan, clock=lambda: 0)
+    service.lease.state = state
+    service.lease.owner = object() if owned else None
+    service.lease.deadline = 5 if owned else None
+    client = object()
+    command = decode(b'{"version":1,"op":"power_apply","expected_uuid":"GPU-test",'
+                     b'"limit_mw":320000,"expected_mw":250000}')
+    result = service.request(client, command)
+    assert result['ok'] == allowed
+    if allowed:
+        assert result['power_with_fan'] is True
+        owner = service.lease.owner
+        assert service.request(owner, {'version': 1, 'op': 'renew'})['ok']
+        assert service.lease.owner is owner and service.lease.state == 'active'
+        assert fan.stops == 0 and service.power.starts == [(320000, 250000)]
+        assert service.request(owner, {'version': 1, 'op': 'release'})['ok']
+        assert fan.stops == 1  # Fan release is available even while power is busy.
+    else:
+        assert result['error'] == 'busy' and not service.power.starts
+
+
+def test_expired_continuous_fan_lease_is_restored_before_power_apply():
+    from gwe.fan_service import Lease
+    service = object.__new__(FanService)
+    service.power_with_fan = True
+    service.power = PowerBackend()
+    fan = FanBackend()
+    fan.state = 'active'
+    service.lease = Lease(fan, clock=lambda: 6)
+    service.lease.state, service.lease.owner, service.lease.deadline = 'active', object(), 5
+    result = service.request(object(), {'op': 'power_apply', 'expected_uuid': 'GPU-test',
+                                       'limit_mw': 320000, 'expected_mw': 250000})
+    assert result['ok'] and fan.stops == 1 and service.lease.owner is None

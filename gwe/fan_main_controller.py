@@ -26,13 +26,23 @@ class FanMainController:
         self.session, self.allow_control, self.clock = session, allow_control, clock
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.pending = None
+        self.pending_transition = False
         self.selected = None
         self.next_tick = 0
         self.closed = False
         self.telemetry_available = False
         self.power = power
         if power is not None:
-            power.fan_busy = lambda: self.pending is not None or self.session.state != 'idle'
+            power.fan_active = lambda: self.session.state == 'active'
+            power.fan_busy = self.power_fan_busy
+
+    def power_fan_busy(self):
+        if self.closed:
+            return True
+        if self.session.continuous:
+            return (self.session.state not in ('idle', 'active')
+                    or (self.pending is not None and self.pending_transition))
+        return self.pending is not None or self.session.state != 'idle'
 
     def start(self):
         self.view.prepare_service_controls()
@@ -88,6 +98,7 @@ class FanMainController:
         if self.closed or self.pending is not None:
             return
         self.pending = self.executor.submit(operation, *arguments)
+        self.pending_transition = operation in (self.session.begin, self.session.release)
         self.refresh()
 
     def apply(self):
@@ -111,6 +122,7 @@ class FanMainController:
             self.refresh()
         if self.pending is not None and self.pending.done():
             task, self.pending = self.pending, None
+            self.pending_transition = False
             try:
                 task.result()
             except Exception as error:

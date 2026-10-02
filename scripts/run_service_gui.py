@@ -27,12 +27,15 @@ def main(argv=None):
     checks.add_argument('--smoke-test', action='store_true', help='Check the real main window in preview mode')
     checks.add_argument('--smoke-service', action='store_true', help='Exercise main-window buttons with a simulated service')
     checks.add_argument('--smoke-power', action='store_true', help='Exercise power Apply with a simulated service only')
+    checks.add_argument('--smoke-combined', action='store_true', help='Exercise power during a simulated continuous curve')
     args = parser.parse_args(argv)
-    if args.continuous and not (args.allow_control or args.smoke_service):
+    if args.smoke_combined:
+        args.continuous = True
+    if args.continuous and not (args.allow_control or args.smoke_service or args.smoke_combined):
         parser.error('--continuous requires --allow-control or --smoke-service')
-    if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power):
+    if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined):
         parser.error('Real control cannot be combined with demo or smoke checks')
-    if (args.smoke_service or args.smoke_power) and not args.demo:
+    if (args.smoke_service or args.smoke_power or args.smoke_combined) and not args.demo:
         parser.error('Simulated service smoke test requires --demo')
 
     build = prepare_environment(ROOT, 'service-gui')
@@ -55,15 +58,18 @@ def main(argv=None):
     endpoint = '/run/gwe-fan-service/control.sock'
     stop = threading.Event()
     worker = service = temporary = backend = None
-    if args.smoke_service or args.smoke_power:
+    if args.smoke_service or args.smoke_power or args.smoke_combined:
         from gwe.fan_service import FanService
         class SimulatedBackend:
             starts = 0
             stops = 0
+            renewals = 0
             def start(self, curve):
                 self.starts += 1
             def stop(self):
                 self.stops += 1
+            def renew(self, deadline):
+                self.renewals += 1
         backend = SimulatedBackend()
         temporary = tempfile.TemporaryDirectory(prefix='gwe-service-gui-')
         endpoint = str(Path(temporary.name) / 'control.sock')
@@ -85,8 +91,11 @@ def main(argv=None):
                 self.result = dict(state='applied', operation_id=len(self.calls),
                                    previous_mw=expected, applied_mw=requested)
                 return self.status()
-        simulated_power = SimulatedPower() if args.smoke_power else None
-        service = FanService(endpoint, backend, allowed_uid=os.geteuid(), power=simulated_power)
+        simulated_power = SimulatedPower() if args.smoke_power or args.smoke_combined else None
+        if args.smoke_combined:
+            simulated_power.rejections = 1
+        service = FanService(endpoint, backend, allowed_uid=os.geteuid(), power=simulated_power,
+                             power_with_fan=args.continuous)
         def serve():
             while not stop.is_set():
                 service.step(.01)
@@ -96,9 +105,9 @@ def main(argv=None):
     def factory(view):
         from gwe.power_gui import PowerController
         power = PowerController(view, endpoint, allowed=True, event_sink=log.record) if (
-            args.allow_power_control or args.smoke_power) else None
+            args.allow_power_control or args.smoke_power or args.smoke_combined) else None
         return FanMainController(view, profiles, limits, session,
-                                 allow_control=args.allow_control or args.smoke_service, power=power)
+                                 allow_control=args.allow_control or args.smoke_service or args.smoke_combined, power=power)
     configure_factory(factory)
 
     import gi
@@ -112,7 +121,7 @@ def main(argv=None):
     passed, phase = [], [0]
     power_edit_started = [0]
     deadline = time.monotonic() + 30
-    if args.smoke_test or args.smoke_service or args.smoke_power:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined:
         def check():
             app = entry.INJECTOR.get(entry.Application)
             presenter, view = app._presenter, app._view
@@ -125,6 +134,39 @@ def main(argv=None):
             if time.monotonic() >= deadline or session.state == 'fault':
                 return finish(False)
             if controller is None or not controller.telemetry_available:
+                return GLib.SOURCE_CONTINUE
+            if args.smoke_combined:
+                power = controller.power
+                gpu = presenter._latest_status.gpu_status_list[0]
+                simulated_power.uuid = gpu.info.uuid
+                if view._overclock_frame.get_sensitive() or not presenter._latest_status.read_only:
+                    return finish(False)
+                if phase[0] == 0:
+                    if simulated_power.calls or session.client is not None:
+                        return finish(False)
+                    view._fan_combobox.set_active(0)
+                    if not view._fan_apply_button.get_sensitive():
+                        return GLib.SOURCE_CONTINUE
+                    view._fan_apply_button.clicked()
+                    phase[0] = 1
+                elif phase[0] == 1 and session.state == 'active' and view._power_limit_apply_button.get_sensitive():
+                    view._power_limit_adjustment.set_value(320)
+                    view._power_limit_apply_button.clicked()
+                    phase[0] = 2
+                elif phase[0] == 2 and power.operation_id is None and simulated_power.calls:
+                    if (simulated_power.calls != [(320000, round(gpu.power.limit * 1000))]
+                            or 'Power verified: 320 W' not in view._main_infobar_label.get_text()
+                            or session.state != 'active' or backend.stops):
+                        return finish(False)
+                    power_edit_started[0] = time.monotonic()
+                    phase[0] = 3
+                elif phase[0] == 3 and time.monotonic() - power_edit_started[0] >= 5:
+                    if session.state != 'active' or backend.renewals < 2 or backend.stops:
+                        return finish(False)
+                    view._fan_edit_button.clicked()
+                    phase[0] = 4
+                elif phase[0] == 4 and session.state == 'idle' and controller.pending is None:
+                    return finish(backend.starts == backend.stops == 1 and 'recovery verified' in session.message)
                 return GLib.SOURCE_CONTINUE
             if args.smoke_power:
                 power = controller.power
@@ -273,7 +315,7 @@ def main(argv=None):
             worker.join(2)
             service.close()
             temporary.cleanup()
-    if args.smoke_test or args.smoke_service or args.smoke_power:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined:
         return 0 if passed == [True] and (not args.smoke_service or backend.starts == backend.stops == 3) else 1
     return result
 

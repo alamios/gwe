@@ -128,7 +128,8 @@ class FanService:
     Caller owns lifecycle/event-loop scheduling. Production root-to-user socket
     provisioning uses an explicitly supplied root-owned runtime directory.
     """
-    def __init__(self, path, backend, *, allowed_uid, clock=boot_time, provision=False, power=None):
+    def __init__(self, path, backend, *, allowed_uid, clock=boot_time, provision=False, power=None,
+                 power_with_fan=False):
         self.path = Path(path)
         parent = self.path.parent.stat()
         if type(allowed_uid) is not int or allowed_uid < 0:
@@ -141,6 +142,7 @@ class FanService:
         self.allowed_uid = allowed_uid
         self.lease = Lease(backend, clock)
         self.power = power
+        self.power_with_fan = power_with_fan
         self.selector = selectors.DefaultSelector()
         self.listener = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
         try:
@@ -202,18 +204,23 @@ class FanService:
         self.lease.expire()
 
     def request(self, client, request):
-        """Power is one-shot, mutually exclusive with every fan lease."""
+        """Continuous sessions may change power alongside a stable owned fan curve."""
         if request['op'].startswith('power_'):
             if self.power is None:
                 return {'ok': False, 'error': 'power_unavailable'}
             if request['op'] == 'power_status':
-                return self.power.status()
+                result = self.power.status()
+                return {**result, 'power_with_fan': True} if getattr(self, 'power_with_fan', False) else result
             if request['expected_uuid'] != self.power.uuid:
                 return {'ok': False, 'error': 'identity_mismatch'}
             self.lease.expire()
-            if self.lease.owner is not None or self.lease.state != 'idle':
+            stable_fan = (getattr(self, 'power_with_fan', False)
+                          and self.lease.owner is not None and self.lease.state == 'active')
+            idle_fan = self.lease.owner is None and self.lease.state == 'idle'
+            if not (idle_fan or stable_fan):
                 return {'ok': False, 'error': 'busy'}
-            return self.power.start(request['limit_mw'], request['expected_mw'])
+            result = self.power.start(request['limit_mw'], request['expected_mw'])
+            return {**result, 'power_with_fan': True} if getattr(self, 'power_with_fan', False) else result
         if request['op'] == 'acquire' and self.power is not None:
             status = self.power.status()
             if status['state'] in ('busy', 'fault') or status.get('trial_active') is True:

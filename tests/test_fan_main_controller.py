@@ -178,3 +178,18 @@ def test_active_fan_recovery_message_keeps_priority_over_power(controller):
     instance.power = SimpleNamespace(busy=False, message='Power unavailable during fan control.', close=lambda: None)
     instance.refresh()
     assert view.calls['show_main_infobar_message'][0].startswith(instance.session.message)
+
+
+def test_continuous_power_does_not_block_fan_renewal_or_release(controller):
+    activate(controller)
+    instance, view, client, now = controller
+    instance.session.continuous = True
+    assert not instance.power_fan_busy()
+    instance.pending = SimpleNamespace()
+    instance.pending_transition = False
+    assert not instance.power_fan_busy()  # An ordinary renewable-lease tick is compatible.
+    instance.pending_transition = True
+    assert instance.power_fan_busy()      # A queued release/start is not.
+    instance.pending = None
+    instance.session.state = 'stopping'
+    assert instance.power_fan_busy()

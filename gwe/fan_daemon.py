@@ -302,7 +302,8 @@ def main(argv=None):
         backend = ProcessBackend(config['gpu_uuid'], ceiling=85 if args.continuous else 60,
                                  record=record.record, clear=record.clear)
         power = PowerBackend(config['gpu_uuid'], RUNTIME)
-        service = FanService(endpoint, backend, allowed_uid=config['allowed_uid'], provision=True, power=power)
+        service = FanService(endpoint, backend, allowed_uid=config['allowed_uid'], provision=True,
+                             power=power, power_with_fan=args.continuous)
         stopping = False
         def stop(signum, frame):
             nonlocal stopping

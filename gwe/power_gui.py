@@ -12,7 +12,7 @@ POWER_ERRORS = {
     'stale_power': 'The live limit changed. Wait for telemetry before pressing Apply again.',
     'outside_limits': 'The requested power is outside the live GPU limits.',
     'power_busy': 'The service is busy; wait before pressing Apply again.',
-    'busy': 'Fan control is active; release it before changing power.',
+    'busy': 'Fan control is starting, restoring or faulted; wait for a stable session.',
     'recovery_pending': 'Recovery is pending. Check the service before another trial.',
     'recovery_failed': 'Recovery is not verified. Check the service.',
     'worker_unavailable': 'The service could not start its power worker.',
@@ -47,9 +47,11 @@ def to_mw(watts):
 
 class PowerController:
     def __init__(self, view, path, *, allowed=False, factory=FanClient, clock=time.monotonic,
-                 fan_busy=lambda: False, event_sink=lambda *args, **kwargs: None):
+                 fan_busy=lambda: False, fan_active=lambda: False, event_sink=lambda *args, **kwargs: None):
         self.view, self.path, self.allowed = view, path, allowed
         self.factory, self.clock, self.fan_busy, self.event_sink = factory, clock, fan_busy, event_sink
+        self.fan_active = fan_active
+        self.power_with_fan = False
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.pending = None
         self.pending_operation = 'power_status'
@@ -93,14 +95,14 @@ class PowerController:
 
     def refresh(self):
         enabled = (self.allowed and self.available and self.valid() and self.service_uuid == self.snapshot.info.uuid and not self.busy
-                   and not self.fan_busy() and not self.closed)
+                   and not self.fan_busy() and (not self.fan_active() or self.power_with_fan) and not self.closed)
         self.view.set_service_power_enabled(enabled, self.message)
 
     def apply(self):
         self.refresh()
         if not (self.allowed and self.available and self.valid() and not self.busy
                 and self.service_uuid == self.snapshot.info.uuid
-                and not self.fan_busy() and not self.closed):
+                and not self.fan_busy() and (not self.fan_active() or self.power_with_fan) and not self.closed):
             return
         try:
             requested = to_mw(self.view.get_power_limit()[1])
@@ -136,6 +138,7 @@ class PowerController:
                 if not self.snapshot or result.get('gpu_uuid') != self.snapshot.info.uuid:
                     raise PowerResponseError('identity_mismatch')
                 self.service_uuid = result['gpu_uuid']
+                self.power_with_fan = result.get('power_with_fan') is True
                 self.available = True
                 state = result.get('state')
                 if state not in ('idle', 'busy', 'applied', 'rolled_back', 'failed', 'fault'):

@@ -28,6 +28,11 @@ The binding version does not establish support for every API on the installed dr
 
 ## API questions for implementation
 
+Concurrency review on 2026-10-02: [NVIDIA's NVML API reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html)
+documents thread-safe simultaneous calls. This is not a guarantee of atomic fan/power transactions or
+GeForce hardware acceptance. Continuous-mode concurrent control retains separate worker supervision,
+readbacks and recovery journals; real CUDA-load power acceptance remains pending.
+
 - Use read-only enumeration and fan limit queries before enabling any setter.
 - Check both `nvmlDeviceSetFanSpeed_v2` and `nvmlDeviceSetDefaultFanSpeed_v2` behavior and permissions.
 - Specify handling for unsupported calls, permission errors, lost devices, missing sensors and partial writes.

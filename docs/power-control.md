@@ -9,7 +9,7 @@ Visible main-window Power Apply verification has also passed on the current host
 
 Launch the isolated main window with an explicit backup and `--allow-power-control`. The existing
 Power slider and Apply button become available only after a matching-GPU service status response,
-fresh usable telemetry, and absence of fan/power work. `--allow-control` separately enables bounded
+fresh usable telemetry, and absence of conflicting fan/power work. `--allow-control` separately enables bounded
 fan trials; neither flag implies the other. Preview and monitor-only launchers never enable power writes.
 No power setting is applied at startup or imported from a profile. Overclock remains disabled.
 
@@ -27,7 +27,11 @@ the caller's expected value. Older installed services reject the new operation a
 Only an isolated worker invokes `nvmlDeviceSetPowerManagementLimit`. It re-resolves/checks UUID,
 queries current min/max and current limit, validates both previous/requested values, journals the previous
 limit before the setter, and requires exact readback after it. No fan or clock setters exist in this worker.
-Fan acquisitions and power operations exclude one another server-side; UI gating is additional protection.
+Fan acquisition remains blocked during power work. Brief trial services reject power during any fan
+lease. Continuous services advertise `power_with_fan=true` and permit power changes alongside a stable,
+owned active curve; starting, stopping, faulted or unowned active fan states remain blocked. The GUI
+requires that explicit capability before enabling Power with a curve active. Lease renewals and fan
+release continue independently during power work; UI gating is additional protection.
 The main service loop remains responsive to its watchdog while power NVML calls execute separately.
 
 ## Recovery and private records
@@ -286,3 +290,30 @@ watchdog termination. It does not establish hardware interruption inside an unco
 transaction. That boundary remains covered by simulated tests. Continuous operation, suspend/resume,
 driver/host failure and target-OS/Wayland acceptance remain pending. No new hardware tests are needed
 to repeat this accepted service-level result.
+
+## Power alongside a CUDA workload and active curve
+
+Prepared on 2026-10-02 at the owner's request. Authorized read-only inspection found the continuous
+service active, CoolerControl inactive, both fan policies manual, driver 580.178.04, GPU utilization 99%,
+temperature 58 C, a 250 W limit and approximately 249.3 W draw. Live power constraints were 100–480 W.
+The owner identified the load as CUDA with the saved curve active and requested a 320 W thermal trial.
+These observations establish the baseline; no 320 W hardware write or thermal result is claimed yet.
+
+The reviewed `build/session-service-v4` bundle enables power beside stable continuous fan ownership.
+The GTK simulated combined check applies 320 W, verifies its visible result while the curve remains
+active, observes continued lease renewal and explicitly restores fans afterward. The full suite passes
+with 465 tests on each interpreter, including capability gating, blocked transitions, lease expiry and
+release while power is busy. All setters during these checks use simulated backends.
+
+For the hardware check, close the current GWE window, update using the continuous-session launcher,
+reapply the saved curve and explicitly apply 320 W under the owner's CUDA workload. Observe temperature,
+actual draw and fan behavior; do not change clocks or add an artificial stress workload. The continuous
+fan-control cutoff remains 85 C. It restores automatic fan control, not a previously committed power
+limit. Explicitly apply 250 W again when the check ends; normal close retains the last verified power.
+If a fault prevents Apply, close/recover the session and reopen before restoring power. No claim is made
+that the power limit guarantees a particular temperature or that live workload stability is validated.
+
+[NVIDIA's NVML reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html) states that
+the library supports simultaneous calls from multiple threads. This supports the access-layer design,
+not atomicity between independent fan/power setters or this host's hardware acceptance. The supervised
+workers, exact power readback, fan-policy checks and separate journals remain the practical boundaries.

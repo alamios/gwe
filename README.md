@@ -39,7 +39,7 @@ current X11 host with administrator privileges. Recovery after worker SIGTERM, S
 stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-453 automated tests pass on both Python versions, including the socket-to-process service, client loss
+465 automated tests pass on both Python versions, including the socket-to-process service, client loss
 and recovery. The isolated Python
 3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
@@ -93,6 +93,9 @@ recorded an error at shutdown, followed by verified automatic policies and no pe
 The reviewed follow-up bundle is staged with an 85 C continuous ceiling, graceful process-group shutdown
 and root supervision of launcher exit/cleanup. Automated and simulated GTK checks pass; these follow-up
 changes and extended hardware operation remain unvalidated. See the single-command session launcher.
+Continuous sessions now advertise support for changing power alongside a stable active curve; transitions
+and faults remain blocked. A combined simulated GTK 320 W Apply/renewal/release check passes. A live CUDA
+baseline was read at 250 W and 58 C; changing to 320 W under that workload remains pending.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared

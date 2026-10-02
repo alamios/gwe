@@ -165,6 +165,10 @@ the initial 60 C ceiling has since been replaced by an 85 C continuous ceiling (
 client session lasted about 104 seconds but reported a service shutdown error, followed by verified
 automatic recovery. The revised private bundle is staged; hardware acceptance remains pending. See
 [continuous session](continuous-session.md).
+Prepared: changing power alongside a stable continuous fan curve, with explicit service capability
+gating and unchanged renewal/release recovery. Combined simulated GTK and 465 automated tests per
+interpreter pass. The owner's requested 320 W CUDA-load check remains pending; its baseline is recorded
+in [power control](power-control.md).
 
 Guarded power acceptance on 2026-10-01 now includes the terminal 250→240→250 W trial and a real
 main-window session with two verified transactions and an owner-confirmed visible result. Independent
