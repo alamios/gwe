@@ -116,5 +116,7 @@ startup. This accepts the observed extended session and clean service/session-re
 not suspend/resume, forced launcher death on hardware or a recorded temperature peak.
 
 Power retention on close behaved as designed: returning to the old application did not restore 250 W.
-No GPU settings were changed during follow-up. The next practical block is local packaging and a
-desktop launcher with controller-exclusivity checks and retained rollback, before target-OS migration.
+No GPU settings were changed during follow-up. A separate [local desktop installation](local-installation.md)
+now provides snapshots, retained rollback and controller checks before privileged session preparation.
+The owner explicitly chose to retain 320 W while continuing CUDA work. Installation does not start a
+session or interrupt that workload; target-OS migration and remaining recovery acceptance stay pending.

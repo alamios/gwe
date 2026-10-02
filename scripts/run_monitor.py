@@ -14,7 +14,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def prepare_environment(root, directory="monitor"):
-    build = root / "build" / directory
+    state = os.environ.get("GWE_STATE_HOME")
+    if state and not Path(state).is_absolute():
+        raise ValueError("GWE_STATE_HOME must be an absolute path")
+    build = Path(state) / directory if state else root / "build" / directory
     build.mkdir(parents=True, exist_ok=True)
     os.environ["GWE_MONITOR_ONLY"] = "1"
     os.environ.pop("GWE_SERVICE_TRIAL", None)

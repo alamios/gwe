@@ -63,6 +63,10 @@ esac
 if [ "$1" = -d ]; then mkdir -p "${@: -1}"; else cp "${@: -2:1}" "${@: -1}"; fi
 ''')
     python.write_text('''#!/bin/sh
+if [ "$1" = scripts/check_controllers.py ]; then
+    echo controller_check >> "$TRIAL_LOG"
+    exit "${CONTROLLER_EXIT:-0}"
+fi
 echo "gui_args $*" >> "$TRIAL_LOG"
 exit "${TRIAL_EXIT:-0}"
 ''')
@@ -93,6 +97,13 @@ def test_gui_failure_still_recovers_and_removes_override(tmp_path):
     assert result.returncode == 17
     assert not override.exists()
     assert 'entry recover' in log and 'start coolercontrold' in log
+
+
+def test_other_controller_refuses_before_any_service_changes(tmp_path):
+    result, log, _, override, _ = run_session(tmp_path, CONTROLLER_EXIT='1')
+    assert result.returncode != 0
+    assert log.strip() == 'controller_check'
+    assert not override.exists()
 
 
 def test_cooler_initially_stopped_is_not_started(tmp_path):

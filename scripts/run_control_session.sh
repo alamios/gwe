@@ -7,6 +7,12 @@ session_python=${1:?Provide the prepared Python 3.12 interpreter}
 session_database=${2:?Provide the read-only backup database}
 bundle=${3:?Provide the reviewed continuous-capable service bundle}
 [ "$#" -eq 3 ] && [ -f "$session_database" ] || exit 1
+# Hold a desktop-session lock and inspect competing applications before sudo or recovery.
+session_state=${GWE_STATE_HOME:-"$PWD/build"}
+mkdir -p -- "$session_state"
+exec 9>"$session_state/control-session.lock"
+flock -n 9 || { echo 'Another local control session is running'; exit 1; }
+"$session_python" scripts/check_controllers.py
 unit=gwe-fan-service.service
 override=/run/systemd/system/gwe-fan-service.service.d/90-gwe-continuous.conf
 state=$(systemctl show "$unit" -p ActiveState --value)

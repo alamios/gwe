@@ -26,6 +26,7 @@
 - [Main-window NVML service integration](docs/main-window-service.md)
 - [Explicit power-limit control and guarded acceptance](docs/power-control.md)
 - [Experimental manual continuous session](docs/continuous-session.md)
+- [Separate local desktop installation and rollback](docs/local-installation.md)
 - [Development monitor-only integration](docs/monitor-mode.md)
 - [Preparing the development GUI](docs/gui-development.md)
 - [Configuration backup and restore](docs/configuration-backup.md)
@@ -39,7 +40,7 @@ current X11 host with administrator privileges. Recovery after worker SIGTERM, S
 stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-465 automated tests pass on both Python versions, including the socket-to-process service, client loss
+478 automated tests pass on both Python versions, including the socket-to-process service, client loss
 and recovery. The isolated Python
 3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
@@ -101,6 +102,9 @@ reports successful real use; after returning to the old application, read-only i
 The session launcher now resets only an actually failed unit; unnecessary `reset-failed` calls could
 abort preparation after recovery unloaded an inactive unit. Focused launcher regression checks pass.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
+An optional separate local desktop installation snapshots the reviewed GUI, preserves prior code for
+rollback and checks for another GWE before service operations. It reuses the installed root service and
+explicit read-only backup; it does not replace Flatpak or migrate profiles. See the local installation guide.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.

@@ -6,6 +6,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- Implemented: separate user-owned desktop snapshots, update/rollback and pre-session competing-GWE
+  checks. The existing root service and explicit read-only backup are reused without profile migration or
+  automatic startup. Full simulated validation passes with 478 tests on both interpreters; see
+  [local installation](local-installation.md). The owner retains 320 W during current CUDA work.
+
 - Completed: read-only baseline, source assessment, working branch and English documentation.
 - Completed: interpreter checks for the two owner-provided environments (2026-09-30): Python 3.12.3 and 3.14.6.
 - Completed: standalone read-only NVML probe, 26 simulated tests on each interpreter, live GPU reads without
