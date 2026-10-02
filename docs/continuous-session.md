@@ -70,8 +70,8 @@ disconnect, continuous daemon operation beyond its historical lifetime, backend 
 rollback copies, source/installed launch modes and cleanup after GUI or recovery failures. The Python
 3.12 GTK simulated-service check held an active curve beyond ten seconds, explicitly restored it and
 closed during a subsequent active lease. All native GPU access during that GTK check was read-only.
-The current bundle is staged privately at `build/session-service-v4`; it has not been installed or
-accepted on hardware. Earlier staged bundles are retained, not overwritten. Existing Reactivex datetime
+The current bundle is staged privately at `build/session-service-v4`; the owner installed it and reported
+successful real use as recorded below. Earlier staged bundles are retained, not overwritten. Existing Reactivex datetime
 deprecation warnings remain non-fatal.
 
 ## Observed first continuous session and consolidated follow-up
@@ -100,3 +100,21 @@ An inactive unit can be unloaded after recovery/reload; `reset-failed` is unnece
 The launcher now rechecks ActiveState after recovery and resets only a failed unit. Eleven focused
 launcher tests pass on both interpreters, including inactive/unloaded and failed-state cases. This is a
 source-wrapper correction; the same reviewed bundle command can be rerun without rebuilding the bundle.
+
+### Extended session accepted by the owner: 2026-10-02
+
+Following the launcher correction, the real client logged active control from 11:45:17 to closure at
+14:18:31 (Europe/Madrid), approximately 2 hours 33 minutes. It recorded one `power_verified` event
+during that active session, without failure events in the session. The owner reported that use worked
+well and reopened the old application afterward.
+
+Independent read-only follow-up found the experimental service inactive with success, CoolerControl
+active and no GPU or session pending record. The old application was already reopened: fan policies
+were manual, power limit 320 W, temperature 63 C and GPU utilization 94%. These fan readings cannot
+independently establish automatic policy between development shutdown and the old application's
+startup. This accepts the observed extended session and clean service/session-record shutdown,
+not suspend/resume, forced launcher death on hardware or a recorded temperature peak.
+
+Power retention on close behaved as designed: returning to the old application did not restore 250 W.
+No GPU settings were changed during follow-up. The next practical block is local packaging and a
+desktop launcher with controller-exclusivity checks and retained rollback, before target-OS migration.

@@ -317,3 +317,18 @@ that the power limit guarantees a particular temperature or that live workload s
 the library supports simultaneous calls from multiple threads. This supports the access-layer design,
 not atomicity between independent fan/power setters or this host's hardware acceptance. The supervised
 workers, exact power readback, fan-policy checks and separate journals remain the practical boundaries.
+
+### Reported successful CUDA-load use: 2026-10-02
+
+After the launcher correction, the real session logged a verified power operation while its curve was
+active, followed by approximately 2 hours 33 minutes of active session time and normal window closure.
+The owner reported that use worked well and reopened the old application. Independent read-only
+follow-up found 320 W, 63 C and 94% GPU utilization, the experimental service inactive with success and
+no pending recovery/session records. The 320 W limit remained committed after development close.
+
+The redacted log does not retain numeric transaction values. The later live read establishes retained
+320 W, but does not reconstruct the exact transition, peak temperature or workload completion.
+No return to 250 W is claimed. The old application was already managing manual fan policies during
+follow-up; its behavior is separate from development recovery. No writes were made during inspection.
+The owner accepts this practical under-load use provisionally; quantitative thermal/performance
+characterization and suspend/resume remain pending.

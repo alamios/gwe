@@ -90,12 +90,14 @@ expected; CoolerControl is active again.
 An experimental manual continuous session supports explicit Apply/Restore, renewable ownership and
 watchdog/post-stop recovery. A real client session remained active for about 104 seconds; its service
 recorded an error at shutdown, followed by verified automatic policies and no pending GPU records.
-The reviewed follow-up bundle is staged with an 85 C continuous ceiling, graceful process-group shutdown
-and root supervision of launcher exit/cleanup. Automated and simulated GTK checks pass; these follow-up
-changes and extended hardware operation remain unvalidated. See the single-command session launcher.
+The follow-up with an 85 C continuous ceiling, graceful process-group shutdown and root supervision
+of launcher exit/cleanup has now been used successfully. A real session logged about 2 hours 33 minutes
+of active curve control and a verified power operation; follow-up found clean service shutdown and no
+pending records. See the single-command session launcher.
 Continuous sessions now advertise support for changing power alongside a stable active curve; transitions
-and faults remain blocked. A combined simulated GTK 320 W Apply/renewal/release check passes. A live CUDA
-baseline was read at 250 W and 58 C; changing to 320 W under that workload remains pending.
+and faults remain blocked. A combined simulated GTK 320 W Apply/renewal/release check passes. The owner
+reports successful real use; after returning to the old application, read-only inspection found 320 W,
+63 C and 94% GPU use. This is a later observation, not the trial's measured peak temperature.
 The session launcher now resets only an actually failed unit; unnecessary `reset-failed` calls could
 abort preparation after recovery unloaded an inactive unit. Focused launcher regression checks pass.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.

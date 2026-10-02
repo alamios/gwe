@@ -170,6 +170,13 @@ gating and unchanged renewal/release recovery. Combined simulated GTK and 465 au
 interpreter pass. The owner's requested 320 W CUDA-load check remains pending; its baseline is recorded
 in [power control](power-control.md).
 
+Follow-up acceptance on 2026-10-02: the owner reported successful extended use. The real session logged
+about 2 hours 33 minutes of active curve control and a verified power operation. Read-only follow-up
+after reopening old GWE found 320 W retained, 63 C, 94% GPU use, clean experimental-service shutdown
+and no pending records. The earlier pending CUDA-use entry is superseded by this observed result;
+no peak temperature or workload completion is established. Next: local packaging and a desktop launcher
+with exclusivity/rollback, followed by target-OS/Wayland and suspend/resume validation.
+
 Guarded power acceptance on 2026-10-01 now includes the terminal 250→240→250 W trial and a real
 main-window session with two verified transactions and an owner-confirmed visible result. Independent
 follow-up found 250 W, automatic fan policies and clean service shutdown. Earlier GUI failures remain
