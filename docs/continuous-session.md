@@ -90,3 +90,13 @@ rejection, real pidfd exit detection, CoolerControl restoration and retaining re
 The consolidated GTK check passes. Hardware verification of this complete revision remains pending.
 The additional combined GTK check verifies a simulated 320 W power change without interrupting active
 curve renewal, followed by explicit fan restoration. See the [CUDA load baseline and planned check](power-control.md).
+
+### Launcher reset correction: 2026-10-02
+
+The owner's update attempt stopped at `reset-failed` with a unit-not-loaded error. Independent inspection
+found the regular unit file present, the service inactive with success, CoolerControl active, 250 W, both
+fan policies automatic and no pending record. The failure happened before the wrapper's bundle update.
+An inactive unit can be unloaded after recovery/reload; `reset-failed` is unnecessary in that state.
+The launcher now rechecks ActiveState after recovery and resets only a failed unit. Eleven focused
+launcher tests pass on both interpreters, including inactive/unloaded and failed-state cases. This is a
+source-wrapper correction; the same reviewed bundle command can be rerun without rebuilding the bundle.

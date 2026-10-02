@@ -49,9 +49,13 @@ def run_session(tmp_path, *, installed=False, old_backup=False, override_exists=
     (bindir / 'systemctl').write_text('''#!/bin/sh
 echo "systemctl $*" >> "$TRIAL_LOG"
 case "$1" in
- show) echo inactive ;;
+ show) echo "${UNIT_STATE:-inactive}" ;;
  is-active) [ "${COOLER_ACTIVE:-1}" = 1 ] ;;
- stop|start|reset-failed|daemon-reload) exit 0 ;;
+ reset-failed)
+    if [ "${UNIT_STATE:-inactive}" != failed ]; then
+        echo 'Unit not loaded' >&2; exit 1
+    fi ;;
+ stop|start|daemon-reload) exit 0 ;;
  *) exit 91 ;;
 esac
 ''')
@@ -134,3 +138,11 @@ def test_continuous_override_retains_watchdog_and_no_boot_enablement():
     assert 'ReadWritePaths=/run/systemd/system/gwe-fan-service.service.d' in override
     assert 'WatchdogSec=10s' in unit and 'ExecStopPost=' in unit
     assert '[Install]' not in override
+
+
+@pytest.mark.parametrize('state', ['inactive', 'failed'])
+def test_only_failed_units_are_reset_after_recovery(tmp_path, state):
+    result, log, _, _, _ = run_session(tmp_path, UNIT_STATE=state)
+    assert result.returncode == 0, result.stderr
+    assert ('systemctl reset-failed' in log) == (state == 'failed')
+    assert 'gui_args' in log

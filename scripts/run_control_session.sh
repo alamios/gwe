@@ -27,7 +27,9 @@ sudo test ! -e "$override" && sudo test ! -L "$override" || {
 for marker in owned.json power-pending.json power-trial.json session.json; do
     sudo test ! -e "/run/gwe-fan-service/$marker" || exit 1
 done
-sudo systemctl reset-failed "$unit"
+if [ "$(systemctl show "$unit" -p ActiveState --value)" = failed ]; then
+    sudo systemctl reset-failed "$unit"
+fi
 # Preserve older rollback copies instead of deleting them during repeat updates.
 if [ "$bundle" != --installed ]; then
     if sudo test -e /opt/gwe-fan-service.previous || sudo test -L /opt/gwe-fan-service.previous; then

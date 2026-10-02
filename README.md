@@ -96,6 +96,8 @@ changes and extended hardware operation remain unvalidated. See the single-comma
 Continuous sessions now advertise support for changing power alongside a stable active curve; transitions
 and faults remain blocked. A combined simulated GTK 320 W Apply/renewal/release check passes. A live CUDA
 baseline was read at 250 W and 58 C; changing to 320 W under that workload remains pending.
+The session launcher now resets only an actually failed unit; unnecessary `reset-failed` calls could
+abort preparation after recovery unloaded an inactive unit. Focused launcher regression checks pass.
 Verified power changes persist on normal window/service close; no reboot persistence is configured.
 See the main-window and power-control guides.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
