@@ -22,9 +22,19 @@ location instead of resolving its Python symlink into the system interpreter.
 
 Open **GreenWithEnvy (NVML)** after closing the old GWE. A terminal opens for existing sudo authentication
 and session diagnostics; keep it open for the session. The launcher reuses the reviewed service with
-`--installed`, without a root package update. Select a curve and Apply explicitly; launch never applies a
-saved curve. Closing restores fan ownership through the existing supervised recovery. Verified power
+`--installed`, without a root package update. By default select a curve and Apply explicitly; a named
+startup curve requires the opt-in below. Closing restores fan ownership through the existing supervised recovery. Verified power
 changes remain committed, including the owner's intentionally retained 320 W; close does not reset power.
+
+The source installer now accepts `--startup-profile "Curve name"` to select a named startup curve in
+private local configuration. It preserves that preference on subsequent updates; an empty string disables
+it. With this opt-in, the continuous client selects exactly one compatible saved curve, waits for available
+telemetry and requests normal service acquisition once. Missing/ambiguous/incompatible curves refuse
+setup. Restore before acquisition cancels it; Restore after acquisition and faults never automatically
+rearm it. Preview/monitor and bounded trials do not automatically apply curves. This does not enable
+boot/login startup, power reapplication or profile database writes. Existing snapshots require an update
+after the application is closed; the new behavior was not installed over the owner's running session.
+Restore requests during an outstanding I/O renewal are now queued instead of silently dropped.
 
 Before sudo/recovery/service changes, a desktop-bus and Flatpak-process inspection refuses another
 historical GWE or service-control window. Inspection failure also refuses launch. A lock prevents overlapping
@@ -70,4 +80,17 @@ additional hardware acceptance.
 The separate user installation was prepared without launch. Its installed snapshot hashes and desktop
 entry passed validation; the installed controller check refused the reopened old GWE. The experimental
 root service remained inactive with a successful result. A real launch from the menu remains pending.
+On 2026-10-03 the owner reported the installed application working and reported completing the
+suspend/resume check. This is user-observed acceptance, without independently captured suspend/recovery
+telemetry. Encoder/decoder readings stayed zero during reported accelerated playback, as they did in the
+old application. This remains an inherited telemetry investigation, not a demonstrated new regression.
+The named-startup GTK simulated check passed, including release and no automatic reacquisition. Smoke
+windows now use a separate `.ServiceTrial.Smoke` identity/settings namespace so validation does not
+activate the installed real control window. An earlier startup check failed; the subsequent diagnostic
+check exposed a Restore click during pending I/O, which is covered by the queued-release correction.
+The explicit existing backup was reopened read-only: integrity and the requested curve's current manual
+limit compatibility passed. Real startup reapplication remains pending until the installed snapshot is updated.
+Final validation passed with 489 tests on each interpreter. A workspace-only snapshot update, rollback
+and reselect cycle also passed desktop validation without starting control; the active user installation
+was left running unchanged.
 Target-OS/Wayland, suspend/resume and driver/host failure recovery remain pending.

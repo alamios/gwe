@@ -20,3 +20,11 @@ def test_service_trial_always_blocks_direct_writes_and_isolates_state(monkeypatc
     assert monitor_only()
     assert config_namespace('gwe') == 'gwe-service-trial'
     assert application_id('com.leinardi.gwe') == 'com.leinardi.gwe.ServiceTrial'
+
+
+def test_simulated_gui_check_cannot_activate_installed_control_window(monkeypatch):
+    monkeypatch.setenv('GWE_SERVICE_TRIAL', '1')
+    monkeypatch.setenv('GWE_UI_SMOKE_TEST', '1')
+    assert monitor_only()
+    assert config_namespace('gwe') == 'gwe-service-smoke'
+    assert application_id('com.leinardi.gwe') == 'com.leinardi.gwe.ServiceTrial.Smoke'

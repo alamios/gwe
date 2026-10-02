@@ -16,6 +16,9 @@ system drivers, Xorg settings, Flatpak overrides or other application data.
 The directory permissions are owner-only and the files are private. This is a local recovery copy on the
 same disk, not protection against disk failure; copy it to the owner's normal backup storage before a system upgrade.
 Do not commit databases or manifests containing personal paths.
+On 2026-10-03, the explicitly supplied existing backup was checked again using a read-only SQLite
+connection. `integrity_check` passed, and the requested startup curve passed the current manual-limit
+validation. No database was overwritten or migrated. This does not include subsequent edits in old GWE.
 
 ## Make another online database backup
 

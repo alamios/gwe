@@ -193,3 +193,78 @@ def test_continuous_power_does_not_block_fan_renewal_or_release(controller):
     instance.pending = None
     instance.session.state = 'stopping'
     assert instance.power_fan_busy()
+
+
+def startup_controller(*, name='Saved', allow=True, continuous=True, profiles=None):
+    client = Client()
+    session = FanGuiSession('unused', factory=lambda _: client, continuous=continuous)
+    profiles = profiles or (SavedFanProfile(7, 'Saved', FanCurve(((40, 30), (80, 100))), None),)
+    instance = FanMainController(View(), profiles, (30, 100), session,
+                                 allow_control=allow, startup_profile_name=name)
+    instance.start()
+    return instance, client
+
+
+def test_startup_waits_for_telemetry_applies_once_and_release_does_not_rearm():
+    instance, client = startup_controller()
+    try:
+        instance.pulse()
+        assert not client.calls
+        assert instance.view.calls['refresh_fan_profile_combobox'][1] == 0
+        instance.telemetry(True)
+        settle(instance)
+        assert instance.session.state == 'active' and client.calls.count('acquire') == 1
+        instance.release()
+        instance.next_tick = 0
+        settle(instance)
+        assert instance.session.state == 'idle'
+        instance.pulse()
+        assert client.calls.count('acquire') == 1
+    finally:
+        instance.close()
+
+
+def test_startup_failure_does_not_retry():
+    instance, client = startup_controller()
+    client.state = 'fault'
+    try:
+        instance.telemetry(True)
+        settle(instance)
+        assert instance.session.state == 'fault'
+        count = len(client.calls)
+        instance.pulse()
+        assert len(client.calls) == count
+    finally:
+        instance.close()
+
+
+@pytest.mark.parametrize('options', [{'name': 'Missing'}, {'allow': False}, {'continuous': False},
+                                  {'profiles': (SavedFanProfile(1, 'Saved', FanCurve(((40, 0), (80, 100))), None),)}])
+def test_invalid_startup_settings_fail_closed(options):
+    with pytest.raises(ValueError):
+        startup_controller(**options)
+
+
+def test_restore_before_telemetry_cancels_startup():
+    instance, client = startup_controller()
+    try:
+        instance.release()
+        settle(instance)
+        instance.telemetry(True)
+        instance.pulse()
+        assert 'acquire' not in client.calls
+    finally:
+        instance.close()
+
+
+def test_restore_during_pending_renewal_is_queued(controller):
+    activate(controller)
+    instance, view, client, now = controller
+    instance._submit(instance.session.tick, now[0])
+    instance.release()
+    assert instance.release_pending
+    settle(instance)
+    assert not instance.release_pending
+    now[0] = 1
+    settle(instance)
+    assert 'release' in client.calls and instance.session.state == 'idle'

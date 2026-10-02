@@ -129,3 +129,17 @@ def test_shared_state_survives_source_location_change(tmp_path, monkeypatch):
     monkeypatch.setenv('GWE_STATE_HOME', str(state))
     assert load('run_monitor').prepare_environment(tmp_path / 'one') == state / 'monitor'
     assert load('run_monitor').prepare_environment(tmp_path / 'two') == state / 'monitor'
+
+
+def test_startup_preference_survives_update_and_is_forwarded(tmp_path, monkeypatch):
+    source, backup, prefix, apps = fixture(tmp_path)
+    installer = load('install_local')
+    installer.install(prefix, apps, sys.executable, backup, source=source, startup_profile='Saved')
+    installer.install(prefix, apps, sys.executable, backup, source=source)
+    assert json.loads((prefix / 'config.json').read_text())['startup_profile'] == 'Saved'
+    launcher = load('launch_local')
+    monkeypatch.setattr(launcher, '__file__', str(prefix / 'launch.py'))
+    calls = []
+    monkeypatch.setattr(launcher.os, 'execve', lambda *args: calls.append(args))
+    launcher.main()
+    assert calls[0][2]['GWE_STARTUP_PROFILE'] == 'Saved'

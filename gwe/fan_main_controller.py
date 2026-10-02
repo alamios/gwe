@@ -21,13 +21,26 @@ def create_controller(view):
 
 
 class FanMainController:
-    def __init__(self, view, profiles, limits, session, *, allow_control=False, clock=boot_time, power=None):
+    def __init__(self, view, profiles, limits, session, *, allow_control=False, clock=boot_time, power=None,
+                 startup_profile_name=None):
+        startup = None
+        if startup_profile_name is not None:
+            if not allow_control or not session.continuous:
+                raise ValueError('Startup application requires continuous fan control')
+            matches = [profile for profile in profiles if profile.name == startup_profile_name]
+            if len(matches) != 1 or matches[0].problem:
+                raise ValueError('Startup curve must match one compatible saved profile')
+            matches[0].curve.validate_limits(*limits)
+            startup = matches[0]
         self.view, self.profiles, self.limits = view, profiles, limits
         self.session, self.allow_control, self.clock = session, allow_control, clock
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.pending = None
         self.pending_transition = False
-        self.selected = None
+        self.release_pending = False
+        self.selected = startup
+        self.startup_pending = startup is not None
+        self.initializing = False
         self.next_tick = 0
         self.closed = False
         self.telemetry_available = False
@@ -41,14 +54,22 @@ class FanMainController:
             return True
         if self.session.continuous:
             return (self.session.state not in ('idle', 'active')
+                    or self.release_pending
                     or (self.pending is not None and self.pending_transition))
         return self.pending is not None or self.session.state != 'idle'
 
     def start(self):
         self.view.prepare_service_controls()
         self.view.set_service_continuous(self.session.continuous)
-        self.view.refresh_fan_profile_combobox(
-            [(profile.identifier, escape(profile.name)) for profile in self.profiles], None)
+        self.initializing = True
+        try:
+            self.view.refresh_fan_profile_combobox(
+                [(profile.identifier, escape(profile.name)) for profile in self.profiles],
+                self.profiles.index(self.selected) if self.selected else None)
+        finally:
+            self.initializing = False
+        if self.selected:
+            self.view.refresh_service_curve(self.selected.curve)
         self.refresh()
 
     def problem(self):
@@ -63,9 +84,10 @@ class FanMainController:
         return None
 
     def select(self, identifier):
-        if self.pending is not None or self.session.state != 'idle' or self.closed:
+        if self.initializing or self.pending is not None or self.session.state != 'idle' or self.closed:
             return
         self.selected = next((profile for profile in self.profiles if profile.identifier == identifier), None)
+        self.startup_pending = False
         self.view.refresh_service_curve(self.selected.curve if self.selected else None)
         self.refresh()
 
@@ -108,6 +130,12 @@ class FanMainController:
             self._submit(self.session.begin, self.selected.curve, self.limits)
 
     def release(self):
+        self.startup_pending = False
+        if self.closed:
+            return
+        if self.pending is not None:
+            self.release_pending = True
+            return
         self._submit(self.session.release)
 
     def telemetry(self, available):
@@ -129,6 +157,14 @@ class FanMainController:
                 self.session._fail(error)
             self.refresh()
         now = self.clock()
+        if self.release_pending and self.pending is None:
+            self.release_pending = False
+            self._submit(self.session.release)
+        if (self.startup_pending and self.pending is None and self.telemetry_available
+                and self.session.state == 'idle' and not (self.power is not None and self.power.busy)):
+            # One attempt per application start; recovery/release must never rearm it.
+            self.startup_pending = False
+            self.apply()
         if self.pending is None and self.session.client is not None:
             if not self.telemetry_available and self.session.state in ('starting', 'active'):
                 self.release()

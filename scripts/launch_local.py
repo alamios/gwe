@@ -15,6 +15,9 @@ def main():
     if release.parent != prefix / 'releases':
         raise RuntimeError('Invalid local release selection')
     environment = dict(os.environ, GWE_STATE_HOME=str(prefix / 'state'))
+    environment.pop('GWE_STARTUP_PROFILE', None)
+    if config.get('startup_profile'):
+        environment['GWE_STARTUP_PROFILE'] = config['startup_profile']
     os.execve('/bin/bash', ['bash', str(release / 'scripts/run_control_session.sh'),
                            config['python'], config['database'], '--installed'], environment)
 

@@ -6,6 +6,14 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- Owner follow-up on 2026-10-03: installed menu client works; suspend/resume was reported tested,
+  without an independently captured recovery trace. Named startup curve reapplication is now opt-in
+  in source with once-per-launch acquisition, fresh-telemetry gating and no fault/release rearming.
+  Encoder/decoder zeros during reported accelerated playback remain an inherited unresolved observation.
+  Native/Flatpak packaging is still proposed; see [architecture and prerequisites](packaging-plan.md).
+  Restore requests during pending renewal are now queued. The startup GTK simulated check passed using
+  a separate smoke identity; real automatic startup acceptance requires updating the inactive local client.
+
 - Implemented: separate user-owned desktop snapshots, update/rollback and pre-session competing-GWE
   checks. The existing root service and explicit read-only backup are reused without profile migration or
   automatic startup. Full simulated validation passes with 478 tests on both interpreters; see

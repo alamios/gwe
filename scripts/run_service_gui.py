@@ -23,23 +23,37 @@ def main(argv=None):
     parser.add_argument('--allow-control', action='store_true', help='Enable explicit ten-second service trials')
     parser.add_argument('--allow-power-control', action='store_true', help='Enable explicit service power-limit Apply')
     parser.add_argument('--continuous', action='store_true', help='Keep an explicitly applied curve until release/close')
+    parser.add_argument('--startup-profile', help='Apply one named saved curve once after fresh startup telemetry')
     checks = parser.add_mutually_exclusive_group()
     checks.add_argument('--smoke-test', action='store_true', help='Check the real main window in preview mode')
     checks.add_argument('--smoke-service', action='store_true', help='Exercise main-window buttons with a simulated service')
     checks.add_argument('--smoke-power', action='store_true', help='Exercise power Apply with a simulated service only')
     checks.add_argument('--smoke-combined', action='store_true', help='Exercise power during a simulated continuous curve')
+    checks.add_argument('--smoke-startup', action='store_true', help='Check automatic startup and explicit release with simulated control')
     args = parser.parse_args(argv)
+    if args.smoke_startup:
+        args.continuous = True
+    startup_profile = args.startup_profile
+    if startup_profile is None and args.allow_control and args.continuous:
+        startup_profile = os.environ.get('GWE_STARTUP_PROFILE')
+    if args.smoke_startup:
+        startup_profile = 'Synthetic trial'
+    if startup_profile is not None and not ((args.allow_control or args.smoke_startup) and args.continuous):
+        parser.error('--startup-profile requires --allow-control and --continuous')
     if args.smoke_combined:
         args.continuous = True
-    if args.continuous and not (args.allow_control or args.smoke_service or args.smoke_combined):
-        parser.error('--continuous requires --allow-control or --smoke-service')
-    if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined):
+    if args.continuous and not (args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup):
+        parser.error('--continuous requires --allow-control or a simulated continuous check')
+    if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup):
         parser.error('Real control cannot be combined with demo or smoke checks')
-    if (args.smoke_service or args.smoke_power or args.smoke_combined) and not args.demo:
+    if (args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup) and not args.demo:
         parser.error('Simulated service smoke test requires --demo')
 
     build = prepare_environment(ROOT, 'service-gui')
     os.environ['GWE_SERVICE_TRIAL'] = '1'
+    os.environ.pop('GWE_UI_SMOKE_TEST', None)
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
+        os.environ['GWE_UI_SMOKE_TEST'] = '1'
     from gwe.fan_curve import FanCurve
     from gwe.fan_profiles import SavedFanProfile, read_profiles, manual_limits
     from gwe.fan_gui_session import FanGuiSession
@@ -48,6 +62,11 @@ def main(argv=None):
     try:
         profiles = (SavedFanProfile(1, 'Synthetic trial', FanCurve(((0, 40), (50, 40), (80, 100))), None),) if args.demo else read_profiles(args.database)
         limits = (30, 100) if args.demo else manual_limits()
+        if startup_profile is not None:
+            matches = [profile for profile in profiles if profile.name == startup_profile]
+            if len(matches) != 1 or matches[0].problem:
+                raise ValueError('Startup curve must uniquely match a compatible profile')
+            matches[0].curve.validate_limits(*limits)
         log = FanGuiLog(build / 'logs' / 'trial.log')
         log.record('control_window_opened' if args.allow_control or args.smoke_service else 'preview_opened')
         resource_path = prepare_resources(ROOT, build)
@@ -58,7 +77,7 @@ def main(argv=None):
     endpoint = '/run/gwe-fan-service/control.sock'
     stop = threading.Event()
     worker = service = temporary = backend = None
-    if args.smoke_service or args.smoke_power or args.smoke_combined:
+    if args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
         from gwe.fan_service import FanService
         class SimulatedBackend:
             starts = 0
@@ -107,7 +126,8 @@ def main(argv=None):
         power = PowerController(view, endpoint, allowed=True, event_sink=log.record) if (
             args.allow_power_control or args.smoke_power or args.smoke_combined) else None
         return FanMainController(view, profiles, limits, session,
-                                 allow_control=args.allow_control or args.smoke_service or args.smoke_combined, power=power)
+                                 allow_control=args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup,
+                                 power=power, startup_profile_name=startup_profile)
     configure_factory(factory)
 
     import gi
@@ -121,19 +141,35 @@ def main(argv=None):
     passed, phase = [], [0]
     power_edit_started = [0]
     deadline = time.monotonic() + 30
-    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
         def check():
             app = entry.INJECTOR.get(entry.Application)
             presenter, view = app._presenter, app._view
             controller = presenter._service_controller
             def finish(valid):
                 passed.append(valid)
+                if args.smoke_startup and not valid:
+                    print('Startup check:', {'phase': phase[0], 'state': session.state,
+                                             'starts': backend.starts, 'stops': backend.stops,
+                                             'startup_pending': controller.startup_pending if controller else None}, flush=True)
                 print('Main-window service smoke test:', 'PASS' if valid else 'FAIL', flush=True)
                 app.quit()
                 return GLib.SOURCE_REMOVE
             if time.monotonic() >= deadline or session.state == 'fault':
                 return finish(False)
             if controller is None or not controller.telemetry_available:
+                return GLib.SOURCE_CONTINUE
+            if args.smoke_startup:
+                if phase[0] == 0 and session.state == 'active':
+                    if backend.starts != 1 or controller.selected.name != 'Synthetic trial':
+                        return finish(False)
+                    view._fan_edit_button.clicked()
+                    phase[0] = 1
+                elif phase[0] == 1 and session.state == 'idle' and controller.pending is None:
+                    power_edit_started[0] = time.monotonic()
+                    phase[0] = 2
+                elif phase[0] == 2 and time.monotonic() - power_edit_started[0] >= 2:
+                    return finish(backend.starts == backend.stops == 1 and session.state == 'idle')
                 return GLib.SOURCE_CONTINUE
             if args.smoke_combined:
                 power = controller.power
@@ -315,7 +351,7 @@ def main(argv=None):
             worker.join(2)
             service.close()
             temporary.cleanup()
-    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
         return 0 if passed == [True] and (not args.smoke_service or backend.starts == backend.stops == 3) else 1
     return result
 

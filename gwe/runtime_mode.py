@@ -14,11 +14,15 @@ def service_trial():
 
 def config_namespace(package_name):
     if service_trial():
+        if os.environ.get('GWE_UI_SMOKE_TEST') == '1':
+            return package_name + '-service-smoke'
         return package_name + "-service-trial"
     return package_name + "-monitor" if monitor_only() else package_name
 
 
 def application_id(base_id):
     if service_trial():
+        if os.environ.get('GWE_UI_SMOKE_TEST') == '1':
+            return base_id + '.ServiceTrial.Smoke'
         return base_id + ".ServiceTrial"
     return base_id + ".Monitor" if monitor_only() else base_id

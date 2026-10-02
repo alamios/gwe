@@ -53,7 +53,8 @@ def desktop_quote(value):
     return '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$').replace('%', '%%') + '"'
 
 
-def install(prefix, applications, python=None, database=None, *, rollback=False, source=ROOT):
+def install(prefix, applications, python=None, database=None, *, rollback=False, source=ROOT,
+            startup_profile=None):
     prefix = prefix.absolute()
     if prefix.is_symlink():
         raise RuntimeError('Installation directory must not be a symlink')
@@ -118,7 +119,12 @@ def install(prefix, applications, python=None, database=None, *, rollback=False,
                    f'Icon={prefix}/current/data/icons/hicolor/256x256/apps/com.leinardi.gwe.png\n')
         applications.mkdir(parents=True, exist_ok=True)
         atomic_file(prefix / 'launch.py', (source / 'scripts/launch_local.py').read_text(), 0o700)
-        atomic_file(prefix / 'config.json', json.dumps({'version': 1, 'python': str(python), 'database': str(database)}) + '\n')
+        config = {'version': 1, 'python': str(python), 'database': str(database)}
+        if startup_profile is None and (prefix / 'config.json').exists():
+            startup_profile = json.loads((prefix / 'config.json').read_text()).get('startup_profile')
+        if startup_profile:
+            config['startup_profile'] = startup_profile
+        atomic_file(prefix / 'config.json', json.dumps(config) + '\n')
         if old and old != release:
             select(prefix, 'previous', old)
         select(prefix, 'current', release)
@@ -130,13 +136,15 @@ def main():
     parser.add_argument('--python', type=Path)
     parser.add_argument('--database', type=Path)
     parser.add_argument('--rollback', action='store_true')
+    parser.add_argument('--startup-profile', help='Named saved curve to apply once at application startup')
     args = parser.parse_args()
     if not args.rollback and (args.python is None or args.database is None):
         parser.error('--python and --database are required for install/update')
     data = Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share')))
     if not data.is_absolute():
         parser.error('XDG_DATA_HOME must be absolute')
-    install(data / 'gwe-nvml', data / 'applications', args.python, args.database, rollback=args.rollback)
+    install(data / 'gwe-nvml', data / 'applications', args.python, args.database,
+            rollback=args.rollback, startup_profile=args.startup_profile)
     print('Local launcher prepared; no service started or GPU settings changed')
 
 

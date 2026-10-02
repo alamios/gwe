@@ -2,6 +2,8 @@
 
 This maintenance continuation has no published release or chosen public hosting namespace yet.
 The installed Flathub application is the historical upstream build, not a build of this branch.
+See the [NVML packaging architecture](docs/packaging-plan.md) for the proposed separate desktop client
+and native host helper. The current local snapshot is not a standalone binary, `.deb` or new Flatpak.
 
 ## Current preparation phase
 

@@ -27,6 +27,9 @@ supervisor finish recovery before systemd kills remaining children on timeout; t
 is 50 seconds. No boot enablement occurs.
 The application opens with isolated settings, explicit backup access and no selected/applied curve.
 Select a compatible curve and press **Apply selected curve**. **Restore automatic** releases it.
+The updated source supports an opt-in named startup curve through the
+[local installation preference](local-installation.md). It uses the same guarded acquisition once after
+telemetry becomes available; faults and Restore never rearm it. The default remains explicit Apply.
 Closing the application ends the session, stops/recovers the service, removes the runtime override
 and restores CoolerControl's original active state only after recovery succeeds. Keep the launching
 terminal open. Normal verified power changes remain committed on close, as documented in
