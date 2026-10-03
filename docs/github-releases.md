@@ -4,7 +4,7 @@ The fork develops on `main`. The annotated `upstream-baseline` tag preserves the
 commit; the maintenance branch is merged without squash. Existing upstream tags and historical branches
 are retained, but are not new fork releases. A separate `release` branch is not needed.
 
-## Candidate gate
+## Accepted candidate
 
 The first fork version is `1.0.0-rc1`, targeting the tested KDE/X11 host. Before tagging or publishing,
 record installed startup/editor/tray/Quit and SIGKILL/watchdog recovery using the unified package:
@@ -18,10 +18,15 @@ two service faults, keeps GTK unprivileged, restores automatic fans and verifies
 unchanged. It does not apply a power limit or clock offset. Do not substitute the old power trial,
 which uses a historical 250 W baseline. If recovery is not verified, stop and inspect the service.
 
-Wayland/Kubuntu 26.04, other GPUs and driver/host failure guarantees are outside the candidate's
-validated scope. Installed rc1-3 startup/editor/tray/Quit passed after recovery of a hung GUI. The original hang cause
-is unconfirmed; rc1-5 adds nonblocking error notices with an expanded isolated GTK check. Service
-fault trials and the updated package gate remain pending; no release tag or publication is claimed.
+The owner completed the installed rc1-5 gate on 2026-10-04: startup/editor/tray/Quit, SIGKILL and
+SIGSTOP/watchdog recovery all passed. Independent checks verified automatic fans, unchanged power,
+restored CoolerControl and an available socket. Package inspection confirms rc1-5 and unchanged payload.
+The child normal-startup checks printed FAIL when deliberately interrupted; those were not failures of
+the independent recovery checks. The developer harness now uses ordinary sessions for fault injection.
+
+Wayland/Kubuntu 26.04, other GPUs and driver/host failure guarantees remain outside validated scope.
+The exact original rc1-3 hang cause is unconfirmed; rc1-5 contains the tested nonblocking-notice fix.
+The local annotated `v1.0.0-rc1` tag and publication assets are prepared; no push or publication occurred.
 
 ## Generate local assets
 
@@ -34,9 +39,11 @@ Use a fresh directory and a monotonically increasing Debian revision, preserving
 python scripts/build_debs.py build/release-rc1-5 --version 1.0.0~rc1-5 --epoch 1790985600
 ```
 
-After final checks, create an annotated local version tag on the reviewed commit. Archive that exact
-tag with `git archive`, record it in `BUILD_INFO`, and checksum the `.deb`, source archive and build
-information in `SHA256SUMS`. Upload only those four files; review trees and service bundles are local
+The prepared assets are in `build/publish-v1.0.0-rc1/`. The `.deb` is copied byte-for-byte from the
+installed, accepted `build/release-rc1-5` artifact, built at `db50975`. It is deliberately not rebuilt
+after acceptance. The source archive uses the final `v1.0.0-rc1` tag; subsequent changes are documentation
+and the developer fault harness only, with no changes to packaged application/helper code. `BUILD_INFO`
+records both commits; `SHA256SUMS` checksums the package, archive and build information. Upload only those four files; review trees and service bundles are local
 inspection material. Never attach personal configuration, databases, screenshots or diagnostic logs.
 Inspect the archive/package contents and verify checksums before upload. Publication should use the
 exact tested package; source-only documentation changes must be recorded separately from its build.
@@ -54,7 +61,8 @@ git push origin v1.0.0-rc1 upstream-baseline
 ```
 
 These commands publish repository history/tags; they have not been run during preparation.
-Set `main` as the GitHub repository's default branch.
+Create the empty `alamios/gwe` GitHub repository first if needed (without an initial README/license).
+Set `main` as its default branch.
 
 1. Open **Releases → Draft a new release** in `alamios/gwe`.
 2. Select the existing `v1.0.0-rc1` tag and title the release `GreenWithEnvy 1.0.0-rc1`.

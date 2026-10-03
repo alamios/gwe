@@ -34,7 +34,8 @@ Earlier artifacts are retained for rollback.
 
 ## Installing the reviewed candidates
 
-The first candidate is prepared for local acceptance, not yet declared a validated release. Close all
+The first X11 prerelease passed installed rc1-5 acceptance; publication has not occurred.
+The publish directory retains the exact tested package plus tagged source and checksums. Close all
 GWE applications and let recovery finish before installing, updating, downgrading or removing the package.
 Review the APT simulation first:
 

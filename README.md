@@ -10,8 +10,8 @@ Original authors, contributor credits and the GPL-3.0-or-later license are retai
 
 The project home is [alamios/gwe](https://github.com/alamios/gwe). Source and native `.deb` packages are
 intended for [GitHub Releases](https://github.com/alamios/gwe/releases). The first candidate is
-**1.0.0-rc1**; Debian revision `1.0.0~rc1-3` is installed on the current host.
-Publication and final installed recovery acceptance are pending. This fork currently has no Flatpak
+**1.0.0-rc1**; Debian revision `1.0.0~rc1-5` passed installed X11 acceptance on the current host.
+The prerelease is prepared locally; publication remains an owner action. This fork currently has no Flatpak
 or PyPI distribution.
 
 ## What changed
@@ -38,7 +38,8 @@ power-limit persistence is configured. Missing readings remain unavailable rathe
 Current hardware evidence covers an RTX 3090 Ti with two fans, NVIDIA driver 580.178.04 and Ubuntu/Kubuntu
 24.04.5 on KDE/X11. Earlier supervised fan and power trials passed, including SIGKILL and watchdog recovery.
 The new native desktop has passed isolated graphical checks with simulated control and real read-only
-telemetry. Installed rc1-3 startup/Quit recovery passed; service SIGKILL/watchdog acceptance is still pending.
+telemetry. Installed rc1-5 startup/editor/tray/Quit and service SIGKILL/watchdog recovery passed, with automatic
+fans, unchanged power and restored CoolerControl.
 
 **Kubuntu 26.04 and Wayland remain untested.** Python 3.14 backend tests do not reproduce their native GTK
 stack. Driver/host failure guarantees and an independently recorded suspend/resume trace remain pending.
@@ -66,8 +67,8 @@ The package handles helper setup and socket activation; no separate installation
 required. The optional `scripts/install_release_candidate.sh` combines installation with development
 checks and a real startup/recovery trial. Those tests are not required for ordinary installation.
 The current-host package is installed and the owner reports successful ordinary use and corrected UI.
-Installed rc1-3 startup/editor/tray/Quit acceptance has passed. Privileged service fault-recovery
-acceptance and final acceptance of the nonblocking-notice candidate remain pending.
+Installed rc1-5 startup/editor/tray/Quit and privileged service fault-recovery acceptance passed.
+The original rc1-3 hang cause remains unconfirmed; native error notices are now nonblocking.
 
 After installation, launch **GreenWithEnvy** from the application menu or run `gwe-nvml`.
 Configuration and curves belong to the desktop user; the root helper stores only its authorization.

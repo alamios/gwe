@@ -34,7 +34,9 @@ def fault(nvml, signal, expected):
         raise RuntimeError('GPU must be cool and all fan policies automatic')
     cooler = state('coolercontrold.service')
     admin('reset-failed', UNIT)
-    process = subprocess.Popen(['/usr/bin/gwe-nvml', '--check-startup'])
+    # Normal startup/Quit is checked separately. A deliberately interrupted
+    # session must not also print that normal-completion check as FAIL.
+    process = subprocess.Popen(['/usr/bin/gwe-nvml'])
     try:
         deadline = time.monotonic() + 30
         while True:

@@ -14,7 +14,8 @@ Independent fork maintained by alamios with AI assistance. Original GWE authors 
  * Update project/About/support links to alamios/gwe and disclose AI maintenance.
  * Bundle complete Peewee playhouse modules and correct migration literal escape warnings.
 
-Current-host X11 trials passed on the RTX 3090 Ti; final unified installed acceptance remains pending.
+Installed unified rc1-5 X11 acceptance passed on the RTX 3090 Ti: startup/editor/tray/Quit,
+SIGKILL and SIGSTOP/watchdog recovery, automatic fans, unchanged power and restored CoolerControl.
 Kubuntu 26.04/Wayland, other hardware and driver/host failure recovery are not validated.
 
 Upstream history

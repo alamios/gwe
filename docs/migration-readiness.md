@@ -5,7 +5,10 @@ implemented and installed as unified Debian revision `1.0.0~rc1-3`. Isolated pac
 system Python, and the owner reports successful ordinary use. Read-only inspection confirms active
 installed service/socket. On 2026-10-04, hung-GUI termination recovered the helper with automatic
 fans and unchanged 340 W; subsequent installed rc1-3 startup/editor/tray/Quit acceptance passed.
-Native notices are now nonblocking in source; privileged service fault-recovery remains pending.
+Native notices are nonblocking in installed rc1-5. The owner subsequently ran rc1-5 installed
+startup/editor/tray/Quit and SIGKILL/SIGSTOP-watchdog recovery: all passed, with power unchanged,
+fans automatic and CoolerControl restored. Read-only verification confirms installed rc1-5 payload
+integrity, service inactive/success and activation socket active.
 Earlier split v5 statements below describe historical preparation, not the current installed package.
 Use [current packaging](packaging-plan.md) and [the grouped native acceptance](native-desktop.md).
 Earlier “pending” statements below describe their dated development stage.

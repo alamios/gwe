@@ -25,5 +25,7 @@ Launch **GreenWithEnvy** from the menu. No venv or repository installer is requi
 This fork currently has no Flatpak or PyPI distribution. Preserve existing profile backups before import;
 see the configuration/import and recovery documentation included in the repository.
 
-Preparation note (remove before publication only after acceptance): final unified installed startup/Quit
-and SIGKILL/watchdog recovery are pending. This file is local draft release text, not a published release.
+Installed native acceptance passed on 2026-10-04: startup with the saved curve, editor/tray/Quit,
+SIGKILL and SIGSTOP/watchdog recovery, with automatic fans, unchanged power and restored CoolerControl.
+The previous rc1-3 GUI hang's exact cause remains unconfirmed; rc1-5 includes nonblocking error notices
+validated with continued fan renewals and Quit while a notice is open. Please report recurring hangs.

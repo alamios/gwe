@@ -99,5 +99,9 @@ applied custom profile and automatic policies before startup, opens the original
 data, checks tray hide/show retains the lease, and explicitly quits. It then independently verifies
 automatic fans, unchanged power, restored CoolerControl state and an available activation socket.
 The check does not save preference changes or change the profile selection. This startup/Quit check
-passed on installed rc1-3. Privileged service fault trials and rc1-5 installed acceptance remain pending.
+passed on installed rc1-3 and rc1-5. On 2026-10-04 the owner also ran the grouped rc1-5 SIGKILL
+and SIGSTOP/watchdog service trials: both passed with automatic fans, unchanged power, restored
+CoolerControl and an available activation socket. The child startup-completion checks printed FAIL
+after the deliberate interruptions; the independent fault-recovery checks passed. The developer
+fault harness now launches an ordinary session to avoid that misleading normal-completion message.
 Wayland and Kubuntu 26.04 remain untested.

@@ -7,6 +7,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- Candidate acceptance on 2026-10-04: installed rc1-5 passes startup/editor/tray/Quit and privileged
+  SIGKILL/SIGSTOP-watchdog recovery, with automatic fans, unchanged power and CoolerControl restored.
+  The X11 prerelease is ready for owner publication; Wayland/26.04 and the original rc1-3 hang cause
+  remain unconfirmed. Earlier dated preparation statuses below are historical.
+
 - Release preparation on 2026-10-03: the 1.0.0-rc1 source now contains one native package, authenticated
   socket activation, writable profile import/editor, startup persistence and original tray/automatic
   controls. The extracted package passes its isolated GTK check using system Python. The unified rc1-3 package is now installed and the owner reports successful ordinary use;
