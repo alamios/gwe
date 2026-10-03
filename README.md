@@ -42,6 +42,9 @@ The first native installation exposed missing bundled Peewee `playhouse` modules
 pass the extracted-client GTK check with system Python; updating the installed v4 packages is pending.
 Kubuntu 26.04/Wayland validation remains pending. Decoder utilization
 during ordinary playback is still reported as zero despite successful controlled NVDEC telemetry checks.
+During the owner's Firefox/YouTube reproduction, direct NVML, the installed v5 backend and nvidia-smi
+also reported zero video-engine utilization. Firefox decoding diagnostics remain pending; the observed
+zero is not introduced by the GWE display mapping.
 
 All maintained documentation is written in English. The default control mode still requires X11 NV-CONTROL.
 Both fans have passed a supervised NVML manual-control trial and normal automatic restoration on the

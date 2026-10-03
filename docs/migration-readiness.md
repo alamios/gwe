@@ -12,6 +12,22 @@ control; upgrading the installed pair and real native-session acceptance remain 
 
 ## Current system and remaining maintenance
 
+### Firefox/YouTube video-counter follow-up
+
+On 2026-10-03, the owner reproduced zero Encoder/Decoder values in the native GUI while playing YouTube
+in Firefox. Installed packages were confirmed at `0.15.9+nvml20261003.5`. A read-only sampler used system
+Python and the installed vendor/backend modules, retained NVML initialization, and took 100 samples at
+approximately 200 ms intervals. Both direct encoder/decoder maxima were 0%; the installed backend had
+zero nonzero samples for either engine and returned successful readings with 100000 us sampling periods.
+An independent 12-sample `nvidia-smi dmon -s u` run likewise reported enc=0 and dec=0 throughout, while
+general GPU utilization varied from 7% to 39%. No GPU settings, browser preferences or packages changed.
+
+This establishes agreement between the source counters and the displayed zero for the observed interval;
+it does not establish whether Firefox selected software decoding, a different device, or another path.
+The owner was asked for only Firefox's HARDWARE_VIDEO_DECODING status or codec-support table from
+about:support. Browser diagnosis remains pending. Controlled NVDEC success from the earlier synthetic
+test must not be treated as proof that this browser playback uses NVDEC.
+
 Read-only checks reported kernel 7.0.0-38-generic and driver 580.178.04. NVIDIA DKMS reports this driver
 installed for the running kernel. The previous kernel 7.0.0-34 baseline is historical. Both fan policies
 were automatic, the experimental service inactive with success and CoolerControl active. The observed
