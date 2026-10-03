@@ -13,7 +13,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def prepare_environment(root, directory="monitor"):
+def prepare_environment(root, directory="monitor", *, isolate=True):
     state = os.environ.get("GWE_STATE_HOME")
     if state and not Path(state).is_absolute():
         raise ValueError("GWE_STATE_HOME must be an absolute path")
@@ -24,6 +24,8 @@ def prepare_environment(root, directory="monitor"):
     # Force local paths before imports can initialize the settings database.
     for variable, directory in (("XDG_CONFIG_HOME", "config"), ("XDG_CACHE_HOME", "cache"),
                                 ("XDG_DATA_HOME", "data")):
+        if not isolate:
+            continue
         target = build / directory
         target.mkdir(exist_ok=True)
         os.environ[variable] = str(target)

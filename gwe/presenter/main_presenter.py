@@ -52,7 +52,7 @@ from gwe.presenter.edit_overclock_profile_presenter import EditOverclockProfileP
 from gwe.presenter.historical_data_presenter import HistoricalDataPresenter
 from gwe.presenter.preferences_presenter import PreferencesPresenter
 from gwe.util.deployment import is_flatpak
-from gwe.runtime_mode import service_trial
+from gwe.runtime_mode import service_trial, native_desktop
 from gwe.util.view import show_notification, open_uri, get_default_application
 
 _LOG = logging.getLogger(__name__)
@@ -154,6 +154,8 @@ class MainPresenter:
 
     def on_start(self) -> None:
         if service_trial():
+            if native_desktop():
+                self._register_db_listeners()
             from gwe.fan_main_controller import create_controller
             self._service_controller = create_controller(self.main_view)
             self._service_controller.start()
@@ -167,7 +169,7 @@ class MainPresenter:
             self._check_new_version()
 
     def on_application_window_delete_event(self, *_: Any) -> bool:
-        if service_trial():
+        if service_trial() and not native_desktop():
             self.on_shutdown()
             return False
         if self._settings_interactor.get_int('settings_minimize_to_tray'):
@@ -196,7 +198,10 @@ class MainPresenter:
     def on_fan_edit_button_clicked(self, *_: Any) -> None:
         if service_trial():
             if self._service_controller is not None:
-                self._service_controller.release()
+                if native_desktop():
+                    self._service_controller.edit(self._edit_fan_profile_presenter)
+                else:
+                    self._service_controller.release()
             return
         profile = self._fan_profile_selected
         if profile:
@@ -245,7 +250,7 @@ class MainPresenter:
                         on_error=self._handle_set_overclock_result))
 
     def on_menu_settings_clicked(self, *_: Any) -> None:
-        if service_trial():
+        if service_trial() and not native_desktop():
             self.main_view.show_main_infobar_message('Preferences are disabled during the service trial.')
             return
         self._preferences_presenter.show()
@@ -262,7 +267,10 @@ class MainPresenter:
             profile_id = widget.get_model()[active][0]
             if service_trial():
                 if self._service_controller is not None:
-                    self._service_controller.select(profile_id)
+                    if native_desktop() and profile_id == -1:
+                        self._edit_fan_profile_presenter.show_add()
+                    else:
+                        self._service_controller.select(profile_id)
                 return
             self._select_fan_profile(profile_id)
 
@@ -322,11 +330,19 @@ class MainPresenter:
                                                 on_error=lambda e: _LOG.exception(f"Db signal error: {str(e)}"))
 
     def _on_speed_step_list_changed(self, db_change: DbChange) -> None:
+        if native_desktop():
+            if self._service_controller is not None:
+                self._service_controller.reload()
+            return
         profile: SpeedStep = db_change.entry.profile
         if self._fan_profile_selected and self._fan_profile_selected.id == profile.id:
             self.main_view.refresh_chart(profile)
 
     def _on_fan_profile_list_changed(self, db_change: DbChange) -> None:
+        if native_desktop():
+            if self._service_controller is not None:
+                self._service_controller.reload(None if db_change.type == DbChange.DELETE else db_change.entry.id)
+            return
         profile: FanProfile = db_change.entry
         if db_change.type == DbChange.DELETE:
             self._refresh_fan_profile_ui()
@@ -345,6 +361,10 @@ class MainPresenter:
             self._refresh_overclock_profile_ui(profile_id=profile.id)
 
     def _on_setting_list_changed(self, db_change: DbChange) -> None:
+        if native_desktop():
+            if self._service_controller is not None and db_change.entry.key == 'settings_hysteresis':
+                self._service_controller.reload()
+            return
         if db_change.entry.key == 'settings_hysteresis' and self._fan_profile_applied:
             self.main_view.refresh_chart(self._fan_profile_applied)
 

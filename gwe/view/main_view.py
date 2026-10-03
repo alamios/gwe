@@ -27,7 +27,7 @@ from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCan
 from gwe.interactor.settings_interactor import SettingsInteractor
 from gwe.model.status import Status
 from gwe.model.fan_profile import FanProfile
-from gwe.runtime_mode import service_trial
+from gwe.runtime_mode import service_trial, native_desktop
 _LOG = logging.getLogger(__name__)
 
 try:  # AppIndicator3 may not be installed
@@ -242,6 +242,10 @@ class MainView(MainViewInterface):
                     if service_trial() else "Fan control is disabled in monitor-only mode.")
                 self._overclock_warning_label.set_text("Overclocking is disabled during service trials."
                                                        if service_trial() else "Overclocking is disabled in monitor-only mode.")
+                if native_desktop():
+                    self._window.set_title('GreenWithEnvy')
+                    self._fan_warning_label.hide()
+                    self._overclock_warning_label.set_text('Clock offset control is not supported in this release.')
             if self._first_refresh or status.read_only:
                 self._first_refresh = False
                 self._set_entry_text(self._info_name_entry, gpu_status.info.name)
@@ -261,7 +265,7 @@ class MainView(MainViewInterface):
                 self._overclock_frame.set_sensitive(gpu_status.overclock.available)
                 self._overclock_warning_label.set_visible(not gpu_status.overclock.available)
                 self._fan_profile_frame.set_sensitive(service_trial() or gpu_status.fan.control_allowed)
-                self._fan_warning_label.set_visible(not gpu_status.fan.control_allowed)
+                self._fan_warning_label.set_visible(not gpu_status.fan.control_allowed and not native_desktop())
                 self._remove_level_bar_offsets(self._info_gpu_usage_levelbar)
                 self._remove_level_bar_offsets(self._info_memory_usage_levelbar)
                 self._remove_level_bar_offsets(self._info_encoder_usage_levelbar)
@@ -404,6 +408,13 @@ class MainView(MainViewInterface):
         self._fan_edit_button.set_sensitive(enabled)
 
     def prepare_service_controls(self) -> None:
+        if native_desktop():
+            self._main_infobar.hide()
+            self._fan_profile_frame.set_sensitive(True)
+            self._overclock_frame.set_sensitive(False)
+            self._power_limit_apply_button.set_sensitive(False)
+            self._power_limit_scale.set_sensitive(False)
+            return
         self._main_infobar_label.set_line_wrap(True)
         self._main_infobar_label.set_max_width_chars(80)
         self._main_infobar_label.set_xalign(0)
@@ -423,7 +434,7 @@ class MainView(MainViewInterface):
 
     def set_service_continuous(self, enabled: bool) -> None:
         self._service_continuous = enabled
-        if enabled:
+        if enabled and not native_desktop():
             self._fan_apply_button.set_label('Apply selected curve')
             self._fan_apply_button.set_tooltip_text('Runs while this window renews its service lease')
 
@@ -434,6 +445,10 @@ class MainView(MainViewInterface):
         self._power_limit_scale.set_sensitive(enabled)
         self._power_limit_apply_button.set_sensitive(enabled)
         self._power_limit_apply_button.set_tooltip_text(message)
+        if native_desktop() and message.startswith(('Power:', 'Invalid power limit', 'Power operation failed')):
+            if getattr(self, '_native_power_error', None) != message:
+                self._native_power_error = message
+                self.show_error_message_dialog('Power control', message)
 
     def refresh_service_curve(self, curve) -> None:
         if curve is None:

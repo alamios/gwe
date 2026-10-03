@@ -19,8 +19,10 @@ The combined development package now uses socket activation and `Terminal=false`
 existing private GPU/user authorization or generates it from an explicitly authorized desktop UID and one
 read-only GPU identity. Only the owner-readable socket is enabled; opening the authorized desktop session
 activates the helper. Kernel peer credentials, pidfd supervision, lease expiry and post-stop recovery
-remain enforced. Normal launch has no sudo invocation. User configuration/editor and trial UI cleanup are
-still pending. Both complete simulated suites pass with 531 tests; actual systemd activation/recovery
+remain enforced. Normal launch has no sudo invocation. Writable configuration/editor, tray behavior and
+trial UI cleanup are implemented; the isolated native GTK check passes. See
+[configuration/import and desktop validation](docs/native-desktop.md). Both complete simulated suites
+previously passed with 531 tests; actual systemd activation/recovery
 acceptance requires the prepared package to be installed and run from the owner's desktop.
 
 ## First local X11 release: agreed requirements

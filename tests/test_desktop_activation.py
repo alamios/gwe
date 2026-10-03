@@ -107,6 +107,25 @@ def test_existing_authorization_is_preserved_without_nvml_calls(tmp_path, monkey
     assert setup.OWNER_OVERRIDE.read_text() == '[Socket]\nSocketUser=1000\n'
 
 
+@pytest.mark.parametrize('kind', ['unknown', 'fifo', 'hardlink'])
+def test_unrecognized_socket_override_is_rejected_before_new_configuration(tmp_path, monkeypatch, kind):
+    from types import SimpleNamespace
+    from gwe import fan_daemon as daemon, native_setup as setup
+    monkeypatch.setattr(daemon, 'trusted', lambda path: Path(path))
+    monkeypatch.setattr(setup, 'OWNER_OVERRIDE', tmp_path / 'owner.conf')
+    monkeypatch.setattr(setup.pwd, 'getpwuid', lambda uid: SimpleNamespace(pw_uid=uid))
+    if kind == 'fifo':
+        os.mkfifo(setup.OWNER_OVERRIDE)
+    else:
+        setup.OWNER_OVERRIDE.write_text('unexpected authorization' if kind == 'unknown'
+                                       else '[Socket]\nSocketUser=1000\n')
+        if kind == 'hardlink':
+            os.link(setup.OWNER_OVERRIDE, tmp_path / 'second-link')
+    with pytest.raises(ValueError):
+        setup.configure(tmp_path / 'private.json', uid=1000)
+    assert not (tmp_path / 'private.json').exists()
+
+
 @pytest.mark.parametrize('device_count', [1, 2])
 def test_new_authorization_uses_read_only_identity_and_refuses_ambiguous_gpu(tmp_path, monkeypatch, device_count):
     from types import SimpleNamespace

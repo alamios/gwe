@@ -5,6 +5,7 @@ import math
 import time
 
 from gwe.fan_service import FanClient
+from gwe.runtime_mode import native_desktop
 
 
 POWER_ERRORS = {
@@ -47,10 +48,12 @@ def to_mw(watts):
 
 class PowerController:
     def __init__(self, view, path, *, allowed=False, factory=FanClient, clock=time.monotonic,
-                 fan_busy=lambda: False, fan_active=lambda: False, event_sink=lambda *args, **kwargs: None):
+                 fan_busy=lambda: False, fan_active=lambda: False, event_sink=lambda *args, **kwargs: None,
+                 telemetry_ttl=2.5):
         self.view, self.path, self.allowed = view, path, allowed
         self.factory, self.clock, self.fan_busy, self.event_sink = factory, clock, fan_busy, event_sink
         self.fan_active = fan_active
+        self.telemetry_ttl = telemetry_ttl
         self.power_with_fan = False
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.pending = None
@@ -69,7 +72,9 @@ class PowerController:
 
     @property
     def busy(self):
-        return self.pending is not None or self.remote_busy or self.operation_id is not None
+        request_busy = self.pending is not None and (
+            not native_desktop() or self.pending_operation != 'power_status')
+        return request_busy or self.remote_busy or self.operation_id is not None
 
     def _request(self, op, **fields):
         client = self.factory(self.path)
@@ -85,7 +90,7 @@ class PowerController:
 
     def valid(self):
         gpu = self.snapshot
-        if gpu is None or self.clock() - self.sample_time > 2.5:
+        if gpu is None or self.clock() - self.sample_time > self.telemetry_ttl:
             return False
         try:
             low, limit, high = (to_mw(v) for v in (gpu.power.minimum, gpu.power.limit, gpu.power.maximum))

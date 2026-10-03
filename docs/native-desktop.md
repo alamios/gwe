@@ -1,0 +1,54 @@
+# Native desktop candidate
+
+The unified development package uses the original GTK window with NVML monitoring and supervised
+fan/power control. Normal launch uses `gwe-nvml`, without a terminal or sudo. Only installation/setup
+authorizes the root helper. Installed socket activation still requires hardware acceptance; the older
+split v5 packages do not implement this desktop lifecycle.
+
+## Configuration and import
+
+The launcher creates private user configuration in `$XDG_DATA_HOME/gwe-nvml/config.json`
+(`~/.local/share` by default). The writable profile/settings database is
+`$XDG_CONFIG_HOME/gwe-native/gwe.db` (`~/.config` by default). A fresh installation initializes the
+ordinary profile schema and editor; it needs no manually authored fan-curve JSON. Root authorization
+contains only the desktop UID and pinned GPU identity, not editable curves.
+
+When upgrading an existing development installation with an explicitly configured `database` source,
+the first native launch performs an online SQLite copy and checks its integrity. It preserves the source,
+archives the previous launcher JSON and a database copy in `gwe-nvml/native-import-backup`, and records
+the new writable database. An existing destination or archive aborts import rather than overwriting it.
+The source backup is never the runtime database. No owner's profiles have been imported during source
+validation; synthetic fixtures verified this procedure and source preservation.
+
+For rollback, quit the native application and wait for verified helper recovery first. Preserve the
+native database separately before removing anything. Restore the earlier reviewed package/snapshot and
+its archived launcher JSON; retain the original profile source. Do not copy an active database with an
+ordinary filesystem copy or overwrite the historical source with the native database.
+
+## Ordinary controls
+
+- The original fan button opens the editor. Creation, edits and deletion update the profile list/plot.
+  Apply validates the curve against the current hardware range; invalid legacy curves are not clamped.
+- Applying an automatic profile releases the service lease and restores automatic fan control.
+- The last successfully applied curve is stored in the database and reapplied once after fresh startup
+  telemetry, subject to the existing "load last profile" preference. Choosing another curve without
+  applying it does not change the applied/startup profile. Faults never rearm startup application.
+- Closing follows the minimize-to-tray preference. Hiding retains the curve and lease; explicit Quit
+  releases them. The native login entry has its own `io.github.alamios.gwe.desktop` filename and launches
+  `gwe-nvml --hide-window --delay`; it does not overwrite the historical GWE login entry.
+- Routine lease renewal and read-only power-status polling do not disable the controls. Actual writes,
+  stale telemetry, transitions and faults retain their guards. Clock-offset control remains unsupported.
+- Trial titles/status band and temporary Apply/Restore labels are absent. Actionable failures use ordinary
+  dialogs; bounded private diagnostic logs remain in the launcher state directory.
+
+## Source validation
+
+`python scripts/run_service_gui.py --smoke-native` uses a separate settings identity and a synthetic
+service. The Python 3.12/X11 grouped check passed startup acquisition, editor opening/live plot changes,
+tray hide/show retaining control, automatic-profile Apply and persisted automatic selection. Its only
+real GPU operations are telemetry reads. Configuration tests verify private creation, online import,
+edit persistence, repeated preparation and refusal to overwrite existing data.
+
+Final acceptance must use the actual unified installed package and system Python, including profile
+creation/deletion, reopening, window-close with tray disabled, socket activation and post-stop recovery.
+Wayland and Kubuntu 26.04 remain untested.

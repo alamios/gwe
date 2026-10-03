@@ -4,6 +4,10 @@
 import os
 
 
+def native_desktop():
+    return os.environ.get('GWE_NATIVE_DESKTOP') == '1'
+
+
 def monitor_only():
     return os.environ.get("GWE_MONITOR_ONLY") == "1" or service_trial()
 
@@ -13,6 +17,8 @@ def service_trial():
 
 
 def config_namespace(package_name):
+    if native_desktop():
+        return package_name + ('-native-smoke' if os.environ.get('GWE_UI_SMOKE_TEST') == '1' else '-native')
     if service_trial():
         if os.environ.get('GWE_UI_SMOKE_TEST') == '1':
             return package_name + '-service-smoke'
@@ -21,6 +27,8 @@ def config_namespace(package_name):
 
 
 def application_id(base_id):
+    if native_desktop():
+        return 'io.github.alamios.gwe' + ('.Smoke' if os.environ.get('GWE_UI_SMOKE_TEST') == '1' else '')
     if service_trial():
         if os.environ.get('GWE_UI_SMOKE_TEST') == '1':
             return base_id + '.ServiceTrial.Smoke'

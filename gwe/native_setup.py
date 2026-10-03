@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 import pwd
+import stat
+import tempfile
 
 OWNER_OVERRIDE = Path('/etc/systemd/system/gwe-fan-service.socket.d/10-owner.conf')
 
@@ -19,6 +21,16 @@ def configure(config_path, uid=None):
         account = pwd.getpwuid(uid)
         if account.pw_uid < 1000:
             raise ValueError('A desktop account is required')
+        config = dict(version=1, allowed_uid=uid)
+    # Validate an existing override before any configuration/identity work or write.
+    expected = '[Socket]\nSocketUser=' + str(config['allowed_uid']) + '\n'
+    if OWNER_OVERRIDE.exists() or OWNER_OVERRIDE.is_symlink():
+        trusted(OWNER_OVERRIDE)
+        info = OWNER_OVERRIDE.stat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > 128
+                or OWNER_OVERRIDE.read_text() != expected):
+            raise ValueError('Unrecognized socket authorization override; review it explicitly')
+    if not path.exists():
         import pynvml
         pynvml.nvmlInit()
         try:
@@ -43,9 +55,14 @@ def configure(config_path, uid=None):
     directory = OWNER_OVERRIDE.parent
     directory.mkdir(mode=0o755, exist_ok=True)
     trusted(directory)
-    override = OWNER_OVERRIDE
-    if override.exists() or override.is_symlink():
-        trusted(override)
-    override.write_text('[Socket]\nSocketUser=' + str(config['allowed_uid']) + '\n')
-    override.chmod(0o644)
+    fd, temporary = tempfile.mkstemp(prefix='.gwe-owner-', dir=directory)
+    try:
+        with os.fdopen(fd, 'w') as target:
+            target.write(expected)
+            target.flush()
+            os.fsync(target.fileno())
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, OWNER_OVERRIDE)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
     print('Desktop authorization configured; no GPU settings changed')

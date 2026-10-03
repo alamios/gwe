@@ -14,9 +14,10 @@ class SavedFanProfile:
     name: str
     curve: FanCurve | None
     problem: str | None
+    automatic: bool = False
 
 
-def read_profiles(path):
+def read_profiles(path, *, allow_automatic=False):
     """Read one coherent snapshot; retain insertion order and reject ambiguous curves."""
     source = Path(path).resolve(strict=True)
     profiles = []
@@ -46,7 +47,8 @@ def read_profiles(path):
             if not isinstance(name, str) or len(name) > 256:
                 raise ValueError('Invalid profile name')
             if kind == 'auto':
-                problem = 'Automatic profile: use Restore automatic for this client\'s active trial.'
+                if not allow_automatic:
+                    problem = 'Automatic profile: use Restore automatic for this client\'s active trial.'
             else:
                 try:
                     if kind != 'fan_curve' or silent not in (0, 1):
@@ -59,7 +61,7 @@ def read_profiles(path):
                     curve = FanCurve(points, hysteresis, bool(silent))
                 except ValueError as error:
                     problem = str(error)
-            profiles.append(SavedFanProfile(identifier, name, curve, problem))
+            profiles.append(SavedFanProfile(identifier, name, curve, problem, kind == 'auto' and allow_automatic))
     return tuple(profiles)
 
 

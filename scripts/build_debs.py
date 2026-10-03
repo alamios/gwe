@@ -223,8 +223,8 @@ os.execve('/bin/bash', ['bash', '/usr/share/gwe-nvml/scripts/run_control_session
 ''', True)
     if not split:
         write(client / 'usr/bin/gwe-nvml', '''#!/usr/bin/python3
-import os
-os.execv('/usr/bin/python3', ['python3', '/usr/share/gwe-nvml/scripts/run_native.py'])
+import os, sys
+os.execv('/usr/bin/python3', ['python3', '/usr/share/gwe-nvml/scripts/run_native.py'] + sys.argv[1:])
 ''', True)
     write(client / 'usr/share/applications/gwe-nvml-native.desktop', '''[Desktop Entry]
 Type=Application

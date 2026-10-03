@@ -5,7 +5,7 @@ import subprocess
 
 
 def check(names, flatpak_apps):
-    competing = {'com.leinardi.gwe', 'com.leinardi.gwe.ServiceTrial'}
+    competing = {'com.leinardi.gwe', 'com.leinardi.gwe.ServiceTrial', 'io.github.alamios.gwe'}
     if competing.intersection(names) or 'com.leinardi.gwe' in flatpak_apps:
         raise RuntimeError('Close the other GWE application before starting NVML control')
 

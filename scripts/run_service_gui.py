@@ -17,9 +17,12 @@ sys.path.insert(0, str(ROOT))
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    source = parser.add_mutually_exclusive_group(required=True)
+    source = parser.add_mutually_exclusive_group()
     source.add_argument('--database', type=Path, help='Explicit backup opened read-only')
     source.add_argument('--demo', action='store_true', help='Use a synthetic curve; telemetry still uses read-only NVML')
+    parser.add_argument('--native', action='store_true', help='Use private writable configuration and the standard desktop controls')
+    parser.add_argument('--hide-window', action='store_true', help='Start minimized to the system tray')
+    parser.add_argument('--delay', action='store_true', help='Delay startup briefly for desktop login')
     parser.add_argument('--allow-control', action='store_true', help='Enable explicit ten-second service trials')
     parser.add_argument('--allow-power-control', action='store_true', help='Enable explicit service power-limit Apply')
     parser.add_argument('--continuous', action='store_true', help='Keep an explicitly applied curve until release/close')
@@ -30,8 +33,17 @@ def main(argv=None):
     checks.add_argument('--smoke-power', action='store_true', help='Exercise power Apply with a simulated service only')
     checks.add_argument('--smoke-combined', action='store_true', help='Exercise power during a simulated continuous curve')
     checks.add_argument('--smoke-startup', action='store_true', help='Check automatic startup and explicit release with simulated control')
+    checks.add_argument('--smoke-native', action='store_true', help='Check writable curves, editor, tray and automatic mode with simulated control')
     checks.add_argument('--check-startup', action='store_true', help='Verify real startup control briefly and close; requires the supervised wrapper')
     args = parser.parse_args(argv)
+    if args.smoke_native:
+        args.native = args.demo = args.continuous = True
+    if args.native:
+        if args.database or (args.demo and not args.smoke_native):
+            parser.error('--native creates/uses its own database')
+        os.environ['GWE_NATIVE_DESKTOP'] = '1'
+    elif not (args.database or args.demo):
+        parser.error('Provide --database, --demo or --native')
     if args.smoke_startup:
         args.continuous = True
     startup_profile = args.startup_profile
@@ -39,23 +51,25 @@ def main(argv=None):
         startup_profile = os.environ.get('GWE_STARTUP_PROFILE')
     if args.smoke_startup:
         startup_profile = 'Synthetic trial'
-    if startup_profile is not None and not ((args.allow_control or args.smoke_startup) and args.continuous):
+    if args.smoke_native:
+        startup_profile = 'Native synthetic'
+    if startup_profile is not None and not ((args.allow_control or args.smoke_startup or args.smoke_native) and args.continuous):
         parser.error('--startup-profile requires --allow-control and --continuous')
     if args.check_startup and not (args.allow_control and args.continuous and startup_profile):
         parser.error('--check-startup requires a configured startup curve and continuous control')
     if args.smoke_combined:
         args.continuous = True
-    if args.continuous and not (args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup):
+    if args.continuous and not (args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup or args.smoke_native):
         parser.error('--continuous requires --allow-control or a simulated continuous check')
     if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup):
         parser.error('Real control cannot be combined with demo or smoke checks')
     if (args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup) and not args.demo:
         parser.error('Simulated service smoke test requires --demo')
 
-    build = prepare_environment(ROOT, 'service-gui')
+    build = prepare_environment(ROOT, 'service-gui', isolate=not (args.native and not args.smoke_native))
     os.environ['GWE_SERVICE_TRIAL'] = '1'
     os.environ.pop('GWE_UI_SMOKE_TEST', None)
-    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.smoke_native:
         os.environ['GWE_UI_SMOKE_TEST'] = '1'
     from gwe.fan_curve import FanCurve
     from gwe.fan_profiles import SavedFanProfile, read_profiles, manual_limits
@@ -63,9 +77,14 @@ def main(argv=None):
     from gwe.fan_gui_log import FanGuiLog
     from gwe.fan_main_controller import FanMainController, configure_factory
     try:
-        profiles = (SavedFanProfile(1, 'Synthetic trial', FanCurve(((0, 40), (50, 40), (80, 100))), None),) if args.demo else read_profiles(args.database)
+        if args.native:
+            profiles = ()  # The writable ORM tables are initialized by the application before the factory runs.
+        elif args.demo:
+            profiles = (SavedFanProfile(1, 'Synthetic trial', FanCurve(((0, 40), (50, 40), (80, 100))), None),)
+        else:
+            profiles = read_profiles(args.database)
         limits = (30, 100) if args.demo else manual_limits()
-        if startup_profile is not None:
+        if startup_profile is not None and not args.native:
             matches = [profile for profile in profiles if profile.name == startup_profile]
             if len(matches) != 1 or matches[0].problem:
                 raise ValueError('Startup curve must uniquely match a compatible profile')
@@ -80,7 +99,7 @@ def main(argv=None):
     endpoint = '/run/gwe-fan-service/control.sock'
     stop = threading.Event()
     worker = service = temporary = backend = None
-    if args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
+    if args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.smoke_native:
         from gwe.fan_service import FanService
         class SimulatedBackend:
             starts = 0
@@ -126,8 +145,27 @@ def main(argv=None):
     session = FanGuiSession(endpoint, event_sink=log.record, continuous=args.continuous)
     def factory(view):
         from gwe.power_gui import PowerController
-        power = PowerController(view, endpoint, allowed=True, event_sink=log.record) if (
+        if args.native:
+            from gwe.interactor.settings_interactor import SettingsInteractor
+            telemetry_ttl = max(2.5, min(60, SettingsInteractor.get_int('settings_refresh_interval') + 1))
+        else:
+            telemetry_ttl = 2.5
+        power = PowerController(view, endpoint, allowed=True, event_sink=log.record,
+                                telemetry_ttl=telemetry_ttl) if (
             args.allow_power_control or args.smoke_power or args.smoke_combined) else None
+        if args.native:
+            from peewee import SqliteDatabase
+            from gwe.di import INJECTOR
+            from gwe.native_fan_controller import NativeFanController
+            if args.smoke_native:
+                from gwe.model.fan_profile import FanProfile
+                from gwe.model.speed_step import SpeedStep
+                profile = FanProfile.get_or_create(name='Native synthetic')[0]
+                if not profile.steps.exists():
+                    for temperature, duty in ((0, 40), (50, 40), (80, 100)):
+                        SpeedStep.create(profile=profile, temperature=temperature, duty=duty)
+            return NativeFanController(view, INJECTOR.get(SqliteDatabase), limits, session,
+                                       power=power, startup_profile_name=startup_profile)
         return FanMainController(view, profiles, limits, session,
                                  allow_control=args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup,
                                  power=power, startup_profile_name=startup_profile)
@@ -144,7 +182,7 @@ def main(argv=None):
     passed, phase = [], [0]
     power_edit_started = [0]
     deadline = time.monotonic() + 30
-    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.check_startup:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.smoke_native or args.check_startup:
         def check():
             app = entry.INJECTOR.get(entry.Application)
             presenter, view = app._presenter, app._view
@@ -172,6 +210,39 @@ def main(argv=None):
                     phase[0] = 2
                     view._window.close()
                     return GLib.SOURCE_REMOVE
+                return GLib.SOURCE_CONTINUE
+            if args.smoke_native:
+                if phase[0] == 0 and session.state == 'active':
+                    if view._main_infobar.get_visible() or backend.starts != 1:
+                        return finish(False)
+                    view._fan_edit_button.clicked()
+                    editor = presenter._edit_fan_profile_presenter
+                    if editor._profile.name != 'Native synthetic':
+                        return finish(False)
+                    from gwe.model.speed_step import SpeedStep
+                    step = editor._profile.steps.order_by(SpeedStep.temperature).offset(1).first()
+                    step.duty = 41
+                    step.save()
+                    editor.view.hide()
+                    if controller.selected.curve.points[1][1] != 41:
+                        return finish(False)
+                    from gwe.interactor.settings_interactor import SettingsInteractor
+                    SettingsInteractor.set_bool('settings_minimize_to_tray', True)
+                    if presenter.on_application_window_delete_event() is not True or view._window.get_visible():
+                        return finish(False)
+                    power_edit_started[0] = time.monotonic()
+                    phase[0] = 1
+                elif phase[0] == 1 and time.monotonic() - power_edit_started[0] >= 2:
+                    if session.state != 'active' or backend.stops:
+                        return finish(False)
+                    presenter.on_toggle_app_window_clicked()
+                    automatic = next(p for p in controller.profiles if p.automatic)
+                    view._fan_combobox.set_active(controller.profiles.index(automatic))
+                    view._fan_apply_button.clicked()
+                    phase[0] = 2
+                elif phase[0] == 2 and session.state == 'idle' and controller.desired is None and controller.pending is None:
+                    from gwe.model.current_fan_profile import CurrentFanProfile
+                    return finish(backend.starts == backend.stops == 1 and CurrentFanProfile.get().profile.type == 'auto')
                 return GLib.SOURCE_CONTINUE
             if args.smoke_startup:
                 if phase[0] == 0 and session.state == 'active':
@@ -343,7 +414,11 @@ def main(argv=None):
             return GLib.SOURCE_CONTINUE
         GLib.timeout_add(100, check)
 
-    sys.argv = ['gwe-service-trial']
+    sys.argv = ['gwe-nvml' if args.native else 'gwe-service-trial']
+    if args.hide_window:
+        sys.argv.append('--hide-window')
+    if args.delay:
+        sys.argv.append('--delay')
     result = 1
     try:
         try:
@@ -369,7 +444,7 @@ def main(argv=None):
             worker.join(2)
             service.close()
             temporary.cleanup()
-    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.check_startup:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.smoke_native or args.check_startup:
         return 0 if passed == [True] and (not args.smoke_service or backend.starts == backend.stops == 3) else 1
     return result
 

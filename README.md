@@ -44,7 +44,9 @@
 The next local X11 release will use one package, writable profile configuration and the regular desktop
 controls without the trial terminal or status band. The combined package builder is implemented; the
 socket-activated desktop launcher without sudo/terminal is implemented in the development package.
-The remaining desktop/configuration changes and privileged activation acceptance are pending.
+Private writable configuration, the original curve editor, tray-close behavior and ordinary automatic
+profile selection are now implemented and pass an isolated graphical check. Actual installed activation
+and grouped release acceptance remain pending. See the [native desktop procedure](docs/native-desktop.md).
 See the [agreed release requirements](RELEASING.md#first-local-x11-release-agreed-requirements).
 
 The reviewed local `.deb` candidates have a guarded first-install procedure:
