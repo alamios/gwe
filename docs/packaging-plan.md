@@ -3,7 +3,8 @@
 Release decision: the upcoming 1.0.0 fork maintained by alamios will ship one combined `.deb` and source
 through [alamios/gwe GitHub Releases](https://github.com/alamios/gwe/releases). This fork is maintained
 with AI assistance. The two-package builds below describe the existing development implementation;
-consolidation and the production desktop flow remain pending. Flatpak is outside this release's scope.
+the production desktop flow remains pending. The builder now emits the combined `gwe-nvml` package by
+default; `--split` retains the historical layout for rollback checks. Flatpak is outside this release's scope.
 See [release requirements](../RELEASING.md) for attribution and public-text cleanup.
 
 Reviewed on 2026-10-03. Two local native `.deb` candidates can now be built and inspected. Initial v4
@@ -14,6 +15,33 @@ is a user-owned source snapshot using a prepared external Python environment; th
 is a separately reviewed directory and systemd unit.
 
 ## Two deliverables
+
+### Combined package preparation
+
+The UI and root helper remain separate processes but now share one `gwe-nvml` `.deb`, a common version
+and distro dependencies. The package declares `Conflicts` and `Replaces` against both development packages
+so they cannot coexist at shared paths. Its maintainer scripts retain inactive/recovery guards, reject an
+unmanaged helper, preserve private configuration and never start or enable the control service.
+The terminal/session launcher and trial UI remain unchanged at this packaging-only step; this is not the
+final 1.0.0 release UX. Do not install intermediate packages during an active control session.
+
+Build a combined review artifact with the existing explicit destination/version/epoch arguments.
+Append `--split` only when generating historical split rollback fixtures. The first combined artifact is
+`build/unified-package-v1/gwe-nvml_1.0.0~dev1_all.deb`; retained v5 split archives provide rollback inputs.
+Use APT to review the actual transition; replacing the old pair intentionally removes those two packages,
+which is distinct from removing unrelated system dependencies. Do not use `--force-overwrite`.
+
+Tests run real dpkg against a private root/database to install the split pair, replace them with one
+package, remove it and reinstall the pair, checking payload ownership and unchanged private configuration.
+Host maintainer scripts are omitted from that isolated ownership test and their guards are tested
+separately. Deterministic builds and both interpreter checks remain covered. Real host transition is
+pending; package construction does not authorize changing installed packages independently.
+Normal rollback with recovered/inactive control removes only `gwe-nvml` and reinstalls the retained pair;
+private configuration and profile sources remain outside package payloads. The older manual-helper
+archive's restore script targets only the split names and must not be used over an installed combined
+package without first removing that combined package through the package manager.
+
+Packaging reference: [Debian Policy: Conflicts and Replaces](https://www.debian.org/doc/debian-policy/ch-relationships.html).
 
 The desktop client contains Python modules, a launcher, compiled GTK resources/settings schemas, icons
 and application metadata. It runs without root and owns only a renewable fan-control lease. The host

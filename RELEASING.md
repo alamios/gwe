@@ -11,6 +11,10 @@ user experience. See [packaging](docs/packaging-plan.md) for the existing implem
 The first candidate is **1.0.0-rc1**, followed by **1.0.0** after release acceptance.
 Original upstream 0.x version history and attribution are preserved.
 
+Preparation progress: the native builder now emits one `gwe-nvml` package by default. The split-to-combined
+transition and rollback pass in an isolated dpkg root; host transition and the remaining requirements below
+are pending. Historical split builds remain available with `--split` for recovery validation.
+
 ## First local X11 release: agreed requirements
 
 These are acceptance requirements, not claims of implemented behavior. The initial release targets the

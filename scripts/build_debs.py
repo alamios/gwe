@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Build private native client/service artifacts. Never install, start or enable them."""
+"""Build the combined native package (or historical split artifacts for rollback checks)."""
 import argparse
 import hashlib
 from importlib import metadata
@@ -74,7 +74,7 @@ def vendor(destination):
     write(destination / 'BUNDLED_VERSIONS', '\n'.join(versions) + '\n')
 
 
-def finish(tree, destination, name, version, dependencies, epoch):
+def finish(tree, destination, name, version, dependencies, epoch, *, relationships=''):
     write(tree / 'DEBIAN/control', f'''Package: {name}
 Version: {version}
 Architecture: all
@@ -82,8 +82,10 @@ Maintainer: GWE local maintenance <noreply@example.invalid>
 Section: utils
 Priority: optional
 Depends: {dependencies}
+{relationships}Homepage: https://github.com/alamios/gwe
 Description: Local experimental NVML GreenWithEnvy maintenance
- Separate client and host helper; manual sessions only, no driver or CUDA changes.
+ Unprivileged desktop and privileged host helper; manual sessions only.
+ No driver or CUDA changes.
 ''')
     checksum = []
     for file in sorted(tree.rglob('*')):
@@ -111,12 +113,12 @@ Description: Local experimental NVML GreenWithEnvy maintenance
     return artifact
 
 
-def build(destination, version, epoch):
+def build(destination, version, epoch, *, split=False):
     if not re.fullmatch(r'[0-9][A-Za-z0-9.+~:-]*', version) or epoch < 0:
         raise ValueError('Invalid package version or source epoch')
     destination = Path(destination).absolute()
     destination.mkdir(parents=True, exist_ok=False)
-    helper = destination / 'service-tree'
+    helper = destination / ('service-tree' if split else 'package-tree')
     bundle = stage(destination / 'reviewed-service')
     shutil.copytree(bundle, helper / 'opt/gwe-fan-service')
     # Bundle scripts stay review material, not alternate unmanaged system installers.
@@ -137,7 +139,7 @@ fi
     write(helper / 'DEBIAN/postinst', '#!/bin/sh\nset -eu\nsystemctl daemon-reload\n', True)
     write(helper / 'DEBIAN/postrm', '#!/bin/sh\nsystemctl daemon-reload || true\n', True)
 
-    client = destination / 'client-tree'
+    client = destination / 'client-tree' if split else helper
     application = client / 'usr/share/gwe-nvml'
     shutil.copytree(ROOT / 'gwe', application / 'gwe', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
     shutil.copytree(ROOT / 'data', application / 'data')
@@ -178,23 +180,33 @@ Terminal=true
 Categories=System;
 StartupNotify=false
 ''')
-    write(client / 'DEBIAN/preinst', GUARD, True)
-    write(client / 'DEBIAN/prerm', GUARD, True)
+    if split:
+        write(client / 'DEBIAN/preinst', GUARD, True)
+        write(client / 'DEBIAN/prerm', GUARD, True)
     dependencies = ('python3 (>= 3.12), python3-gi, python3-gi-cairo, python3-cairo, '
                     'python3-matplotlib (>= 3.6), python3-xlib, python3-xdg, python3-requests, '
                     'gir1.2-gtk-3.0, gir1.2-dazzle-1.0, gir1.2-notify-0.7, '
-                    'gir1.2-ayatanaappindicator3-0.1, sudo, util-linux, '
-                    f'gwe-nvml-service (= {version})')
-    for tree, package in ((helper, 'gwe-nvml-service'), (client, 'gwe-nvml-client')):
+                    'gir1.2-ayatanaappindicator3-0.1, sudo, util-linux, systemd')
+    if split:
+        dependencies += f', gwe-nvml-service (= {version})'
+    documents = ((helper, 'gwe-nvml-service'), (client, 'gwe-nvml-client')) if split else ((helper, 'gwe-nvml'),)
+    for tree, package in documents:
         copyright = tree / f'usr/share/doc/{package}/copyright'
         copyright.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / 'COPYING.txt', copyright)
         shutil.copyfile(ROOT / 'docs/packaging-plan.md', copyright.parent / 'README.Debian')
-    service = finish(helper, destination, 'gwe-nvml-service', version, 'python3 (>= 3.12), systemd', epoch)
-    desktop = finish(client, destination, 'gwe-nvml-client', version, dependencies, epoch)
+    if split:
+        service = finish(helper, destination, 'gwe-nvml-service', version, 'python3 (>= 3.12), systemd', epoch)
+        desktop = finish(client, destination, 'gwe-nvml-client', version, dependencies, epoch)
+        artifacts = (desktop, service)
+    else:
+        # Complete replacement: the old packages must not coexist with shared payload paths.
+        artifacts = (finish(helper, destination, 'gwe-nvml', version, dependencies, epoch,
+                            relationships='Conflicts: gwe-nvml-client, gwe-nvml-service\n'
+                                          'Replaces: gwe-nvml-client, gwe-nvml-service\n'),)
     write(destination / 'SHA256SUMS', '\n'.join(hashlib.sha256(p.read_bytes()).hexdigest() + '  ' + p.name
-                                              for p in (desktop, service)) + '\n')
-    return desktop, service
+                                              for p in artifacts) + '\n')
+    return artifacts
 
 
 if __name__ == '__main__':
@@ -202,6 +214,7 @@ if __name__ == '__main__':
     parser.add_argument('destination', type=Path)
     parser.add_argument('--version', required=True)
     parser.add_argument('--epoch', type=int, required=True)
+    parser.add_argument('--split', action='store_true', help='Build historical two-package layout for rollback validation')
     args = parser.parse_args()
-    for artifact in build(args.destination, args.version, args.epoch):
+    for artifact in build(args.destination, args.version, args.epoch, split=args.split):
         print(artifact.name)

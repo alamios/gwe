@@ -69,11 +69,17 @@ def test_native_build_is_repeatable_and_keeps_private_data_out(tmp_path, monkeyp
         output = subprocess.check_output(['dpkg-deb', '-c', str(artifact)], text=True)
         assert 'gwe.db' not in output and '.local-backups' not in output and 'config.json' not in output
         assert 'root/root' in output
-    helper = tmp_path / 'first/service-tree'
+    assert len(first) == 1
+    control = subprocess.check_output(['dpkg-deb', '-f', str(first[0])], text=True)
+    assert 'Package: gwe-nvml\n' in control
+    assert 'Conflicts: gwe-nvml-client, gwe-nvml-service\n' in control
+    assert 'Replaces: gwe-nvml-client, gwe-nvml-service\n' in control
+    assert 'gwe-nvml-service (=' not in control
+    helper = tmp_path / 'first/package-tree'
     assert not list((helper / 'etc').glob('*')) if (helper / 'etc').exists() else True
     assert 'systemctl start' not in (helper / 'DEBIAN/postinst').read_text()
     assert '\n[Install]\n' not in (helper / 'usr/lib/systemd/system/gwe-fan-service.service').read_text()
-    app = tmp_path / 'first/client-tree/usr/share/gwe-nvml'
+    app = helper / 'usr/share/gwe-nvml'
     assert (app / 'resources/gschemas.compiled').is_file()
     assert 'vendor_imports' in (app / 'scripts/run_service_gui.py').read_text()
 
@@ -112,3 +118,49 @@ def test_peewee_vendor_includes_playhouse_without_native_extensions(tmp_path, mo
     module.vendor(destination)
     for name in files:
         assert (destination / name).exists() == (not name.endswith(('.so', 'direct_url.json')))
+
+
+def test_real_dpkg_transition_and_rollback_preserve_private_config(tmp_path, monkeypatch):
+    """Exercise dpkg ownership in a private root, without executing host maintainer scripts."""
+    module = builder(monkeypatch)
+    monkeypatch.setattr(module, 'vendor', lambda path: module.write(path / 'BUNDLED_VERSIONS', 'fixture\n'))
+    old = module.build(tmp_path / 'split', '0.15.9+nvmltest1', 1700000000, split=True)
+    new = module.build(tmp_path / 'combined', '1.0.0~rc1', 1700000000)
+    root = tmp_path / 'root'
+    database = root / 'var/lib/dpkg'
+    database.mkdir(parents=True)
+    (database / 'status').touch()
+    config = root / 'etc/gwe-fan-service.json'
+    config.parent.mkdir()
+    config.write_text('private configuration fixture')
+    # Guard scripts are tested separately. Strip scripts to keep this real dpkg test entirely
+    # within its --root; dependencies use the host only in production, not this private database.
+    def fixture(artifact, label):
+        tree = tmp_path / label
+        subprocess.run(['dpkg-deb', '-R', str(artifact), str(tree)], check=True, capture_output=True)
+        for name in ('preinst', 'postinst', 'prerm', 'postrm'):
+            (tree / 'DEBIAN' / name).unlink(missing_ok=True)
+        result = tmp_path / (label + '.deb')
+        subprocess.run(['dpkg-deb', '--build', str(tree), str(result)], check=True, capture_output=True)
+        return str(result)
+    previous = [fixture(p, 'old-' + str(i)) for i, p in enumerate(old)]
+    combined = fixture(new[0], 'new')
+    command = ['dpkg', '--root=' + str(root), '--force-not-root', '--force-depends']
+    def dpkg(*args):
+        subprocess.run([*command, *args], check=True, capture_output=True)
+    def installed():
+        text = subprocess.check_output(['dpkg-query', '--admindir=' + str(database), '-W',
+                                        '-f=${Package} ${Status}\n'], text=True)
+        return {line.split()[0] for line in text.splitlines() if line.endswith('install ok installed')}
+    dpkg('--install', *previous)
+    assert installed() == {'gwe-nvml-client', 'gwe-nvml-service'}
+    dpkg('--install', combined)
+    assert installed() == {'gwe-nvml'}
+    for name in ('opt/gwe-fan-service/entry.py', 'usr/share/gwe-nvml/gwe/__main__.py',
+                 'usr/lib/systemd/system/gwe-fan-service.service', 'usr/bin/gwe-nvml'):
+        assert (root / name).is_file()
+    assert config.read_text() == 'private configuration fixture'
+    dpkg('--remove', 'gwe-nvml')
+    dpkg('--install', *previous)
+    assert installed() == {'gwe-nvml-client', 'gwe-nvml-service'}
+    assert config.read_text() == 'private configuration fixture'

@@ -42,8 +42,9 @@
 - [Local builds and future releases](RELEASING.md)
 
 The next local X11 release will use one package, writable profile configuration and the regular desktop
-controls without the trial terminal or status band. These changes are specified, not yet implemented;
-see the [agreed release requirements](RELEASING.md#first-local-x11-release-agreed-requirements).
+controls without the trial terminal or status band. The combined package builder is implemented; the
+remaining desktop/configuration changes are specified and pending.
+See the [agreed release requirements](RELEASING.md#first-local-x11-release-agreed-requirements).
 
 The reviewed local `.deb` candidates have a guarded first-install procedure:
 `bash scripts/install_native.sh`. See [installation and recovery](docs/packaging-plan.md#installing-the-reviewed-candidates).
