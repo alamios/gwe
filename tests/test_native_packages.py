@@ -107,6 +107,7 @@ def test_peewee_vendor_includes_playhouse_without_native_extensions(tmp_path, mo
     source = tmp_path / 'source'
     for name in files:
         module.write(source / name, '# test payload\n')
+    module.write(source / 'playhouse/migrate.py', migration_fixture())
     class Distribution:
         version = '3.17.0'
         def locate_file(self, entry):
@@ -118,6 +119,36 @@ def test_peewee_vendor_includes_playhouse_without_native_extensions(tmp_path, mo
     module.vendor(destination)
     for name in files:
         assert (destination / name).exists() == (not name.endswith(('.so', 'direct_url.json')))
+
+
+def migration_fixture():
+    return ("class Migration:\n"
+            "    column_re = re.compile('(.+?)\\((.+)\\)')\n"
+            "    def match(self, column_to_update, column):\n"
+            "        if True:\n"
+            "            if re.match('%s(?:[\\'\"`\\]]?\\s|$)' % column_to_update, column):\n"
+            "                return True\n")
+
+
+def test_reviewed_peewee_patch_preserves_ast_and_eliminates_escape_warnings(tmp_path, monkeypatch):
+    import ast
+    import warnings
+    module = builder(monkeypatch)
+    path = tmp_path / 'migrate.py'
+    original = migration_fixture()
+    path.write_text(original)
+    module.patch_peewee(path)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', (SyntaxWarning, DeprecationWarning))
+        before = ast.dump(ast.parse(original))
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', (SyntaxWarning, DeprecationWarning))
+        corrected = path.read_text()
+        assert ast.dump(ast.parse(corrected)) == before
+        compile(corrected, str(path), 'exec')
+    path.write_text(original.replace('column_re =', 'changed_column_re ='))
+    with pytest.raises(RuntimeError):
+        module.patch_peewee(path)
 
 
 def test_real_dpkg_transition_and_rollback_preserve_private_config(tmp_path, monkeypatch):

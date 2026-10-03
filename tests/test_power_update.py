@@ -16,6 +16,7 @@ def make_update_tree(tmp_path):
     bundle = tmp_path / 'bundle'
     (bundle / 'lib/gwe').mkdir(parents=True)
     for name in ('fan_curve', 'fan_service', 'fan_process', 'fan_daemon',
+                 'desktop_activation', 'native_setup',
                  'nvml_fan_control', 'nvml_power', 'power_process', 'power_trial', '__init__'):
         (bundle / f'lib/gwe/{name}.py').write_text(f'# new {name}\n')
     (bundle / 'lib/pynvml.py').write_text('# fake vendored binding\n')

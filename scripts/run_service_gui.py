@@ -55,7 +55,7 @@ def main(argv=None):
         startup_profile = 'Native synthetic'
     if startup_profile is not None and not ((args.allow_control or args.smoke_startup or args.smoke_native) and args.continuous):
         parser.error('--startup-profile requires --allow-control and --continuous')
-    if args.check_startup and not (args.allow_control and args.continuous and startup_profile):
+    if args.check_startup and not (args.allow_control and args.continuous and (startup_profile or args.native)):
         parser.error('--check-startup requires a configured startup curve and continuous control')
     if args.smoke_combined:
         args.continuous = True
@@ -160,10 +160,19 @@ def main(argv=None):
             if args.smoke_native:
                 from gwe.model.fan_profile import FanProfile
                 from gwe.model.speed_step import SpeedStep
-                profile = FanProfile.get_or_create(name='Native synthetic')[0]
+                from gwe.model.current_fan_profile import CurrentFanProfile
+                profile = (FanProfile.select().where(FanProfile.name == 'Native synthetic').order_by(FanProfile.id).first()
+                           or FanProfile.create(name='Native synthetic'))
                 if not profile.steps.exists():
                     for temperature, duty in ((0, 40), (50, 40), (80, 100)):
                         SpeedStep.create(profile=profile, temperature=temperature, duty=duty)
+                if FanProfile.select().where(FanProfile.name == profile.name).count() == 1:
+                    duplicate = FanProfile.create(name=profile.name)
+                    for temperature, duty in ((0, 40), (80, 100)):
+                        SpeedStep.create(profile=duplicate, temperature=temperature, duty=duty)
+                CurrentFanProfile.delete().execute()
+                CurrentFanProfile.create(profile=profile)
+                SettingsInteractor.set_bool('settings_load_last_profile', True)
             return NativeFanController(view, INJECTOR.get(SqliteDatabase), limits, session,
                                        power=power, startup_profile_name=startup_profile)
         return FanMainController(view, profiles, limits, session,
@@ -203,12 +212,34 @@ def main(argv=None):
                 return GLib.SOURCE_CONTINUE
             if args.check_startup:
                 if phase[0] == 0 and session.state == 'active':
+                    if args.native:
+                        if view._main_infobar.get_visible():
+                            return finish(False)
+                        view._fan_edit_button.clicked()
+                        if presenter._edit_fan_profile_presenter._profile.id != controller.selected.identifier:
+                            return finish(False)
+                        presenter._edit_fan_profile_presenter.view.hide()
+                        original = presenter._settings_interactor.get_int
+                        try:
+                            presenter._settings_interactor.get_int = lambda key, *a: (
+                                1 if key == 'settings_minimize_to_tray' else original(key, *a))
+                            if presenter.on_application_window_delete_event() is not True or view._window.get_visible():
+                                return finish(False)
+                        finally:
+                            presenter._settings_interactor.get_int = original
                     print('Startup curve verified by service; keeping control for six seconds', flush=True)
                     power_edit_started[0] = time.monotonic()
                     phase[0] = 1
                 elif phase[0] == 1 and time.monotonic() - power_edit_started[0] >= 6:
                     phase[0] = 2
-                    view._window.close()
+                    if args.native:
+                        if session.state != 'active' or controller.pending_transition:
+                            return finish(False)
+                        presenter.on_toggle_app_window_clicked()
+                        print('Native editor and tray ownership: PASS; quitting without changing profiles', flush=True)
+                        presenter.on_quit_clicked()
+                    else:
+                        view._window.close()
                     return GLib.SOURCE_REMOVE
                 return GLib.SOURCE_CONTINUE
             if args.smoke_native:
@@ -242,7 +273,34 @@ def main(argv=None):
                     phase[0] = 2
                 elif phase[0] == 2 and session.state == 'idle' and controller.desired is None and controller.pending is None:
                     from gwe.model.current_fan_profile import CurrentFanProfile
-                    return finish(backend.starts == backend.stops == 1 and CurrentFanProfile.get().profile.type == 'auto')
+                    if backend.starts != backend.stops or CurrentFanProfile.get().profile.type != 'auto':
+                        return finish(False)
+                    presenter._edit_fan_profile_presenter.show_add()
+                    editor = presenter._edit_fan_profile_presenter
+                    from gwe.model.speed_step import SpeedStep
+                    for temperature, duty in ((0, 40), (50, 45), (80, 100)):
+                        SpeedStep.create(profile=editor._profile, temperature=temperature, duty=duty)
+                    view._fan_apply_button.clicked()
+                    phase[0] = 3
+                elif phase[0] == 3 and session.state == 'active' and controller.pending is None:
+                    if backend.starts != 2:
+                        return finish(False)
+                    presenter._edit_fan_profile_presenter.on_delete_profile_clicked()
+                    phase[0] = 4
+                elif phase[0] == 4 and session.state == 'idle' and controller.desired is None and controller.pending is None:
+                    from gwe.model.current_fan_profile import CurrentFanProfile
+                    if backend.starts != backend.stops or CurrentFanProfile.get().profile.type != 'auto':
+                        return finish(False)
+                    profile = next(p for p in controller.profiles if p.name == 'Native synthetic')
+                    view._fan_combobox.set_active(controller.profiles.index(profile))
+                    view._fan_apply_button.clicked()
+                    phase[0] = 5
+                elif phase[0] == 5 and session.state == 'active' and controller.pending is None:
+                    from gwe.interactor.settings_interactor import SettingsInteractor
+                    SettingsInteractor.set_bool('settings_minimize_to_tray', False)
+                    phase[0] = 6
+                    view._window.close()
+                    return GLib.SOURCE_REMOVE
                 return GLib.SOURCE_CONTINUE
             if args.smoke_startup:
                 if phase[0] == 0 and session.state == 'active':
@@ -433,19 +491,24 @@ def main(argv=None):
             controller = entry.INJECTOR.get(entry.Application)._presenter._service_controller
             passed.append(controller.closed and session.client is None)
             print('Main-window service smoke test:', 'PASS' if passed[-1] else 'FAIL', flush=True)
+        if args.smoke_native and phase[0] == 6:
+            controller = entry.INJECTOR.get(entry.Application)._presenter._service_controller
+            passed.append(controller.closed and session.client is None)
+            print('Native editor, create/delete, automatic mode and tray/close:',
+                  'PASS' if passed[-1] else 'FAIL', flush=True)
     finally:
         session.close()
         if service is not None:
             # Let the simulated server process socket EOF before checking window-close recovery.
             expires = time.monotonic() + 2
-            while args.smoke_service and backend.stops < 3 and time.monotonic() < expires:
+            while (args.smoke_service or args.smoke_native) and backend.stops < 3 and time.monotonic() < expires:
                 time.sleep(.01)
             stop.set()
             worker.join(2)
             service.close()
             temporary.cleanup()
     if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.smoke_native or args.check_startup:
-        return 0 if passed == [True] and (not args.smoke_service or backend.starts == backend.stops == 3) else 1
+        return 0 if passed == [True] and (not (args.smoke_service or args.smoke_native) or backend.starts == backend.stops == 3) else 1
     return result
 
 

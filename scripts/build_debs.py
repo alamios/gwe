@@ -46,6 +46,19 @@ def write(path, content, executable=False):
     path.chmod(0o755 if executable else 0o644)
 
 
+def patch_peewee(path):
+    """Escape two reviewed Peewee 3.17.0 literals without changing their regex values."""
+    source = path.read_text()
+    first = "    column_re = re.compile('(.+?)\\((.+)\\)')"
+    second = "            if re.match('%s(?:[\\'\"`\\]]?\\s|$)' % column_to_update, column):"
+    for original, corrected in ((first, first.replace('\\(', '\\\\(').replace('\\)', '\\\\)')),
+                                (second, second.replace('\\]', '\\\\]').replace('\\s', '\\\\s'))):
+        if source.count(original) != 1:
+            raise RuntimeError('Review changed Peewee migration literals before bundling')
+        source = source.replace(original, corrected)
+    path.write_text(source)
+
+
 def vendor(destination):
     versions = []
     for name, (expected, component) in VENDORS.items():
@@ -71,6 +84,10 @@ def vendor(destination):
         if not licenses and name != 'nvidia-ml-py':
             raise RuntimeError(f'Missing bundled license for {name}')
         versions.append(f'{name}=={expected}')
+    if 'peewee' in VENDORS:
+        patch_peewee(destination / 'playhouse/migrate.py')
+        write(destination / 'BUNDLED_PATCHES',
+              'peewee 3.17.0: escape migration regex literals; runtime string values unchanged.\n')
     write(destination / 'BUNDLED_VERSIONS', '\n'.join(versions) + '\n')
 
 
@@ -78,13 +95,13 @@ def finish(tree, destination, name, version, dependencies, epoch, *, relationshi
     write(tree / 'DEBIAN/control', f'''Package: {name}
 Version: {version}
 Architecture: all
-Maintainer: GWE local maintenance <noreply@example.invalid>
+Maintainer: alamios
 Section: utils
 Priority: optional
 Depends: {dependencies}
 {relationships}Homepage: https://github.com/alamios/gwe
-Description: Local experimental NVML GreenWithEnvy maintenance
- Unprivileged desktop and privileged host helper; manual sessions only.
+Description: GreenWithEnvy with supervised NVML fan and power control
+ Unprivileged GTK desktop and socket-activated privileged helper.
  No driver or CUDA changes.
 ''')
     checksum = []
@@ -237,12 +254,20 @@ StartupNotify=false
 ''')
     if not split:
         desktop_entry = client / 'usr/share/applications/gwe-nvml-native.desktop'
-        desktop_entry.write_text(desktop_entry.read_text().replace('Terminal=true', 'Terminal=false'))
+        desktop_entry.write_text(desktop_entry.read_text().replace('Terminal=true', 'Terminal=false')
+                                 .replace('Name=GreenWithEnvy (NVML native)', 'Name=GreenWithEnvy')
+                                 + 'StartupWMClass=io.github.alamios.gwe\n')
+        desktop_entry.rename(desktop_entry.with_name('io.github.alamios.gwe.desktop'))
+        shutil.copyfile(ROOT / 'data/com.leinardi.gwe.appdata.xml',
+                        client / 'usr/share/gwe-nvml/data/com.leinardi.gwe.appdata.xml')
+        metainfo = client / 'usr/share/metainfo/io.github.alamios.gwe.metainfo.xml'
+        metainfo.parent.mkdir(parents=True)
+        shutil.copyfile(ROOT / 'data/com.leinardi.gwe.appdata.xml', metainfo)
     if split:
         write(client / 'DEBIAN/preinst', GUARD, True)
         write(client / 'DEBIAN/prerm', GUARD, True)
     dependencies = ('python3 (>= 3.12), python3-gi, python3-gi-cairo, python3-cairo, '
-                    'python3-matplotlib (>= 3.6), python3-xlib, python3-xdg, python3-requests, '
+                    'python3-matplotlib (>= 3.6), python3-xlib, python3-xdg, python3-requests, python3-packaging, '
                     'gir1.2-gtk-3.0, gir1.2-dazzle-1.0, gir1.2-notify-0.7, '
                     'gir1.2-ayatanaappindicator3-0.1, sudo, util-linux, systemd')
     if split:

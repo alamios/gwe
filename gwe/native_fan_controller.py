@@ -25,11 +25,13 @@ class NativeFanController(FanMainController):
                 current = self._persist(matches[0].identifier)
             SettingsInteractor.set_bool('settings_native_startup_initialized', True)
         selected = next((p for p in profiles if current is not None and p.identifier == current.profile_id), profiles[0])
-        startup = (selected.name if selected.curve is not None and not selected.problem
-                   and SettingsInteractor.get_bool('settings_load_last_profile', True) else None)
+        restore = (selected.curve is not None and not selected.problem
+                   and SettingsInteractor.get_bool('settings_load_last_profile', True))
         super().__init__(view, profiles, limits, session, allow_control=True, power=power,
-                         startup_profile_name=startup)
+                         startup_profile_name=None)
         self.selected = selected
+        # The native database remembers an ID; duplicate editor names must not make restart ambiguous.
+        self.startup_pending = restore
 
     @staticmethod
     def _persist(identifier):
@@ -74,6 +76,8 @@ class NativeFanController(FanMainController):
         self.refresh()
 
     def problem(self):
+        if self.selected is None:
+            return 'Select a fan profile.'
         if self.selected and self.selected.automatic:
             return None
         return super().problem()
@@ -85,6 +89,7 @@ class NativeFanController(FanMainController):
         self.view.set_apply_fan_profile_button_enabled(bool(
             self.telemetry_available and not busy and not self.problem()
             and not (self.power and self.power.operation_id is not None)))
+        self.view.set_service_fan_hint(self.problem() or 'Apply the selected fan profile')
         from gwe.model.fan_profile import FanProfile
         profile = FanProfile.get_or_none(id=self.selected.identifier) if self.selected else None
         self.view.set_edit_fan_profile_button_enabled(bool(profile and not profile.read_only and not self.closed))
@@ -103,6 +108,8 @@ class NativeFanController(FanMainController):
         self.refresh()
 
     def pulse(self):
+        if self.closed:
+            return False
         result = super().pulse()
         if (self.desired is not None and self.pending is None and self.session.state == 'idle'
                 and not (self.power and self.power.busy)):

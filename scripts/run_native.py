@@ -16,6 +16,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--hide-window', action='store_true')
     parser.add_argument('--delay', action='store_true')
+    parser.add_argument('--check-startup', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     from check_controllers import main as check_controllers
     from gwe.fan_service import FanClient
@@ -23,8 +24,9 @@ def main():
     if check_controllers():
         raise RuntimeError('Another GWE controller is running or desktop inspection failed')
     base = Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share'))) / 'gwe-nvml'
+    base.mkdir(parents=True, exist_ok=True, mode=0o700)
     state = base / 'state'
-    state.mkdir(parents=True, exist_ok=True)
+    state.mkdir(parents=True, exist_ok=True, mode=0o700)
     descriptor = os.open(state / 'control-session.lock', os.O_CREAT | os.O_RDWR, 0o600)
     fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
     os.set_inheritable(descriptor, True)
@@ -46,7 +48,8 @@ def main():
                                  '--native', '--allow-control',
                                  '--allow-power-control', '--continuous'] +
               (['--hide-window'] if args.hide_window else []) +
-              (['--delay'] if args.delay else []), environment)
+              (['--delay'] if args.delay else []) +
+              (['--check-startup'] if args.check_startup else []), environment)
 
 
 if __name__ == '__main__':

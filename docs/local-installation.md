@@ -1,5 +1,9 @@
 # Local desktop installation
 
+This page describes the earlier user-local development snapshots. The current release candidate is
+the [unified native package](packaging-plan.md); do not use this snapshot installer as its installation
+procedure. Earlier snapshots and original profiles remain available for rollback.
+
 The optional user installation provides **GreenWithEnvy (NVML)** in the desktop menu, separate from
 the installed Flatpak. It snapshots application sources and resources; moving or editing the repository
 does not change an installed snapshot. It uses the existing prepared Python environment and reviewed

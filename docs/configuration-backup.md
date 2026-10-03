@@ -1,5 +1,11 @@
 # Configuration backup and restore
 
+The unified 1.0.0 candidate uses a writable native database. Read the
+[native import and rollback procedure](native-desktop.md#configuration-and-import) before first launch:
+an explicitly configured development source is copied online, integrity-checked and archived; it is never
+overwritten or used as the runtime database. The historical backup procedure below remains applicable
+to the original installation. Source validation has used synthetic profiles only.
+
 GWE stores preferences and fan/overclock profiles in `gwe.db`. The current installed user Flatpak uses
 `~/.var/app/com.leinardi.gwe/config/gwe/gwe.db`. Native builds normally use `$XDG_CONFIG_HOME/gwe/gwe.db`
 (or `~/.config/gwe/gwe.db`). The development monitor uses the separate `gwe-monitor` directory.

@@ -1,32 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2019 Roberto Leianrdi -->
 <component type="desktop-application">
-    <id>com.leinardi.gwe.desktop</id>
+    <id>io.github.alamios.gwe</id>
 
     <!-- <translation type="gettext">trg</translation> -->
     <name>GreenWithEnvy</name>
-    <developer_name>Roberto Leinardi</developer_name>
-    <summary>System utility designed to provide information, control the fans and overclock your NVIDIA card</summary>
+    <developer id="io.github.alamios">
+        <name>alamios</name>
+    </developer>
+    <summary>Monitor NVIDIA GPUs and control fans and power limits through NVML</summary>
     <metadata_license>CC0-1.0</metadata_license>
     <project_license>GPL-3.0-or-later</project_license>
     <description>
-        <p>GWE is a GTK system utility designed to provide information, control the fans and overclock your NVIDIA video
-            card and graphics processor.
-        </p>
+        <p>GreenWithEnvy monitors NVIDIA GPUs and controls fan curves and power limits through a
+            supervised NVML helper. This independent fork of Roberto Leinardi's original GWE is
+            maintained by alamios with AI assistance from version 1.0.0.</p>
+        <p>The initial release targets the validated X11 setup. Wayland compatibility is pending;
+            clock-offset control is not supported.</p>
     </description>
-    <launchable type="desktop-id">com.leinardi.gwe.desktop</launchable>
-    <screenshots>
-        <screenshot type="default">
-            <image>https://gitlab.com/leinardi/gwe/raw/release/art/screenshot-1.png</image>
-        </screenshot>
-    </screenshots>
+    <launchable type="desktop-id">io.github.alamios.gwe.desktop</launchable>
     <categories>
         <category>Utility</category>
     </categories>
-    <url type="homepage">https://gitlab.com/leinardi/gwe</url>
-    <url type="bugtracker">https://gitlab.com/leinardi/gwe/issues</url>
-    <update_contact>roberto@leinardi.com</update_contact>
+    <url type="homepage">https://github.com/alamios/gwe</url>
+    <url type="bugtracker">https://github.com/alamios/gwe/issues</url>
     <releases>
+        <release date="2026-10-03" version="1.0.0-rc1" type="development">
+            <description><ul>
+                <li>Move monitoring and fan/power control to NVML with supervised recovery.</li>
+                <li>Provide one native package, desktop socket activation and writable curve configuration.</li>
+                <li>Restore the original editor and tray behavior; retain original author attribution.</li>
+            </ul></description>
+        </release>
         <release date="2024-05-29" version="0.15.9">
             <description>
                 <ul>

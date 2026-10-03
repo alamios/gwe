@@ -53,8 +53,9 @@ def read_profiles(path, *, allow_automatic=False):
                 try:
                     if kind != 'fan_curve' or silent not in (0, 1):
                         raise ValueError('Unsupported saved profile type or silent mode')
+                    order = 'temperature, id' if allow_automatic else 'id'
                     points = database.execute(
-                        'SELECT temperature, duty FROM speed_step WHERE profile_id=? ORDER BY id LIMIT 33',
+                        f'SELECT temperature, duty FROM speed_step WHERE profile_id=? ORDER BY {order} LIMIT 33',
                         (identifier,)).fetchall()
                     if len(points) > 32:
                         raise ValueError('Service supports at most 32 points')

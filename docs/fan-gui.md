@@ -1,5 +1,9 @@
 # Isolated fan-profile review and service client
 
+This page records the earlier read-only profile-review experiment. The release candidate uses a
+[writable native database and original editor](native-desktop.md); its normal launcher needs no explicit
+backup argument.
+
 An experimental GTK3 window reads existing fan curves and can explicitly submit a ten-second trial to
 the installed supervised service. This is a separate preparation tool, not integration into the historical
 main presenter or a replacement for the installed Flatpak. Its application ID ends in `.FanTrial`.

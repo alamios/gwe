@@ -161,6 +161,8 @@ class MainPresenter:
             self._service_controller.start()
             GLib.timeout_add(100, self._service_controller.pulse)
             self._check_nvidia_driver()
+            if native_desktop() and self._settings_interactor.get_int('settings_check_new_version'):
+                self._check_new_version()
             return
         self._refresh_fan_profile_ui(True)
         self._register_db_listeners()
@@ -614,11 +616,13 @@ class MainPresenter:
         if version is not None:
             message = f"{APP_NAME} version <b>{version}</b> is available! " \
                       f"Click <a href=\"{self._get_changelog_uri(version)}\"><b>here</b></a> to see what's new."
-            self.main_view.show_main_infobar_message(message, True)
+            if not native_desktop():
+                self.main_view.show_main_infobar_message(message, True)
             message = f"Version {version} is available! " \
                       f"Click here to see what's new: {self._get_changelog_uri(version)}"
             show_notification("GWE update available!", message, APP_ID)
 
     @staticmethod
-    def _get_changelog_uri(version: str = APP_VERSION) -> str:
-        return f"{APP_SOURCE_URL}/blob/{version}/CHANGELOG.md"
+    def _get_changelog_uri(version: str = None) -> str:
+        reference = f'v{version}' if version is not None else 'maintenance/nvml-revival'
+        return f"{APP_SOURCE_URL}/blob/{reference}/CHANGELOG.md"

@@ -33,9 +33,11 @@ ordinary filesystem copy or overwrite the historical source with the native data
 - The last successfully applied curve is stored in the database and reapplied once after fresh startup
   telemetry, subject to the existing "load last profile" preference. Choosing another curve without
   applying it does not change the applied/startup profile. Faults never rearm startup application.
+  The saved profile ID is used at startup; duplicate names do not make native restoration ambiguous.
 - Closing follows the minimize-to-tray preference. Hiding retains the curve and lease; explicit Quit
   releases them. The native login entry has its own `io.github.alamios.gwe.desktop` filename and launches
   `gwe-nvml --hide-window --delay`; it does not overwrite the historical GWE login entry.
+  Enable login launch through native preferences and disable any historical GWE login entry first.
 - Routine lease renewal and read-only power-status polling do not disable the controls. Actual writes,
   stale telemetry, transitions and faults retain their guards. Clock-offset control remains unsupported.
 - Trial titles/status band and temporary Apply/Restore labels are absent. Actionable failures use ordinary
@@ -45,10 +47,24 @@ ordinary filesystem copy or overwrite the historical source with the native data
 
 `python scripts/run_service_gui.py --smoke-native` uses a separate settings identity and a synthetic
 service. The Python 3.12/X11 grouped check passed startup acquisition, editor opening/live plot changes,
-tray hide/show retaining control, automatic-profile Apply and persisted automatic selection. Its only
+tray hide/show retaining control, automatic-profile Apply and persisted automatic selection, profile
+creation/deletion (including deleting the active profile) and closing with tray minimization disabled. Its only
 real GPU operations are telemetry reads. Configuration tests verify private creation, online import,
 edit persistence, repeated preparation and refusal to overwrite existing data.
 
-Final acceptance must use the actual unified installed package and system Python, including profile
-creation/deletion, reopening, window-close with tray disabled, socket activation and post-stop recovery.
+The extracted native package also passed the earlier editor/tray/automatic check with system Python,
+without a venv or user-installed modules. The expanded graphical check is rerun for the final candidate.
+
+Final acceptance must use the actual unified installed package and system Python, including reopening,
+socket activation and post-stop recovery. A grouped real check is prepared:
+
+```bash
+/usr/bin/python3 scripts/check_installed_session.py --native
+```
+
+Run it only after installing the reviewed candidate and closing other GWE applications. It requires an
+applied custom profile and automatic policies before startup, opens the original editor without editing
+data, checks tray hide/show retains the lease, and explicitly quits. It then independently verifies
+automatic fans, unchanged power, restored CoolerControl state and an available activation socket.
+The check does not save preference changes or change the profile selection. Hardware acceptance is pending.
 Wayland and Kubuntu 26.04 remain untested.

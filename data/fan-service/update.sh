@@ -33,7 +33,7 @@ rollback() {
 }
 trap rollback EXIT
 trap 'exit 1' HUP INT TERM
-for module in fan_curve fan_service fan_process fan_daemon nvml_fan_control nvml_power power_process power_trial __init__; do
+for module in fan_curve fan_service fan_process fan_daemon desktop_activation native_setup nvml_fan_control nvml_power power_process power_trial __init__; do
     install -o root -g root -m 0644 "lib/gwe/$module.py" "/opt/gwe-fan-service.next/lib/gwe/$module.py"
 done
 install -o root -g root -m 0644 lib/pynvml.py /opt/gwe-fan-service.next/lib/pynvml.py

@@ -1,5 +1,9 @@
 # Manual continuous control session
 
+This page records the terminal-based development wrapper. The unified candidate uses
+[desktop socket activation](packaging-plan.md) and the [native desktop](native-desktop.md); its ordinary
+launch does not invoke this wrapper or request sudo.
+
 Implemented and prepared on 2026-10-02. This is an experimental session for the current host, not a
 production/background service or Wayland acceptance. The installed Flatpak and personal database are
 not replaced. Continuous fan control now uses an 85 C ceiling; reaching it stops manual control and

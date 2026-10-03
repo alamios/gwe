@@ -1,5 +1,9 @@
 # Main-window NVML service trials
 
+This page records the isolated development main-window trials. The unified candidate uses the
+[native desktop](native-desktop.md), with the ordinary editor and automatic-profile controls instead
+of these trial labels and status notices.
+
 The existing GWE main window now has an opt-in fan-service integration. It reuses the read-only NVML
 telemetry repository, backup reader, bounded `FanGuiSession` and private diagnostic logger. The normal
 X11 application and installed Flatpak retain their previous entry points. This is a source trial, not a

@@ -297,7 +297,7 @@ def main(argv=None):
             owner_fd = session_owner(config['allowed_uid'])
             if session_record()['cooler_active']:
                 subprocess.run(['systemctl', 'stop', 'coolercontrold.service'], check=True, timeout=5)
-        # Do not stop cooling services implicitly. Operator arranges exclusivity.
+        # Manual trials require operator-arranged exclusivity; desktop activation records the prior state.
         result = subprocess.run(['systemctl', 'is-active', 'coolercontrold.service'], capture_output=True, timeout=2)
         if result.returncode != 3 or result.stdout.strip() not in (b'inactive', b'failed'):
             raise RuntimeError('CoolerControl must be confirmed stopped before starting')

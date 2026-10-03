@@ -27,7 +27,7 @@ from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCan
 from gwe.interactor.settings_interactor import SettingsInteractor
 from gwe.model.status import Status
 from gwe.model.fan_profile import FanProfile
-from gwe.runtime_mode import service_trial, native_desktop
+from gwe.runtime_mode import service_trial, native_desktop, application_id
 _LOG = logging.getLogger(__name__)
 
 try:  # AppIndicator3 may not be installed
@@ -175,6 +175,10 @@ class MainView(MainViewInterface):
         self._about_dialog.set_program_name(APP_NAME)
         self._about_dialog.set_version(APP_VERSION)
         self._about_dialog.set_website(APP_SOURCE_URL)
+        self._about_dialog.set_authors(['Roberto Leinardi', 'Gabriele Musco', 'alamios (fork maintainer since 1.0.0)'])
+        self._about_dialog.set_comments('Independent fork of Roberto Leinardi’s GreenWithEnvy. '
+                                        'Maintained by alamios with AI assistance since version 1.0.0. '
+                                        'NVML monitoring, fan curves and power-limit control.')
         self._about_dialog.connect("delete-event", hide_on_delete)
         self._about_dialog.connect("response", hide_on_delete)
 
@@ -186,7 +190,7 @@ class MainView(MainViewInterface):
         if AppIndicator3:
             # Setting icon name in new() as '', because new() wants an icon path
             self._app_indicator = AppIndicator3.Indicator \
-                .new(APP_ID, '', AppIndicator3.IndicatorCategory.HARDWARE)
+                .new(application_id(APP_ID), '', AppIndicator3.IndicatorCategory.HARDWARE)
             # Set the actual icon by name. If the App is not installed system-wide, the icon won't show up,
             # otherwise it will show up correctly. The set_icon_full() function needs a description for accessibility
             # purposes. I gave it the APP_NAME (should be 'gwe', maybe change it to 'GreenWithEnvy' in the future)
@@ -431,6 +435,9 @@ class MainView(MainViewInterface):
 
     def set_service_selection_enabled(self, enabled: bool) -> None:
         self._fan_combobox.set_sensitive(enabled)
+
+    def set_service_fan_hint(self, message: str) -> None:
+        self._fan_apply_button.set_tooltip_text(message)
 
     def set_service_continuous(self, enabled: bool) -> None:
         self._service_continuous = enabled

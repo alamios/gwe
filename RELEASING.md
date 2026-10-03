@@ -1,6 +1,6 @@
 # Local builds and future releases
 
-The chosen home for this fork is **https://github.com/alamios/gwe**, maintained by **alamios** from the
+The chosen home for this fork is **https://github.com/alamios/gwe**, maintained by **alamios** from
 1.0.0 onward. Source code and `.deb` artifacts will be distributed through that repository and its
 GitHub Releases. This records the destination; no publication or push is authorized by this planning step.
 The installed Flathub application is the historical upstream build, not a build of this branch.
@@ -25,9 +25,25 @@ trial UI cleanup are implemented; the isolated native GTK check passes. See
 previously passed with 531 tests; actual systemd activation/recovery
 acceptance requires the prepared package to be installed and run from the owner's desktop.
 
+The current candidate also passes the expanded extracted-package native GTK check with system Python:
+editor, profile creation/deletion, automatic mode, tray ownership and closing with tray disabled.
+The extracted-package combined power/fan smoke check passes with simulated writes. Desktop metadata,
+AppStream and service/socket units pass their installed validators. APT simulation changes only GWE:
+one combined package replaces the two split packages, with no dependency/driver/kernel/CUDA upgrades.
+The grouped installation script rejects unrelated APT changes before sudo and is tested with fake APT.
+The current simulated suite passes 564 tests on Python 3.12. Python 3.14 passes 554 backend/package tests;
+ten HTTP update-check tests are excluded because that backend-only environment lacks requests. They pass
+on Python 3.12, and requests is an explicit native package dependency. Reactivex's known datetime
+deprecation warning remains non-fatal. Native startup uses the applied profile ID, including duplicate names.
+The owner currently has another GWE open with manual fans; no live writes, import or installation have
+been performed during this preparation. Use `bash scripts/install_release_candidate.sh` after Quit.
+Native socket watchdog/post-stop hardware acceptance remains pending; older lifecycle fault-injection
+results do not by themselves validate the changed installed lifecycle.
+
 ## First local X11 release: agreed requirements
 
-These are acceptance requirements, not claims of implemented behavior. The initial release targets the
+These are acceptance requirements; the preparation status above distinguishes implemented source from
+actual installed acceptance. The initial release targets the
 tested X11 host with NVML fan/power control. Wayland, other machines and driver/host failure guarantees
 remain outside the validated scope. Publication and push remain unauthorized.
 
@@ -73,7 +89,9 @@ An independently captured suspend/resume trace remains pending and must be descr
 
 ## Attribution, public text and links: agreed requirements
 
-Complete this audit before the 1.0.0 release; current development UI/metadata still contain upstream links.
+The candidate updates About, version metadata, public application identity, AppStream, GitHub update
+checking and changelog links. Original credits/history/license remain; legacy internal resources retain
+their names. Confirm these fields in the final installed candidate before the 1.0.0 release.
 
 - Identify the project as a fork of [Roberto Leinardi's original GWE](https://gitlab.com/leinardi/gwe).
   Preserve original authors, contributor credits, copyright and GPL license notices. Add alamios as the
@@ -111,7 +129,7 @@ not permission to perform a blind replacement of upstream author/license referen
 ## Current preparation phase
 
 - Work on `maintenance/nvml-revival` and follow the [maintenance plan](docs/maintenance-plan.md).
-- Keep upstream version history in `CHANGELOG.md`; do not claim a new application version for documentation preparation.
+- Keep upstream history in `CHANGELOG.md`; mark candidate notes as unreleased until publication.
 - Establish a reproducible environment, dependency set and build before providing new installation commands.
 - Review `build.sh` before running it: it regenerates `CHANGELOG.md` from AppStream metadata and clears build output.
 - Review the uninitialized `flatpak` submodule before fetching it. It targets the historical Flathub repository.

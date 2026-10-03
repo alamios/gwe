@@ -66,6 +66,16 @@ def test_automatic_profile_is_never_a_curve_or_autoload(database):
     assert profiles[1].curve is None and profiles[1].problem
 
 
+def test_native_editor_orders_points_by_temperature_and_exposes_automatic_mode(database):
+    with sqlite3.connect(database) as db:
+        db.execute("INSERT INTO fan_profile VALUES (2, 'Auto', 'auto', 0)")
+        db.execute('INSERT INTO speed_step VALUES (3, 1, 60, 60)')
+    curve, automatic = read_profiles(database, allow_automatic=True)
+    assert curve.curve.points == ((40, 30), (60, 60), (80, 100))
+    assert automatic.automatic and automatic.curve is None and automatic.problem is None
+    assert read_profiles(database)[0].problem  # Explicit historical review retains its strict order guard.
+
+
 @pytest.mark.parametrize('value', [b'4', 0])
 def test_supported_hysteresis_encoding(database, value):
     with sqlite3.connect(database) as db:

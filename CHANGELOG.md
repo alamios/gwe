@@ -1,3 +1,22 @@
+Version 1.0.0-rc1 (unreleased candidate)
+=======================================
+
+Independent fork maintained by alamios with AI assistance. Original GWE authors and license retained.
+
+ * Move desktop monitoring and fan/power control to NVML; clock-offset control remains unsupported.
+ * Supervise privileged writes with authenticated leases, watchdog and verified post-stop recovery.
+ * Prepare one native package with terminal-free socket activation and installation-time authorization.
+ * Restore writable curves, the original editor, startup profile persistence and minimize-to-tray behavior.
+ * Remove development status controls; retain bounded private diagnostics and ordinary failure dialogs.
+ * Update project/About/support links to alamios/gwe and disclose AI maintenance.
+ * Bundle complete Peewee playhouse modules and correct migration literal escape warnings.
+
+Current-host X11 trials passed on the RTX 3090 Ti; final unified installed acceptance remains pending.
+Kubuntu 26.04/Wayland, other hardware and driver/host failure recovery are not validated.
+
+Upstream history
+================
+
 Version 0.15.9
 ==============
 Released: 2024-05-29

@@ -1,5 +1,15 @@
 # Migration readiness: current-host follow-up
 
+Current release preparation (2026-10-03): the unified 1.0.0-rc1 package and ordinary native desktop are
+implemented in source. Isolated package/UI validation uses system Python; actual installed socket
+activation, reopening and post-stop recovery remain pending. The split v5 installation is retained.
+Use [current packaging](packaging-plan.md) and [the grouped native acceptance](native-desktop.md).
+Earlier “pending” statements below describe their dated development stage.
+
+Firefox diagnostics subsequently confirmed `FEATURE_FAILURE_VIDEO_DECODING_TEST_FAILED`; direct NVML,
+the installed backend and nvidia-smi also read zero during YouTube. Controlled NVENC/NVDEC telemetry
+passes. Browser acceleration configuration remains separate from the GWE release.
+
 Observed on 2026-10-03. Readiness for the current host is distinct from acceptance on Kubuntu 26.04/Wayland.
 No driver, kernel, CUDA, DKMS registration or repository configuration was changed during this follow-up.
 

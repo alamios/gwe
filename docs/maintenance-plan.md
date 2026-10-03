@@ -6,6 +6,15 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- Release preparation on 2026-10-03: the 1.0.0-rc1 source now contains one native package, authenticated
+  socket activation, writable profile import/editor, startup persistence and original tray/automatic
+  controls. The extracted package passes its isolated GTK check using system Python. The owner’s installed
+  split v5 packages are unchanged; actual unified activation/recovery and target OS acceptance remain pending.
+  See [native desktop](native-desktop.md) and [current packaging](packaging-plan.md).
+- Firefox/YouTube zero video readings were reproduced by direct NVML, the installed backend and nvidia-smi.
+  Firefox reported hardware decoding blocklisted after a failed decoding test. This is distinct from the
+  successful controlled video-engine telemetry checks and is not a GWE release blocker.
+
 - Corrected on 2026-10-03: the monitor/service UI retains its read-only NVML session so video counters
   can accumulate. Available-GPU 1080p60 checks produced matching raw/backend/UI-model nonzero readings;
   nvidia-smi independently confirmed the earlier held-session result. Device-loss reinitialization,

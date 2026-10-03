@@ -95,6 +95,21 @@ def test_construction_and_startup_are_status_only(setup):
     assert not view.enabled[-1][0] or controller.valid()
 
 
+def test_native_read_only_polling_keeps_apply_enabled_but_writes_disable_it(setup, monkeypatch):
+    from concurrent.futures import Future
+    monkeypatch.setenv('GWE_NATIVE_DESKTOP', '1')
+    controller, view, service, now, events = setup
+    make_available(controller)
+    controller.pending = Future()  # A pending background read, without scheduling or hardware access.
+    controller.pending_operation = 'power_status'
+    controller.refresh()
+    assert view.enabled[-1][0] and not controller.busy
+    controller.apply()
+    assert controller.busy and not view.enabled[-1][0]
+    settle(controller)
+    assert service.calls[-1][0] == 'power_apply'
+
+
 def test_allowed_false_never_sends_any_request():
     now = [10.0]
     service = Service()
