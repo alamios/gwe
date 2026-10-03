@@ -60,8 +60,12 @@ installation procedure; do not run the historical upstream build/reset/install i
 Close other GWE applications with **Quit**, then install the reviewed local candidate normally:
 
 ```bash
-sudo apt install ./build/release-rc1-5/gwe-nvml_1.0.0~rc1-5_all.deb
+sudo apt install ./build/publish-v1.0.0-rc1/gwe-nvml_1.0.0~rc1-5_all.deb
 ```
+
+After local cleanup, `build/` retains only `publish-v1.0.0-rc1/`. Earlier package snapshots and
+diagnostic evidence were archived privately under Git-ignored `.local-backups/`; generated review
+trees, smoke states and synthetic media were removed. The four publication assets are unchanged.
 
 The package handles helper setup and socket activation; no separate installation script or venv is
 required. The optional `scripts/install_release_candidate.sh` combines installation with development

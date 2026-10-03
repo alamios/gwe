@@ -30,7 +30,9 @@ is `io.github.alamios.gwe` and the user database has its own native namespace.
 Debian revision `1.0.0~rc1-5` retains the scoped contrast/circular title-button fixes and separate
 maintainer credits, points the development changelog to `main`, and keeps native error notices nonblocking;
 the application version remains `1.0.0-rc1`. It upgrades the original candidate through ordinary APT.
-Earlier artifacts are retained for rollback.
+Earlier package/source artifacts and diagnostics are retained in a private, checksummed
+Git-ignored `.local-backups/` archive. Generated build trees were cleaned; only
+`build/publish-v1.0.0-rc1/` remains, with the original accepted assets unchanged.
 
 ## Installing the reviewed candidates
 

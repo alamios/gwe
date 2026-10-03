@@ -50,8 +50,10 @@ The final publication assets are in **build/publish-v1.0.0-rc1/**:
 - `SHA256SUMS`: checksums for the three assets above.
 
 Later commits contain documentation and developer fault-harness changes only; packaged runtime sources
-are unchanged. Preserve earlier build directories for rollback and never replace a published artifact
-with different bytes under the same version/name. Private databases, UUIDs, screenshots and logs are
+are unchanged. Earlier package snapshots and diagnostic evidence were moved to a private, checksummed
+Git-ignored `.local-backups/` archive before cleanup. `build/` now retains only the publication folder;
+generated review trees, smoke states and synthetic media were removed. Keep rollback assets privately
+and never replace a published artifact with different bytes under the same version/name. Private databases, UUIDs, screenshots and logs are
 excluded from publication assets. The release notes are in [the prepared notes](docs/release-notes-1.0.0-rc1.md).
 
 The native package installs through `sudo apt install ./gwe-nvml_1.0.0~rc1-5_all.deb`. Its maintainer

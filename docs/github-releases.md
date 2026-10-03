@@ -40,13 +40,21 @@ python scripts/build_debs.py build/release-rc1-5 --version 1.0.0~rc1-5 --epoch 1
 ```
 
 The prepared assets are in `build/publish-v1.0.0-rc1/`. The `.deb` is copied byte-for-byte from the
-installed, accepted `build/release-rc1-5` artifact, built at `db50975`. It is deliberately not rebuilt
+installed, accepted rc1-5 artifact, originally built in `build/release-rc1-5` at `db50975`. It is deliberately not rebuilt
 after acceptance. The source archive uses the final `v1.0.0-rc1` tag; subsequent changes are documentation
 and the developer fault harness only, with no changes to packaged application/helper code. `BUILD_INFO`
 records both commits; `SHA256SUMS` checksums the package, archive and build information. Upload only those four files; review trees and service bundles are local
 inspection material. Never attach personal configuration, databases, screenshots or diagnostic logs.
 Inspect the archive/package contents and verify checksums before upload. Publication should use the
 exact tested package; source-only documentation changes must be recorded separately from its build.
+
+## Build-directory cleanup
+
+After owner-authorized cleanup, `build/` contains only `publish-v1.0.0-rc1/`. Prior package/source
+snapshots, manifests and diagnostic logs were archived privately under Git-ignored `.local-backups/`,
+with verified checksums, before removing generated review trees, smoke states and synthetic videos.
+The four publication files and annotated version tag were preserved unchanged. Build commands above
+are for generating a new review directory; they are not needed to publish the accepted assets.
 
 ## Publish manually (owner action)
 
