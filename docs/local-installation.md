@@ -93,4 +93,9 @@ limit compatibility passed. Real startup reapplication remains pending until the
 Final validation passed with 489 tests on each interpreter. A workspace-only snapshot update, rollback
 and reselect cycle also passed desktop validation without starting control; the active user installation
 was left running unchanged.
+After the owner closed it, the requested startup preference was installed and the actual installation
+completed rollback/return without launching a controller. The later snapshot also includes the grouped
+hardware-acceptance flag. Full simulated regression validation passed with 508 tests per interpreter;
+real startup/close acceptance awaits user-terminal sudo authentication. See
+[migration readiness](migration-readiness.md) for the one-command procedure and current system findings.
 Target-OS/Wayland, suspend/resume and driver/host failure recovery remain pending.

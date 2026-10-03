@@ -19,6 +19,10 @@ Do not commit databases or manifests containing personal paths.
 On 2026-10-03, the explicitly supplied existing backup was checked again using a read-only SQLite
 connection. `integrity_check` passed, and the requested startup curve passed the current manual-limit
 validation. No database was overwritten or migrated. This does not include subsequent edits in old GWE.
+A subsequent authorized online backup of the old Flatpak database was created in another private
+timestamped directory on 2026-10-03 and passed integrity validation. The original backup and extra owner
+copy remain untouched. The fresh copy is still on the same disk; place it on independent storage before
+changing the distribution. The local startup profile source was not silently switched to the new backup.
 
 ## Make another online database backup
 

@@ -13,6 +13,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
   Native/Flatpak packaging is still proposed; see [architecture and prerequisites](packaging-plan.md).
   Restore requests during pending renewal are now queued. The startup GTK simulated check passed using
   a separate smoke identity; real automatic startup acceptance requires updating the inactive local client.
+  The owner subsequently closed the client; installation with the startup preference and actual rollback/
+  return completed. The grouped real acceptance command needs user-terminal sudo authentication.
+  Native client/service candidates now build without installing packages; reviewed native dependencies,
+  unmanaged-helper migration and target-OS acceptance remain pending. Read-only system/video observations
+  and the fresh private backup are recorded in [migration readiness](migration-readiness.md).
 
 - Implemented: separate user-owned desktop snapshots, update/rollback and pre-session competing-GWE
   checks. The existing root service and explicit read-only backup are reused without profile migration or

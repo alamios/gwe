@@ -1,8 +1,9 @@
 # Packaging the NVML continuation
 
-Reviewed on 2026-10-03. This is a proposed packaging architecture, not an available `.deb` or Flatpak
-release. The current menu installation is a user-owned source snapshot using a prepared external Python
-environment; the installed root helper is a separately reviewed directory and systemd unit.
+Reviewed on 2026-10-03. Two local native `.deb` candidates can now be built and inspected; installation
+and target-OS acceptance remain pending. There is no new Flatpak release. The current menu installation
+is a user-owned source snapshot using a prepared external Python environment; the installed root helper
+is a separately reviewed directory and systemd unit.
 
 ## Two deliverables
 
@@ -18,8 +19,56 @@ Freezing Python does not remove the host-service, GTK or driver compatibility re
 
 For the owner's Kubuntu-first use, the recommended initial reproducible package target is native `.deb`
 packaging, with separate client/helper packages and declared dependencies. This avoids adding sandbox
-integration during OS migration. This recommendation has not selected package names or implemented
-build scripts. It does not prohibit a later Flatpak UI.
+integration during OS migration. The builder now emits `gwe-nvml-client` and `gwe-nvml-service`.
+It does not prohibit a later Flatpak UI.
+
+## Native candidates: build and review
+
+Use the reviewed Python 3.12 build environment, containing the exact vendor versions declared in
+`scripts/build_debs.py`, plus `dpkg-deb` and GLib resource/schema compilers. No packages are installed by
+the builder. Choose a new destination, an explicit Debian version and a fixed source epoch:
+
+```bash
+python scripts/build_debs.py build/native-candidates --version 0.15.9+nvml20261003.3 --epoch 1790985600
+```
+
+The build produces two `.deb` files, `SHA256SUMS`, unpacked review trees and the reviewed service bundle.
+The desktop client contains precompiled resources and private vendored pure-Python modules for Injector,
+Peewee, Reactivex, typing-extensions, both NVML bindings and xmltodict, with exact versions, original source
+headers and distribution license files. Installed metadata with private origin paths is not copied.
+GTK, Matplotlib, Xlib, XDG, requests and their native dependencies are declared distro dependencies.
+The client entry uses system Python and requires an explicit private local configuration/backup, reusing
+the existing local configuration format rather than importing a personal profile automatically.
+
+The host helper installs its code at the already validated `/opt/gwe-fan-service` path and the unit at
+`/usr/lib/systemd/system/gwe-fan-service.service`. It supplies only a configuration example; existing
+`/etc/gwe-fan-service.json` is never embedded, overwritten or purged by the package. Configure a desktop
+UID and pinned UUID explicitly on a fresh machine. Neither package starts/enables a service, changes
+GPU settings or touches CUDA/kernel/driver packages. Configuration and profiles are not payload files.
+
+Package changes refuse active control, pending ownership/power/session recovery or a remaining runtime
+override. Failed inspection of an existing helper also refuses the operation. The service package rejects
+an existing unmanaged helper on first installation. **Do not install it over the current manual helper.**
+Migration requires a verified inactive/recovered service, archiving the current code and `/etc` unit,
+preserving private configuration, and removing the archived unit's shadowing copy only after the archive
+is verified. That system migration has not been executed by the agent.
+
+Inspect candidate metadata/content with `dpkg-deb --info` and `dpkg-deb --contents`. Resolve declared
+dependencies only after reviewing the exact transaction; the current system lacks several of the native
+Python packages, so a successful venv/simulated GUI check is not a native installation acceptance.
+The owner installs missing system dependencies; the agent does not change system packages independently.
+Close both client launchers and recover the service before package update/downgrade/removal. Retain prior
+`.deb` files and private configuration for rollback; no automatic package downgrade or profile migration
+occurs in maintainer scripts.
+
+Validation covers matching archives from identical source/epoch/input files, root-owned payload metadata,
+absence of personal DB/config, guard rejection, precompiled resources and a staged client GTK startup/
+Restore check with simulated control. Builds export code from the reviewed installed build environment;
+fully independent clean-room builds still need immutable dependency archives/hashes and target-native
+dependency acceptance. Do not treat version pins alone as supply-chain authentication.
+The final local artifacts are retained in `build/native-debs-v3/` with version
+`0.15.9+nvml20261003.3`. A second complete build produced identical archive hashes. The client extracted
+from the final `.deb` passed the simulated GTK startup/Restore check; native installation remains pending.
 
 ## Flatpak option
 

@@ -11,7 +11,7 @@ from test_power_trial_client import make_wrapper_commands, make_wrapper_fixture
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run_session(tmp_path, *, installed=False, old_backup=False, override_exists=False, **extra):
+def run_session(tmp_path, *, installed=False, old_backup=False, override_exists=False, startup_check=False, **extra):
     root, _, bundle, code, runtime = make_wrapper_fixture(tmp_path)
     bindir, _, python = make_wrapper_commands(tmp_path)
     installed_python = bindir / 'installed-python'
@@ -71,8 +71,10 @@ echo "gui_args $*" >> "$TRIAL_LOG"
 exit "${TRIAL_EXIT:-0}"
 ''')
     log = tmp_path / 'session.log'
-    result = subprocess.run(['bash', str(wrapper), str(python), str(backup),
-                             '--installed' if installed else str(bundle)],
+    arguments = ['bash', str(wrapper), str(python), str(backup), '--installed' if installed else str(bundle)]
+    if startup_check:
+        arguments.append('--check-startup')
+    result = subprocess.run(arguments,
                             env={**os.environ, 'PATH': f'{bindir}:{os.environ["PATH"]}',
                                  'TRIAL_LOG': str(log), 'TRIAL_RUNTIME': str(runtime), **extra},
                             capture_output=True, text=True)
@@ -104,6 +106,14 @@ def test_other_controller_refuses_before_any_service_changes(tmp_path):
     assert result.returncode != 0
     assert log.strip() == 'controller_check'
     assert not override.exists()
+
+
+def test_grouped_startup_acceptance_preserves_supervised_cleanup(tmp_path):
+    result, log, backup, override, code = run_session(tmp_path, installed=True, startup_check=True)
+    assert result.returncode == 0
+    assert '--continuous --check-startup' in log
+    assert not override.exists()
+    assert 'start coolercontrold' in log
 
 
 def test_cooler_initially_stopped_is_not_started(tmp_path):

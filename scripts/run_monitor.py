@@ -32,6 +32,11 @@ def prepare_environment(root, directory="monitor"):
 
 
 def prepare_resources(root, build):
+    compiled = root / 'resources'
+    if (compiled / 'com.leinardi.gwe.gresource').is_file() and (compiled / 'gschemas.compiled').is_file():
+        for name in ('com.leinardi.gwe.gresource', 'com.leinardi.gwe.gschema.xml', 'gschemas.compiled'):
+            shutil.copyfile(compiled / name, build / name)
+        return build / 'com.leinardi.gwe.gresource'
     for command in ("glib-compile-resources", "glib-compile-schemas"):
         if shutil.which(command) is None:
             raise RuntimeError(f"Missing {command}; install the native GUI prerequisites")
@@ -48,9 +53,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--smoke-test", action="store_true", help="Check live UI telemetry and quit after 10 seconds")
     args = parser.parse_args()
-    for command in ("glib-compile-resources", "glib-compile-schemas"):
-        if shutil.which(command) is None:
-            parser.error(f"Missing {command}; install the native GUI prerequisites")
+    if not (ROOT / 'resources').is_dir():
+        for command in ("glib-compile-resources", "glib-compile-schemas"):
+            if shutil.which(command) is None:
+                parser.error(f"Missing {command}; install the native GUI prerequisites")
     build = prepare_environment(ROOT)
     data = ROOT / "data"
     resource_path = prepare_resources(ROOT, build)

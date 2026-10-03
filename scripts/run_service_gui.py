@@ -30,6 +30,7 @@ def main(argv=None):
     checks.add_argument('--smoke-power', action='store_true', help='Exercise power Apply with a simulated service only')
     checks.add_argument('--smoke-combined', action='store_true', help='Exercise power during a simulated continuous curve')
     checks.add_argument('--smoke-startup', action='store_true', help='Check automatic startup and explicit release with simulated control')
+    checks.add_argument('--check-startup', action='store_true', help='Verify real startup control briefly and close; requires the supervised wrapper')
     args = parser.parse_args(argv)
     if args.smoke_startup:
         args.continuous = True
@@ -40,6 +41,8 @@ def main(argv=None):
         startup_profile = 'Synthetic trial'
     if startup_profile is not None and not ((args.allow_control or args.smoke_startup) and args.continuous):
         parser.error('--startup-profile requires --allow-control and --continuous')
+    if args.check_startup and not (args.allow_control and args.continuous and startup_profile):
+        parser.error('--check-startup requires a configured startup curve and continuous control')
     if args.smoke_combined:
         args.continuous = True
     if args.continuous and not (args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup):
@@ -141,7 +144,7 @@ def main(argv=None):
     passed, phase = [], [0]
     power_edit_started = [0]
     deadline = time.monotonic() + 30
-    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.check_startup:
         def check():
             app = entry.INJECTOR.get(entry.Application)
             presenter, view = app._presenter, app._view
@@ -152,12 +155,23 @@ def main(argv=None):
                     print('Startup check:', {'phase': phase[0], 'state': session.state,
                                              'starts': backend.starts, 'stops': backend.stops,
                                              'startup_pending': controller.startup_pending if controller else None}, flush=True)
-                print('Main-window service smoke test:', 'PASS' if valid else 'FAIL', flush=True)
+                print('Startup control check:' if args.check_startup else 'Main-window service smoke test:',
+                      'PASS' if valid else 'FAIL', flush=True)
                 app.quit()
                 return GLib.SOURCE_REMOVE
             if time.monotonic() >= deadline or session.state == 'fault':
                 return finish(False)
             if controller is None or not controller.telemetry_available:
+                return GLib.SOURCE_CONTINUE
+            if args.check_startup:
+                if phase[0] == 0 and session.state == 'active':
+                    print('Startup curve verified by service; keeping control for six seconds', flush=True)
+                    power_edit_started[0] = time.monotonic()
+                    phase[0] = 1
+                elif phase[0] == 1 and time.monotonic() - power_edit_started[0] >= 6:
+                    phase[0] = 2
+                    view._window.close()
+                    return GLib.SOURCE_REMOVE
                 return GLib.SOURCE_CONTINUE
             if args.smoke_startup:
                 if phase[0] == 0 and session.state == 'active':
@@ -336,6 +350,10 @@ def main(argv=None):
             entry.main()
         except SystemExit as error:
             result = error.code
+        if args.check_startup and phase[0] == 2:
+            controller = entry.INJECTOR.get(entry.Application)._presenter._service_controller
+            passed.append(controller.closed and session.client is None)
+            print('Window-close disconnect:', 'PASS' if passed[-1] else 'FAIL', flush=True)
         if args.smoke_service and phase[0] == 6:
             controller = entry.INJECTOR.get(entry.Application)._presenter._service_controller
             passed.append(controller.closed and session.client is None)
@@ -351,7 +369,7 @@ def main(argv=None):
             worker.join(2)
             service.close()
             temporary.cleanup()
-    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup:
+    if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.check_startup:
         return 0 if passed == [True] and (not args.smoke_service or backend.starts == backend.stops == 3) else 1
     return result
 

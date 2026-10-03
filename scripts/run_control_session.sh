@@ -6,7 +6,12 @@ cd -- "$(dirname -- "$0")/.."
 session_python=${1:?Provide the prepared Python 3.12 interpreter}
 session_database=${2:?Provide the read-only backup database}
 bundle=${3:?Provide the reviewed continuous-capable service bundle}
-[ "$#" -eq 3 ] && [ -f "$session_database" ] || exit 1
+[ "$#" -ge 3 ] && [ "$#" -le 4 ] && [ -f "$session_database" ] || exit 1
+gui_check=()
+if [ "$#" -eq 4 ]; then
+    [ "$4" = --check-startup ] || exit 1
+    gui_check=(--check-startup)
+fi
 # Hold a desktop-session lock and inspect competing applications before sudo or recovery.
 session_state=${GWE_STATE_HOME:-"$PWD/build"}
 mkdir -p -- "$session_state"
@@ -88,4 +93,4 @@ sudo install -o root -g root -m 0644 "$bundle/continuous.conf" "$override"
 sudo systemctl daemon-reload
 sudo systemctl start "$unit"
 "$session_python" scripts/run_service_gui.py --database "$session_database" \
-    --allow-control --allow-power-control --continuous
+    --allow-control --allow-power-control --continuous "${gui_check[@]}"
