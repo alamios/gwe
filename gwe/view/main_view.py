@@ -172,10 +172,13 @@ class MainView(MainViewInterface):
             self._builder.get_object("historical_data_button").set_sensitive(False)
 
     def _init_about_dialog(self) -> None:
+        from gwe.util.appearance import prepare_windows
+        self._appearance = prepare_windows(self._window, self._about_dialog)
         self._about_dialog.set_program_name(APP_NAME)
         self._about_dialog.set_version(APP_VERSION)
         self._about_dialog.set_website(APP_SOURCE_URL)
-        self._about_dialog.set_authors(['Roberto Leinardi', 'Gabriele Musco', 'alamios (fork maintainer since 1.0.0)'])
+        self._about_dialog.set_authors(['Roberto Leinardi', 'Gabriele Musco'])
+        self._about_dialog.add_credit_section('Maintainer', ['alamios (since 1.0.0)'])
         self._about_dialog.set_comments('Independent fork of Roberto Leinardi’s GreenWithEnvy. '
                                         'Maintained by alamios with AI assistance since version 1.0.0. '
                                         'NVML monitoring, fan curves and power-limit control.')

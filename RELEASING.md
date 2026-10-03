@@ -31,7 +31,7 @@ The extracted-package combined power/fan smoke check passes with simulated write
 AppStream and service/socket units pass their installed validators. APT simulation changes only GWE:
 one combined package replaces the two split packages, with no dependency/driver/kernel/CUDA upgrades.
 The grouped installation script rejects unrelated APT changes before sudo and is tested with fake APT.
-Ordinary installation is `sudo apt install ./gwe-nvml_1.0.0~rc1_all.deb`; the package performs its own
+Ordinary installation is `sudo apt install ./gwe-nvml_1.0.0~rc1-2_all.deb`; the package performs its own
 setup. The repository wrapper is optional development acceptance, not a prerequisite for users.
 The current simulated suite passes 564 tests on Python 3.12. Python 3.14 passes 554 backend/package tests;
 ten HTTP update-check tests are excluded because that backend-only environment lacks requests. They pass
@@ -41,6 +41,11 @@ The owner currently has another GWE open with manual fans; no live writes, impor
 been performed during this preparation. Use `bash scripts/install_release_candidate.sh` after Quit.
 Native socket watchdog/post-stop hardware acceptance remains pending; older lifecycle fault-injection
 results do not by themselves validate the changed installed lifecycle.
+
+The local Debian revision **1.0.0~rc1-2** corrects GTK title-control/link contrast and separates the
+fork maintainer from original authors in About. Application version remains **1.0.0-rc1**. Scoped
+styles passed Breeze and Adwaita light/dark checks; 14 focused packaging/launcher tests and the
+extracted-package native graphical check passed. This revision does not change GPU control behavior.
 
 ## First local X11 release: agreed requirements
 

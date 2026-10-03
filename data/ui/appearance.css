@@ -1,0 +1,26 @@
+/* Keep symbolic title controls and links legible in light and dark GTK themes.
+ * Scope the adjustments to GWE windows; retain the desktop's palette and fonts. */
+.gwe-window headerbar button.titlebutton {
+    color: @theme_fg_color;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.gwe-window headerbar button.titlebutton image {
+    color: inherit;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+.gwe-window button.link,
+.gwe-window button.link label,
+.gwe-window label link {
+    color: mix(@theme_fg_color, @theme_selected_bg_color, 0.35);
+    text-decoration-line: underline;
+}
+
+.gwe-window button.link:visited,
+.gwe-window button.link:visited label,
+.gwe-window label link:visited {
+    color: mix(@theme_fg_color, @theme_selected_bg_color, 0.20);
+}

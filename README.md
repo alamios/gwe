@@ -20,6 +20,8 @@ or PyPI distribution.
   authenticated ownership, renewable leases, watchdog and post-stop recovery.
 - One native package contains the unprivileged GTK application and helper. Normal launch opens no
   terminal and requests no password; administrator authorization happens during installation/setup.
+- Window controls and links retain the desktop GTK theme with scoped contrast fixes. About separates
+  the original authors from the fork maintainer.
 - The original curve editor, profile persistence and minimize-to-tray preference remain available.
   The last applied curve can be restored at startup. Automatic profiles release fan control.
 - Private configuration is created automatically; existing development profile sources are imported
@@ -55,7 +57,7 @@ installation procedure; do not run the historical upstream build/reset/install i
 Close other GWE applications with **Quit**, then install the reviewed local candidate normally:
 
 ```bash
-sudo apt install ./build/release-rc1/gwe-nvml_1.0.0~rc1_all.deb
+sudo apt install ./build/release-rc1-2-final/gwe-nvml_1.0.0~rc1-2_all.deb
 ```
 
 The package handles helper setup and socket activation; no separate installation script or venv is

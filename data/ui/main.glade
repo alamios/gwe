@@ -1858,8 +1858,7 @@ along with gwe.  If not, see <http://www.gnu.org/licenses/>.
     <property name="program_name">GreenWithEnvy</property>
     <property name="website">https://github.com/alamios/gwe</property>
     <property name="authors">Roberto Leinardi &lt;roberto@leinardi.com&gt;
-Gabriele Musco &lt;emaildigabry@gmail.com&gt;
-alamios (fork maintainer since 1.0.0)</property>
+Gabriele Musco &lt;emaildigabry@gmail.com&gt;</property>
     <property name="comments">Independent fork maintained by alamios with AI assistance since version 1.0.0. NVML monitoring, fan curves and power-limit control.</property>
     <property name="logo_icon_name">com.leinardi.gwe</property>
     <property name="license_type">gpl-3-0</property>

@@ -43,6 +43,19 @@ ordinary filesystem copy or overwrite the historical source with the native data
 - Trial titles/status band and temporary Apply/Restore labels are absent. Actionable failures use ordinary
   dialogs; bounded private diagnostic logs remain in the launcher state directory.
 
+## Appearance and credits
+
+The desktop uses the host GTK theme and icon theme rather than forcing a Flatpak/runtime appearance.
+An application-scoped stylesheet makes title controls inherit the normal foreground, gives them a
+24-pixel minimum target with 16-pixel icons, and adds readable, underlined links. It does not change
+the desktop theme or other applications. About retains Roberto Leinardi and Gabriele Musco as authors;
+`alamios (since 1.0.0)` appears in a separate **Maintainer** section.
+
+Standalone GTK checks passed under Breeze and Adwaita light/dark: opaque title icons at least 16 pixels
+wide, link contrast above 4.5:1 against the theme background, and separate maintainer credits.
+The revision `1.0.0~rc1-2` extracted package passed the native editor/tray/automatic graphical check
+with system Python, isolated settings and synthetic control. These checks do not validate Wayland.
+
 ## Source validation
 
 `python scripts/run_service_gui.py --smoke-native` uses a separate settings identity and a synthetic

@@ -8,6 +8,7 @@ Independent fork maintained by alamios with AI assistance. Original GWE authors 
  * Prepare one native package with terminal-free socket activation and installation-time authorization.
  * Restore writable curves, the original editor, startup profile persistence and minimize-to-tray behavior.
  * Remove development status controls; retain bounded private diagnostics and ordinary failure dialogs.
+ * Fix title-control and link contrast without forcing a GTK theme; separate maintainer credits.
  * Update project/About/support links to alamios/gwe and disclose AI maintenance.
  * Bundle complete Peewee playhouse modules and correct migration literal escape warnings.
 
