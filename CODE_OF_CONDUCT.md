@@ -54,12 +54,11 @@ further defined and clarified by project maintainers.
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at roberto@leinardi.com. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
+This continuation currently serves a personal maintenance workflow and has no
+public community or reporting contact. Before opening public collaboration, the
+maintainer must provide a private reporting channel and an enforcement process.
+Do not direct reports about this continuation to the original upstream maintainer.
+Any future reporting process must protect the confidentiality of reporters.
 
 Project maintainers who do not follow or enforce the Code of Conduct in good
 faith may face temporary or permanent repercussions as determined by other

@@ -1,0 +1,29 @@
+[Unit]
+Description=GWE experimental supervised fan and power control (60 second trial)
+After=multi-user.target
+
+[Service]
+Type=notify
+User=root
+ExecStart=/usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py run
+ExecStopPost=/usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py recover
+RuntimeDirectory=gwe-fan-service
+RuntimeDirectoryMode=0711
+RuntimeDirectoryPreserve=yes
+RuntimeMaxSec=60s
+WatchdogSec=10s
+WatchdogSignal=SIGKILL
+TimeoutStartSec=10s
+TimeoutStopSec=25s
+KillMode=control-group
+Restart=no
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+# Deliberately no [Install]: manual trial only, no boot enablement.

@@ -22,3 +22,6 @@ __pycache__/
 .dmypy.json
 /venv/
 .flatpak-builder/
+
+# Private local configuration backups
+/.local-backups/

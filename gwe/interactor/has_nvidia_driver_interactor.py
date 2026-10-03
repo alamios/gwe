@@ -39,7 +39,7 @@ class HasNvidiaDriverInteractor:
         return reactivex.defer(lambda _: reactivex.just(self._has_nvidia_driver()))
 
     def _has_nvidia_driver(self) -> HasNvidiaDriverResult:
-        if not self._nvidia_repository.has_nv_control_extension():
+        if not self._nvidia_repository.monitor_only and not self._nvidia_repository.has_nv_control_extension():
             return HasNvidiaDriverResult.NV_CONTROL_MISSING
         if not self._nvidia_repository.has_nvml_shared_library():
             return HasNvidiaDriverResult.NVML_MISSING

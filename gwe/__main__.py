@@ -40,6 +40,7 @@ from gwe.util.log import set_log_level
 from gwe.di import INJECTOR
 from gwe.app import Application
 from gwe.repository.nvidia_repository import NvidiaRepository
+from gwe.runtime_mode import service_trial
 
 WHERE_AM_I = abspath(dirname(__file__))
 LOCALE_DIR = join(WHERE_AM_I, 'mo')
@@ -59,6 +60,9 @@ gettext.textdomain(APP_PACKAGE_NAME)
 def _cleanup() -> None:
     try:
         _LOG.debug("cleanup")
+        if service_trial():
+            from gwe.presenter.main_presenter import MainPresenter
+            INJECTOR.get(MainPresenter).on_shutdown()
         composite_disposable = INJECTOR.get(CompositeDisposable)
         composite_disposable.dispose()
         nvidia_repository = INJECTOR.get(NvidiaRepository)
@@ -100,6 +104,8 @@ def main() -> int:
     _init_database()
     application: Application = INJECTOR.get(Application)
     GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, application.quit)
+    if service_trial():
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, application.quit)
     exit_status = application.run(sys.argv)
     _cleanup()
     return sys.exit(exit_status)

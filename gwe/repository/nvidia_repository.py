@@ -26,6 +26,7 @@ from py3nvml import py3nvml
 from py3nvml.py3nvml import NVML_CLOCK_SM, NVMLError, NVML_ERROR_NOT_SUPPORTED, NVML_ERROR_UNKNOWN, \
     NVML_TEMPERATURE_GPU, NVML_TEMPERATURE_THRESHOLD_SLOWDOWN, NVML_TEMPERATURE_THRESHOLD_SHUTDOWN
 
+from gwe.runtime_mode import monitor_only
 from gwe.model.clocks import Clocks
 from gwe.model.fan import Fan
 from gwe.model.gpu_status import GpuStatus
@@ -50,6 +51,12 @@ class NvidiaRepository:
         self._gpu_count = 0
         self._gpu_setting_cache: List[Dict[str, str]] = []
         self._ctrl_display: Optional[str] = None
+        self.monitor_only = monitor_only()
+        self._monitor = None
+        if self.monitor_only:
+            from gwe.nvml_backend import NvmlBackend
+            from gwe.nvml_monitor import NvmlMonitor
+            self._monitor = NvmlMonitor(NvmlBackend(keep_alive=True))
 
     @staticmethod
     def is_nvidia_smi_available() -> bool:
@@ -76,6 +83,10 @@ class NvidiaRepository:
 
     @synchronized_with_attr("_lock")
     def has_nvml_shared_library(self) -> bool:
+        if self.monitor_only:
+            # The presence of device_count establishes successful initialization;
+            # optional telemetry failures do not mean that NVML is missing.
+            return self._monitor.is_available()
         try:
             py3nvml.nvmlInit()
             py3nvml.nvmlShutdown()
@@ -86,6 +97,8 @@ class NvidiaRepository:
 
     @synchronized_with_attr("_lock")
     def get_status(self) -> Optional[Status]:
+        if self.monitor_only:
+            return self._monitor.get_status()
         xlib_display = None
         try:
             time1 = time.time()
@@ -217,6 +230,8 @@ class NvidiaRepository:
         return None
 
     def set_overclock(self, gpu_index: int, perf: int, gpu_offset: int, memory_offset: int) -> bool:
+        if self.monitor_only:
+            raise RuntimeError("GPU writes are disabled in monitor-only mode")
         xlib_display = display.Display(self._ctrl_display)
         gpu = Gpu(gpu_index)
         gpu_result = (xlib_display.nvcontrol_set_gpu_nvclock_offset(gpu, perf, gpu_offset) or
@@ -226,8 +241,9 @@ class NvidiaRepository:
         xlib_display.close()
         return gpu_result is True and mem_result is True
 
-    @staticmethod
-    def set_power_limit(gpu_index: int, limit: int) -> bool:
+    def set_power_limit(self, gpu_index: int, limit: int) -> bool:
+        if self.monitor_only:
+            raise RuntimeError("GPU writes are disabled in monitor-only mode")
         cmd = ['pkexec',
                _NVIDIA_SMI_BINARY_NAME,
                '-i',
@@ -239,10 +255,15 @@ class NvidiaRepository:
         return result[0] == 0
 
     def set_all_gpus_fan_to_auto(self) -> None:
+        if self.monitor_only:
+            self._monitor.close()
+            return
         for gpu_index in range(self._gpu_count):
             self.set_fan_speed(gpu_index, manual_control=False)
 
     def set_fan_speed(self, gpu_index: int, speed: int = 100, manual_control: bool = False) -> bool:
+        if self.monitor_only:
+            raise RuntimeError("GPU writes are disabled in monitor-only mode")
         xlib_display = display.Display(self._ctrl_display)
         gpu = Gpu(gpu_index)
         fan_indexes = xlib_display.nvcontrol_get_coolers_used_by_gpu(gpu)

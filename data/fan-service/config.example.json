@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "allowed_uid": 0,
+  "gpu_uuid": "REPLACE_WITH_LOCAL_GPU_UUID"
+}

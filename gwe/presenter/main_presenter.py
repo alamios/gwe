@@ -38,7 +38,7 @@ from gwe.interactor.set_fan_speed_interactor import SetFanSpeedInteractor
 from gwe.interactor.set_overclock_interactor import SetOverclockInteractor
 from gwe.interactor.set_power_limit_iInteractor import SetPowerLimitInteractor
 from gwe.interactor.settings_interactor import SettingsInteractor
-from gwe.model import SpeedStep
+from gwe.model.speed_step import SpeedStep
 from gwe.model.cb_change import DbChange
 from gwe.model.current_fan_profile import CurrentFanProfile
 from gwe.model.current_overclock_profile import CurrentOverclockProfile
@@ -52,6 +52,7 @@ from gwe.presenter.edit_overclock_profile_presenter import EditOverclockProfileP
 from gwe.presenter.historical_data_presenter import HistoricalDataPresenter
 from gwe.presenter.preferences_presenter import PreferencesPresenter
 from gwe.util.deployment import is_flatpak
+from gwe.runtime_mode import service_trial, native_desktop
 from gwe.util.view import show_notification, open_uri, get_default_application
 
 _LOG = logging.getLogger(__name__)
@@ -149,8 +150,20 @@ class MainPresenter:
         self._latest_status: Optional[Status] = None
         self._latest_update_temp: Optional[int] = None
         self._gpu_index: int = 0
+        self._service_controller = None
 
     def on_start(self) -> None:
+        if service_trial():
+            if native_desktop():
+                self._register_db_listeners()
+            from gwe.fan_main_controller import create_controller
+            self._service_controller = create_controller(self.main_view)
+            self._service_controller.start()
+            GLib.timeout_add(100, self._service_controller.pulse)
+            self._check_nvidia_driver()
+            if native_desktop() and self._settings_interactor.get_int('settings_check_new_version'):
+                self._check_new_version()
+            return
         self._refresh_fan_profile_ui(True)
         self._register_db_listeners()
         self._check_nvidia_driver()
@@ -158,15 +171,26 @@ class MainPresenter:
             self._check_new_version()
 
     def on_application_window_delete_event(self, *_: Any) -> bool:
+        if service_trial() and not native_desktop():
+            self.on_shutdown()
+            return False
         if self._settings_interactor.get_int('settings_minimize_to_tray'):
             self.on_toggle_app_window_clicked()
             return True
         return False
 
+    def on_shutdown(self) -> None:
+        if self._service_controller is not None:
+            self._service_controller.close()
+
     def on_historical_data_button_clicked(self, *_: Any) -> None:
         self._historical_data_presenter.show()
 
     def on_power_limit_apply_button_clicked(self, *_: Any) -> None:
+        if service_trial():
+            if self._service_controller is not None and self._service_controller.power is not None:
+                self._service_controller.power.apply()
+            return
         self._composite_disposable.add(self._set_power_limit_interactor.execute(*self.main_view.get_power_limit()).pipe(
             operators.subscribe_on(self._scheduler),
             operators.observe_on(GtkScheduler(GLib)),
@@ -174,6 +198,13 @@ class MainPresenter:
                     on_error=self._handle_set_power_limit_result))
 
     def on_fan_edit_button_clicked(self, *_: Any) -> None:
+        if service_trial():
+            if self._service_controller is not None:
+                if native_desktop():
+                    self._service_controller.edit(self._edit_fan_profile_presenter)
+                else:
+                    self._service_controller.release()
+            return
         profile = self._fan_profile_selected
         if profile:
             self._edit_fan_profile_presenter.show_edit(profile)
@@ -181,6 +212,10 @@ class MainPresenter:
             _LOG.error('Profile is None!')
 
     def on_fan_apply_button_clicked(self, *_: Any) -> None:
+        if service_trial():
+            if self._service_controller is not None:
+                self._service_controller.apply()
+            return
         if self._fan_profile_selected:
             self._fan_profile_applied = self._fan_profile_selected
             if self._fan_profile_selected.type == FanProfileType.AUTO.value:
@@ -189,6 +224,8 @@ class MainPresenter:
             self._update_current_fan_profile(self._fan_profile_selected)
 
     def on_overclock_edit_button_clicked(self, *_: Any) -> None:
+        if service_trial():
+            return
         profile = self._overclock_profile_selected
         assert self._latest_status is not None
         overclock = self._latest_status.gpu_status_list[self._gpu_index].overclock
@@ -198,6 +235,8 @@ class MainPresenter:
             _LOG.error('Profile is None!')
 
     def on_overclock_apply_button_clicked(self, *_: Any) -> None:
+        if service_trial():
+            return
         if self._overclock_profile_selected:
             self._overclock_profile_applied = self._overclock_profile_selected
             self._refresh_overclock_profile_ui(profile_id=self._overclock_profile_selected.id)
@@ -213,6 +252,9 @@ class MainPresenter:
                         on_error=self._handle_set_overclock_result))
 
     def on_menu_settings_clicked(self, *_: Any) -> None:
+        if service_trial() and not native_desktop():
+            self.main_view.show_main_infobar_message('Preferences are disabled during the service trial.')
+            return
         self._preferences_presenter.show()
 
     def on_menu_changelog_clicked(self, *_: Any) -> None:
@@ -225,9 +267,18 @@ class MainPresenter:
         active = widget.get_active()
         if active >= 0:
             profile_id = widget.get_model()[active][0]
+            if service_trial():
+                if self._service_controller is not None:
+                    if native_desktop() and profile_id == -1:
+                        self._edit_fan_profile_presenter.show_add()
+                    else:
+                        self._service_controller.select(profile_id)
+                return
             self._select_fan_profile(profile_id)
 
     def on_overclock_profile_selected(self, widget: Any, *_: Any) -> None:
+        if service_trial():
+            return
         active = widget.get_active()
         if active >= 0:
             profile_id = widget.get_model()[active][0]
@@ -281,11 +332,19 @@ class MainPresenter:
                                                 on_error=lambda e: _LOG.exception(f"Db signal error: {str(e)}"))
 
     def _on_speed_step_list_changed(self, db_change: DbChange) -> None:
+        if native_desktop():
+            if self._service_controller is not None:
+                self._service_controller.reload()
+            return
         profile: SpeedStep = db_change.entry.profile
         if self._fan_profile_selected and self._fan_profile_selected.id == profile.id:
             self.main_view.refresh_chart(profile)
 
     def _on_fan_profile_list_changed(self, db_change: DbChange) -> None:
+        if native_desktop():
+            if self._service_controller is not None:
+                self._service_controller.reload(None if db_change.type == DbChange.DELETE else db_change.entry.id)
+            return
         profile: FanProfile = db_change.entry
         if db_change.type == DbChange.DELETE:
             self._refresh_fan_profile_ui()
@@ -304,6 +363,10 @@ class MainPresenter:
             self._refresh_overclock_profile_ui(profile_id=profile.id)
 
     def _on_setting_list_changed(self, db_change: DbChange) -> None:
+        if native_desktop():
+            if self._service_controller is not None and db_change.entry.key == 'settings_hysteresis':
+                self._service_controller.reload()
+            return
         if db_change.entry.key == 'settings_hysteresis' and self._fan_profile_applied:
             self.main_view.refresh_chart(self._fan_profile_applied)
 
@@ -316,9 +379,27 @@ class MainPresenter:
             operators.flat_map(lambda _: self._get_status()),
             operators.observe_on(GtkScheduler(GLib)),
         ).subscribe(on_next=self._on_status_updated,
-                    on_error=lambda e: _LOG.exception(f"Refresh error: {str(e)}")))
+                    on_error=self._on_refresh_error))
+
+    def _on_refresh_error(self, error) -> None:
+        if service_trial():
+            self._on_status_updated(None)
+        else:
+            _LOG.exception('Refresh error: %s', error)
 
     def _on_status_updated(self, status: Optional[Status]) -> None:
+        if service_trial():
+            self._latest_status = status
+            if status is not None:
+                self.main_view.refresh_status(status, self._gpu_index)
+                self._historical_data_presenter.add_status(status, self._gpu_index)
+            if self._service_controller is not None:
+                if self._service_controller.power is not None:
+                    self._service_controller.power.telemetry(
+                        status.gpu_status_list[self._gpu_index] if status is not None else None)
+                self._service_controller.telemetry(
+                    status is not None and status.gpu_status_list[self._gpu_index].temp.gpu is not None)
+            return
         if status is not None:
             was_latest_status_none = self._latest_status is None
             self._latest_status = status
@@ -421,6 +502,8 @@ class MainPresenter:
             self.main_view.refresh_chart(profile)
 
     def _set_fan_speed(self, gpu_index: int, speed: int = 100, manual_control: bool = True) -> None:
+        if service_trial():
+            return
         _LOG.debug(f"Setting fan speed to {speed}")
         self._composite_disposable.add(self._set_fan_speed_interactor.execute(gpu_index, speed, manual_control).pipe(
             operators.subscribe_on(self._scheduler),
@@ -533,11 +616,13 @@ class MainPresenter:
         if version is not None:
             message = f"{APP_NAME} version <b>{version}</b> is available! " \
                       f"Click <a href=\"{self._get_changelog_uri(version)}\"><b>here</b></a> to see what's new."
-            self.main_view.show_main_infobar_message(message, True)
+            if not native_desktop():
+                self.main_view.show_main_infobar_message(message, True)
             message = f"Version {version} is available! " \
                       f"Click here to see what's new: {self._get_changelog_uri(version)}"
             show_notification("GWE update available!", message, APP_ID)
 
     @staticmethod
-    def _get_changelog_uri(version: str = APP_VERSION) -> str:
-        return f"{APP_SOURCE_URL}/blob/{version}/CHANGELOG.md"
+    def _get_changelog_uri(version: str = None) -> str:
+        reference = f'v{version}' if version is not None else 'maintenance/nvml-revival'
+        return f"{APP_SOURCE_URL}/blob/{reference}/CHANGELOG.md"

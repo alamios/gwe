@@ -1,0 +1,10 @@
+# Initial Python 3.12 GTK baseline; not validated for Python 3.14.
+# PyGObject/Pycairo come from the host via a system-site-packages environment.
+-r requirements-monitor-tests.txt
+# Retain the inherited plotting/ORM versions while validating the GUI.
+# Matplotlib 3.8.2 requires the NumPy 1.x ABI for its published wheels.
+numpy==1.26.4
+matplotlib==3.8.2
+peewee==3.17.0
+pyxdg==0.28
+requests>=2.32.5,<3

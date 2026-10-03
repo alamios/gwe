@@ -27,6 +27,7 @@ from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCan
 from gwe.interactor.settings_interactor import SettingsInteractor
 from gwe.model.status import Status
 from gwe.model.fan_profile import FanProfile
+from gwe.runtime_mode import service_trial, native_desktop, application_id
 _LOG = logging.getLogger(__name__)
 
 try:  # AppIndicator3 may not be installed
@@ -171,9 +172,16 @@ class MainView(MainViewInterface):
             self._builder.get_object("historical_data_button").set_sensitive(False)
 
     def _init_about_dialog(self) -> None:
+        from gwe.util.appearance import prepare_windows
+        self._appearance = prepare_windows(self._window, self._about_dialog)
         self._about_dialog.set_program_name(APP_NAME)
         self._about_dialog.set_version(APP_VERSION)
         self._about_dialog.set_website(APP_SOURCE_URL)
+        self._about_dialog.set_authors(['Roberto Leinardi', 'Gabriele Musco'])
+        self._about_dialog.add_credit_section('Maintainer', ['alamios (since 1.0.0)'])
+        self._about_dialog.set_comments('Independent fork of Roberto Leinardi’s GreenWithEnvy. '
+                                        'Maintained by alamios with AI assistance since version 1.0.0. '
+                                        'NVML monitoring, fan curves and power-limit control.')
         self._about_dialog.connect("delete-event", hide_on_delete)
         self._about_dialog.connect("response", hide_on_delete)
 
@@ -185,7 +193,7 @@ class MainView(MainViewInterface):
         if AppIndicator3:
             # Setting icon name in new() as '', because new() wants an icon path
             self._app_indicator = AppIndicator3.Indicator \
-                .new(APP_ID, '', AppIndicator3.IndicatorCategory.HARDWARE)
+                .new(application_id(APP_ID), '', AppIndicator3.IndicatorCategory.HARDWARE)
             # Set the actual icon by name. If the App is not installed system-wide, the icon won't show up,
             # otherwise it will show up correctly. The set_icon_full() function needs a description for accessibility
             # purposes. I gave it the APP_NAME (should be 'gwe', maybe change it to 'GreenWithEnvy' in the future)
@@ -229,7 +237,23 @@ class MainView(MainViewInterface):
         _LOG.debug('view status')
         if status:
             gpu_status = status.gpu_status_list[gpu_index]
-            if self._first_refresh:
+            if status.read_only:
+                self._window.set_title(
+                    ("GreenWithEnvy — Control session" if getattr(self, '_service_continuous', False)
+                     else "GreenWithEnvy — Service trial") if service_trial()
+                    else "GreenWithEnvy — Monitor only")
+                self._fan_warning_label.set_text(
+                    ("Explicit curve control; automatic recovery at 85 °C or on close."
+                     if getattr(self, '_service_continuous', False)
+                     else "Explicit ten-second service trials; no startup application.")
+                    if service_trial() else "Fan control is disabled in monitor-only mode.")
+                self._overclock_warning_label.set_text("Overclocking is disabled during service trials."
+                                                       if service_trial() else "Overclocking is disabled in monitor-only mode.")
+                if native_desktop():
+                    self._window.set_title('GreenWithEnvy')
+                    self._fan_warning_label.hide()
+                    self._overclock_warning_label.set_text('Clock offset control is not supported in this release.')
+            if self._first_refresh or status.read_only:
                 self._first_refresh = False
                 self._set_entry_text(self._info_name_entry, gpu_status.info.name)
                 self._set_entry_text(self._info_vbios_entry, gpu_status.info.vbios)
@@ -247,8 +271,8 @@ class MainView(MainViewInterface):
                                        "<span size=\"large\">{}</span> °C", gpu_status.temp.shutdown)
                 self._overclock_frame.set_sensitive(gpu_status.overclock.available)
                 self._overclock_warning_label.set_visible(not gpu_status.overclock.available)
-                self._fan_profile_frame.set_sensitive(gpu_status.fan.control_allowed)
-                self._fan_warning_label.set_visible(not gpu_status.fan.control_allowed)
+                self._fan_profile_frame.set_sensitive(service_trial() or gpu_status.fan.control_allowed)
+                self._fan_warning_label.set_visible(not gpu_status.fan.control_allowed and not native_desktop())
                 self._remove_level_bar_offsets(self._info_gpu_usage_levelbar)
                 self._remove_level_bar_offsets(self._info_memory_usage_levelbar)
                 self._remove_level_bar_offsets(self._info_encoder_usage_levelbar)
@@ -262,11 +286,15 @@ class MainView(MainViewInterface):
                         and minimum != maximum):
                     self._power_limit_adjustment.set_lower(minimum)
                     self._power_limit_adjustment.set_upper(maximum)
-                    self._power_limit_adjustment.set_value(limit)
+                    power_snapshot = (gpu_status.info.uuid, minimum, maximum, limit)
+                    if not (service_trial() and getattr(self, '_service_power_has_control', False)
+                            and getattr(self, '_service_power_snapshot', None) == power_snapshot):
+                        self._power_limit_adjustment.set_value(limit)
+                    self._service_power_snapshot = power_snapshot
                     self._power_limit_scale.clear_marks()
                     self._power_limit_scale.add_mark(default, Gtk.PositionType.BOTTOM, f"{default:.0f}")
-                    self._power_limit_scale.set_sensitive(True)
-                    self._power_limit_apply_button.set_sensitive(True)
+                    self._power_limit_scale.set_sensitive(not status.read_only)
+                    self._power_limit_apply_button.set_sensitive(not status.read_only)
                 else:
                     self._power_limit_scale.set_sensitive(False)
                     self._power_limit_apply_button.set_sensitive(False)
@@ -306,6 +334,8 @@ class MainView(MainViewInterface):
                                    "<span size=\"xx-large\">{}</span> °C", gpu_status.temp.gpu)
             for index, value in enumerate(self._fan_duty):
                 if gpu_status.fan.fan_list and index < len(gpu_status.fan.fan_list):
+                    value.set_visible(True)
+                    self._fan_rpm[index].set_visible(True)
                     self._set_label_markup(value,
                                            "<span size=\"large\">{}</span> %", gpu_status.fan.fan_list[index][0])
                     self._set_label_markup(self._fan_rpm[index],
@@ -384,6 +414,66 @@ class MainView(MainViewInterface):
     def set_edit_fan_profile_button_enabled(self, enabled: bool) -> None:
         self._fan_edit_button.set_sensitive(enabled)
 
+    def prepare_service_controls(self) -> None:
+        if native_desktop():
+            self._main_infobar.hide()
+            self._fan_profile_frame.set_sensitive(True)
+            self._overclock_frame.set_sensitive(False)
+            self._power_limit_apply_button.set_sensitive(False)
+            self._power_limit_scale.set_sensitive(False)
+            return
+        self._main_infobar_label.set_line_wrap(True)
+        self._main_infobar_label.set_max_width_chars(80)
+        self._main_infobar_label.set_xalign(0)
+        self._fan_profile_frame.set_sensitive(True)
+        self._fan_apply_button.set_use_stock(False)
+        self._fan_edit_button.set_use_stock(False)
+        self._fan_apply_button.set_label('Run curve for 10 seconds')
+        self._fan_edit_button.set_label('Restore automatic')
+        self._fan_apply_button.set_tooltip_text('Explicit bounded trial through the supervised service')
+        self._fan_edit_button.set_tooltip_text('Release this window\'s active trial')
+        self._overclock_frame.set_sensitive(False)
+        self._power_limit_apply_button.set_sensitive(False)
+        self._power_limit_scale.set_sensitive(False)
+
+    def set_service_selection_enabled(self, enabled: bool) -> None:
+        self._fan_combobox.set_sensitive(enabled)
+
+    def set_service_fan_hint(self, message: str) -> None:
+        self._fan_apply_button.set_tooltip_text(message)
+
+    def set_service_continuous(self, enabled: bool) -> None:
+        self._service_continuous = enabled
+        if enabled and not native_desktop():
+            self._fan_apply_button.set_label('Apply selected curve')
+            self._fan_apply_button.set_tooltip_text('Runs while this window renews its service lease')
+
+    def set_service_power_enabled(self, enabled: bool, message: str) -> None:
+        self._service_power_enabled = enabled
+        if enabled:
+            self._service_power_has_control = True
+        self._power_limit_scale.set_sensitive(enabled)
+        self._power_limit_apply_button.set_sensitive(enabled)
+        self._power_limit_apply_button.set_tooltip_text(message)
+        if native_desktop() and message.startswith(('Power:', 'Invalid power limit', 'Power operation failed')):
+            if getattr(self, '_native_power_error', None) != message:
+                self._native_power_error = message
+                self.show_error_message_dialog('Power control', message)
+
+    def refresh_service_curve(self, curve) -> None:
+        if curve is None:
+            self._plot_chart({}, hysteresis=0)
+            return
+        data = dict(curve.points)
+        maximum = max(100, curve.points[-1][0])
+        if not curve.vbios_silent:
+            data.setdefault(0, curve.points[0][1])
+        data.setdefault(maximum, curve.points[-1][1])
+        self._fan_axis.set_xbound(0, maximum)
+        self._plot_chart(data, hysteresis=curve.hysteresis)
+        self._fan_apply_button.set_tooltip_text(
+            f'Hysteresis: {curve.hysteresis} C; firmware silent mode: {curve.vbios_silent}')
+
     def set_apply_overclock_profile_button_enabled(self, enabled: bool) -> None:
         self._overclock_apply_button.set_sensitive(enabled)
 
@@ -411,11 +501,12 @@ class MainView(MainViewInterface):
             self._fan_axis
         )
 
-    def _plot_chart(self, data: Dict[int, int]) -> None:
+    def _plot_chart(self, data: Dict[int, int], hysteresis=None) -> None:
         sorted_data = OrderedDict(sorted(data.items()))
         temperature_list = list(sorted_data.keys())
         duty_list = list(sorted_data.values())
-        hysteresis = self._settings_interactor.get_int('settings_hysteresis')
+        if hysteresis is None:
+            hysteresis = self._settings_interactor.get_int('settings_hysteresis')
         self._fan_growing_line.set_xdata(temperature_list)
         self._fan_growing_line.set_ydata(duty_list)
         self._fan_decreasing_line.set_xdata([t - hysteresis for t in temperature_list])

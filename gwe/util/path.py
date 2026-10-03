@@ -20,6 +20,7 @@ from pathlib import Path
 from xdg import BaseDirectory
 
 from gwe.conf import APP_PACKAGE_NAME
+from gwe.runtime_mode import config_namespace
 
 _ROOT: Path = Path(__file__).parent.parent
 
@@ -29,4 +30,4 @@ def get_data_path(path: str) -> str:
 
 
 def get_config_path(file: str) -> str:
-    return str(Path(BaseDirectory.save_config_path(APP_PACKAGE_NAME)).joinpath(file))
+    return str(Path(BaseDirectory.save_config_path(config_namespace(APP_PACKAGE_NAME))).joinpath(file))

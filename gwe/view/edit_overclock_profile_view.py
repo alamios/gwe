@@ -57,6 +57,7 @@ class EditOverclockProfileView(EditOverclockProfileViewInterface):
 
     def set_transient_for(self, window: Gtk.Window) -> None:
         self._dialog.set_transient_for(window)
+        self._dialog.get_style_context().add_class('gwe-window')
 
     def show(self, profile: OverclockProfile, overclock: Overclock) -> None:
         self._update_ui(profile, overclock)

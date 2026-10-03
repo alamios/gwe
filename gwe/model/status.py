@@ -21,6 +21,8 @@ from gwe.model.gpu_status import GpuStatus
 
 class Status:
     def __init__(self,
-                 gpu_status_list: List[GpuStatus]
+                 gpu_status_list: List[GpuStatus],
+                 read_only: bool = False
                  ) -> None:
         self.gpu_status_list = gpu_status_list
+        self.read_only = read_only
