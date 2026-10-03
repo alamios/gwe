@@ -19,7 +19,9 @@ unchanged. It does not apply a power limit or clock offset. Do not substitute th
 which uses a historical 250 W baseline. If recovery is not verified, stop and inspect the service.
 
 Wayland/Kubuntu 26.04, other GPUs and driver/host failure guarantees are outside the candidate's
-validated scope. The installed package gate is still pending; no release tag or publication is claimed.
+validated scope. Installed rc1-3 startup/editor/tray/Quit passed after recovery of a hung GUI. The original hang cause
+is unconfirmed; rc1-5 adds nonblocking error notices with an expanded isolated GTK check. Service
+fault trials and the updated package gate remain pending; no release tag or publication is claimed.
 
 ## Generate local assets
 
@@ -29,7 +31,7 @@ installable binary distribution. GitHub does not generate this package automatic
 Use a fresh directory and a monotonically increasing Debian revision, preserving earlier artifacts:
 
 ```bash
-python scripts/build_debs.py build/release-rc1-4 --version 1.0.0~rc1-4 --epoch 1790985600
+python scripts/build_debs.py build/release-rc1-5 --version 1.0.0~rc1-5 --epoch 1790985600
 ```
 
 After final checks, create an annotated local version tag on the reviewed commit. Archive that exact
@@ -66,7 +68,7 @@ installers. Follow [GitHub's release guide](https://docs.github.com/en/repositor
 Users download the `.deb`, verify it against `SHA256SUMS`, quit other controllers and install normally:
 
 ```bash
-sudo apt install ./gwe-nvml_1.0.0~rc1-4_all.deb
+sudo apt install ./gwe-nvml_1.0.0~rc1-5_all.deb
 ```
 
 No development venv or repository installation wrapper is required. For future releases, change the

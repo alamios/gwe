@@ -25,6 +25,7 @@ or PyPI distribution.
   title-button hover feedback. About separates the original authors from the fork maintainer.
 - The original curve editor, profile persistence and minimize-to-tray preference remain available.
   The last applied curve can be restored at startup. Automatic profiles release fan control.
+- Native error notices keep the control loop running and do not block Quit.
 - Private configuration is created automatically; existing development profile sources are imported
   through a verified copy with recovery backups. Trial controls and the development status band are removed.
 
@@ -37,7 +38,7 @@ power-limit persistence is configured. Missing readings remain unavailable rathe
 Current hardware evidence covers an RTX 3090 Ti with two fans, NVIDIA driver 580.178.04 and Ubuntu/Kubuntu
 24.04.5 on KDE/X11. Earlier supervised fan and power trials passed, including SIGKILL and watchdog recovery.
 The new native desktop has passed isolated graphical checks with simulated control and real read-only
-telemetry. The unified package’s actual socket lifecycle still needs installed acceptance.
+telemetry. Installed rc1-3 startup/Quit recovery passed; service SIGKILL/watchdog acceptance is still pending.
 
 **Kubuntu 26.04 and Wayland remain untested.** Python 3.14 backend tests do not reproduce their native GTK
 stack. Driver/host failure guarantees and an independently recorded suspend/resume trace remain pending.
@@ -58,14 +59,15 @@ installation procedure; do not run the historical upstream build/reset/install i
 Close other GWE applications with **Quit**, then install the reviewed local candidate normally:
 
 ```bash
-sudo apt install ./build/release-rc1-4/gwe-nvml_1.0.0~rc1-4_all.deb
+sudo apt install ./build/release-rc1-5/gwe-nvml_1.0.0~rc1-5_all.deb
 ```
 
 The package handles helper setup and socket activation; no separate installation script or venv is
 required. The optional `scripts/install_release_candidate.sh` combines installation with development
 checks and a real startup/recovery trial. Those tests are not required for ordinary installation.
 The current-host package is installed and the owner reports successful ordinary use and corrected UI.
-Recorded native startup/quit and fault-recovery acceptance remain pending.
+Installed rc1-3 startup/editor/tray/Quit acceptance has passed. Privileged service fault-recovery
+acceptance and final acceptance of the nonblocking-notice candidate remain pending.
 
 After installation, launch **GreenWithEnvy** from the application menu or run `gwe-nvml`.
 Configuration and curves belong to the desktop user; the root helper stores only its authorization.

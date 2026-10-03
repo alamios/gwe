@@ -18,7 +18,7 @@ Power changes require explicit Apply and verification; committed limits remain a
 Download the `.deb` and `SHA256SUMS`, verify the package, quit any other GPU fan controller, then install:
 
 ```bash
-sudo apt install ./gwe-nvml_1.0.0~rc1-4_all.deb
+sudo apt install ./gwe-nvml_1.0.0~rc1-5_all.deb
 ```
 
 Launch **GreenWithEnvy** from the menu. No venv or repository installer is required.

@@ -12,10 +12,10 @@ plus `dpkg-deb`, `glib-compile-resources` and `glib-compile-schemas`. The builde
 and refuses changed vendor versions. Use a new destination and a fixed source epoch:
 
 ```bash
-python scripts/build_debs.py build/release-rc1-4 --version 1.0.0~rc1-4 --epoch 1790985600
+python scripts/build_debs.py build/release-rc1-5 --version 1.0.0~rc1-5 --epoch 1790985600
 ```
 
-Verify checksums from their directory with `cd build/release-rc1-4 && sha256sum --check SHA256SUMS`.
+Verify checksums from their directory with `cd build/release-rc1-5 && sha256sum --check SHA256SUMS`.
 Inspect with `dpkg-deb --info` and `dpkg-deb --contents`. The directory also contains unpacked review trees,
 licenses, dependency versions and a reviewed service bundle. No private database, UUID or user configuration
 is included. Build destinations are never cleared automatically.
@@ -27,8 +27,8 @@ the parsed code and runtime regex strings are unchanged. Python warnings are not
 Legacy internal resource/icon names retain upstream attribution; the public application/desktop identity
 is `io.github.alamios.gwe` and the user database has its own native namespace.
 
-Debian revision `1.0.0~rc1-4` retains the scoped contrast/circular title-button fixes and separate
-maintainer credits, and points the development changelog to `main`;
+Debian revision `1.0.0~rc1-5` retains the scoped contrast/circular title-button fixes and separate
+maintainer credits, points the development changelog to `main`, and keeps native error notices nonblocking;
 the application version remains `1.0.0-rc1`. It upgrades the original candidate through ordinary APT.
 Earlier artifacts are retained for rollback.
 
@@ -39,8 +39,8 @@ GWE applications and let recovery finish before installing, updating, downgradin
 Review the APT simulation first:
 
 ```bash
-apt-get --simulate install ./gwe-nvml_1.0.0~rc1-4_all.deb
-sudo apt install ./gwe-nvml_1.0.0~rc1-4_all.deb
+apt-get --simulate install ./gwe-nvml_1.0.0~rc1-5_all.deb
+sudo apt install ./gwe-nvml_1.0.0~rc1-5_all.deb
 ```
 
 Replacing the installed development pair intentionally removes only `gwe-nvml-client` and
@@ -59,7 +59,7 @@ checksums, controller exclusion, an allowlisted APT simulation, installation and
 bash scripts/install_release_candidate.sh
 ```
 
-This historical wrapper targets the original `build/release-rc1` artifact, not revision 4. Use the
+This historical wrapper targets the original `build/release-rc1` artifact, not revision 5. Use the
 ordinary APT command for the updated package and run installed acceptance separately if needed.
 It permits only the combined GWE package and removal of the old GWE pair; any other proposed package
 change aborts before sudo. It requests administrative authorization for installation only. The grouped

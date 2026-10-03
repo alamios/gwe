@@ -58,6 +58,23 @@ wide, link contrast above 4.5:1 against the theme background, and separate maint
 The revision `1.0.0~rc1-2` extracted package passed the native editor/tray/automatic graphical check
 with system Python, isolated settings and synthetic control. These checks do not validate Wayland.
 
+## Hung-interface follow-up
+
+On 2026-10-04 the owner reported the installed rc1-3 interface unresponsive. Its log recorded
+`ui_heartbeat_expired`; both fans were already automatic before intervention. SIGTERM did not exit
+the GUI. Terminating only that GUI with SIGKILL allowed pidfd supervision to stop the helper with
+Result=success, keep both fans automatic, preserve the observed 340 W and restore CoolerControl.
+This is client-loss evidence while fans were already automatic, not a service-fault trial under control.
+The next real startup/editor/tray/Quit check passed with the installed package and system Python,
+including active Custom control, automatic recovery and unchanged power.
+
+Review found a separate reproducible control-loop hazard: synchronous `Gtk.Dialog.run()` from a pulse
+callback waits for acknowledgement and prevents that callback from renewing control. Native errors
+now use visible, nonblocking notices that can be acknowledged or destroyed with the parent. The
+expanded isolated GTK check holds a notice open for ten seconds, verifies continued simulated fan
+renewals, then quits with the notice still open. This passed; the original hang's exact cause remains
+unconfirmed because stack attachment was not permitted. Diagnostic logs are retained privately.
+
 ## Source validation
 
 `python scripts/run_service_gui.py --smoke-native` uses a separate settings identity and a synthetic
@@ -81,5 +98,6 @@ Run it only after installing the reviewed candidate and closing other GWE applic
 applied custom profile and automatic policies before startup, opens the original editor without editing
 data, checks tray hide/show retains the lease, and explicitly quits. It then independently verifies
 automatic fans, unchanged power, restored CoolerControl state and an available activation socket.
-The check does not save preference changes or change the profile selection. Hardware acceptance is pending.
+The check does not save preference changes or change the profile selection. This startup/Quit check
+passed on installed rc1-3. Privileged service fault trials and rc1-5 installed acceptance remain pending.
 Wayland and Kubuntu 26.04 remain untested.

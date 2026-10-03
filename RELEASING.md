@@ -54,6 +54,13 @@ Revision **1.0.0~rc1-3** adds consistent circular hover/pressed feedback for clo
 The scoped stylesheet overrides desktop user styles for GWE widgets only, removing Breeze's red
 close-button overlay. Hover checks passed in standalone Breeze and Adwaita dark GTK windows.
 
+Revision **1.0.0~rc1-5** makes native error notices nonblocking. The extended isolated GTK check
+holds a notice open for ten seconds while simulated fan leases renew, and quits with it still open.
+The installed rc1-3 hang was recovered through GUI-only termination: fans were already automatic,
+340 W was preserved and the helper stopped successfully/restored CoolerControl. A subsequent real
+rc1-3 startup/editor/tray/Quit check passed. The precise original hang cause and privileged service
+fault trials remain pending; the previous active-session blocker is historical, not current.
+
 ## First local X11 release: agreed requirements
 
 These are acceptance requirements; the preparation status above distinguishes implemented source from

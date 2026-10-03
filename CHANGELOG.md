@@ -9,6 +9,7 @@ Independent fork maintained by alamios with AI assistance. Original GWE authors 
  * Restore writable curves, the original editor, startup profile persistence and minimize-to-tray behavior.
  * Remove development status controls; retain bounded private diagnostics and ordinary failure dialogs.
  * Make close/minimize/maximize hover feedback consistently circular, overriding Breeze square overlays.
+ * Keep native error notices nonblocking so fan control can renew and Quit can complete.
  * Fix title-control and link contrast without forcing a GTK theme; separate maintainer credits.
  * Update project/About/support links to alamios/gwe and disclose AI maintenance.
  * Bundle complete Peewee playhouse modules and correct migration literal escape warnings.

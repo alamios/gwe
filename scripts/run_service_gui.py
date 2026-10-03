@@ -296,6 +296,16 @@ def main(argv=None):
                     view._fan_apply_button.clicked()
                     phase[0] = 5
                 elif phase[0] == 5 and session.state == 'active' and controller.pending is None:
+                    phase[0] = 51
+                    power_edit_started[0] = time.monotonic()
+                    view.show_error_message_dialog('Synthetic control notice',
+                                                   'Control must keep renewing while this notice is open.')
+                elif phase[0] == 51 and time.monotonic() - power_edit_started[0] >= 10:
+                    notice_open = any(isinstance(widget, Gtk.MessageDialog) and widget.get_visible()
+                                      for widget in Gtk.Window.list_toplevels())
+                    if not notice_open or session.state != 'active' or backend.stops != 2 or backend.renewals < 5:
+                        return finish(False)
+                    print('Native error notice: PASS; control renews and Quit remains available', flush=True)
                     from gwe.interactor.settings_interactor import SettingsInteractor
                     SettingsInteractor.set_bool('settings_minimize_to_tray', False)
                     phase[0] = 6
@@ -471,6 +481,15 @@ def main(argv=None):
                 return GLib.SOURCE_REMOVE
             return GLib.SOURCE_CONTINUE
         GLib.timeout_add(100, check)
+        if args.smoke_native:
+            def abort_native():
+                # A regressed nested dialog must fail instead of leaving a hung smoke process.
+                for widget in Gtk.Window.list_toplevels():
+                    if isinstance(widget, Gtk.MessageDialog):
+                        widget.destroy()
+                entry.INJECTOR.get(entry.Application).quit()
+                return GLib.SOURCE_REMOVE
+            GLib.timeout_add(35000, abort_native)
 
     sys.argv = ['gwe-nvml' if args.native else 'gwe-service-trial']
     if args.hide_window:

@@ -3,7 +3,9 @@
 Current release preparation (2026-10-03): the unified 1.0.0-rc1 package and ordinary native desktop are
 implemented and installed as unified Debian revision `1.0.0~rc1-3`. Isolated package/UI validation uses
 system Python, and the owner reports successful ordinary use. Read-only inspection confirms active
-installed service/socket; recorded native startup/quit and fault-recovery acceptance remain pending.
+installed service/socket. On 2026-10-04, hung-GUI termination recovered the helper with automatic
+fans and unchanged 340 W; subsequent installed rc1-3 startup/editor/tray/Quit acceptance passed.
+Native notices are now nonblocking in source; privileged service fault-recovery remains pending.
 Earlier split v5 statements below describe historical preparation, not the current installed package.
 Use [current packaging](packaging-plan.md) and [the grouped native acceptance](native-desktop.md).
 Earlier “pending” statements below describe their dated development stage.

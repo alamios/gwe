@@ -230,6 +230,14 @@ class MainView(MainViewInterface):
     def show_error_message_dialog(self, title: str, message: str) -> None:
         dialog = Gtk.MessageDialog(self._window, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, title)
         dialog.format_secondary_text(message)
+        if native_desktop():
+            # A nested dialog.run() pauses its caller, including the control pulse
+            # that renews the fan lease. Keep errors visible without blocking it.
+            dialog.set_destroy_with_parent(True)
+            dialog.get_style_context().add_class('gwe-window')
+            dialog.connect('response', lambda widget, *_: widget.destroy())
+            dialog.show_all()
+            return
         dialog.run()
         dialog.destroy()
 
