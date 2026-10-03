@@ -1,8 +1,10 @@
 # Migration readiness: current-host follow-up
 
 Current release preparation (2026-10-03): the unified 1.0.0-rc1 package and ordinary native desktop are
-implemented in source. Isolated package/UI validation uses system Python; actual installed socket
-activation, reopening and post-stop recovery remain pending. The split v5 installation is retained.
+implemented and installed as unified Debian revision `1.0.0~rc1-3`. Isolated package/UI validation uses
+system Python, and the owner reports successful ordinary use. Read-only inspection confirms active
+installed service/socket; recorded native startup/quit and fault-recovery acceptance remain pending.
+Earlier split v5 statements below describe historical preparation, not the current installed package.
 Use [current packaging](packaging-plan.md) and [the grouped native acceptance](native-desktop.md).
 Earlier “pending” statements below describe their dated development stage.
 

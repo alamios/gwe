@@ -4,16 +4,17 @@ The chosen home for this fork is **https://github.com/alamios/gwe**, maintained 
 1.0.0 onward. Source code and `.deb` artifacts will be distributed through that repository and its
 GitHub Releases. This records the destination; no publication or push is authorized by this planning step.
 The installed Flathub application is the historical upstream build, not a build of this branch.
-The current v5 native client/helper candidates are installed on the owner's X11 host. They remain
-development builds; their terminal wrapper, trial UI and read-only profile source are not the release
-user experience. See [packaging](docs/packaging-plan.md) for the existing implementation.
+Read-only package inspection now confirms the unified `gwe-nvml` **1.0.0~rc1-3** installed on the
+owner's X11 host. The owner reports successful ordinary use and corrected title-button feedback.
+The installed service and socket were both active, with service Result=success; this is evidence of
+activation, not proof of post-stop or fault recovery. See [packaging](docs/packaging-plan.md).
 
 The first candidate is **1.0.0-rc1**, followed by **1.0.0** after release acceptance.
 Original upstream 0.x version history and attribution are preserved.
 
 Preparation progress: the native builder now emits one `gwe-nvml` package by default. The split-to-combined
-transition and rollback pass in an isolated dpkg root; host transition and the remaining requirements below
-are pending. Historical split builds remain available with `--split` for recovery validation.
+transition and rollback pass in an isolated dpkg root; the unified package is now installed on the host,
+while recovery acceptance and the remaining requirements below are pending. Historical split builds remain available with `--split` for recovery validation.
 
 The combined development package now uses socket activation and `Terminal=false`. Installation preserves
 existing private GPU/user authorization or generates it from an explicitly authorized desktop UID and one
@@ -37,8 +38,10 @@ The current simulated suite passes 564 tests on Python 3.12. Python 3.14 passes 
 ten HTTP update-check tests are excluded because that backend-only environment lacks requests. They pass
 on Python 3.12, and requests is an explicit native package dependency. Reactivex's known datetime
 deprecation warning remains non-fatal. Native startup uses the applied profile ID, including duplicate names.
-The owner currently has another GWE open with manual fans; no live writes, import or installation have
-been performed during this preparation. Use `bash scripts/install_release_candidate.sh` after Quit.
+The latest read-only review leaves the active installed session untouched. Package/source archive
+checksums pass and neither artifact contains backup/build directories or SQLite databases.
+Before publication, record native startup/quit recovery and rerun affected SIGKILL/watchdog checks for
+this socket-activated lifecycle. Older trials and successful ordinary use do not close that gate.
 Native socket watchdog/post-stop hardware acceptance remains pending; older lifecycle fault-injection
 results do not by themselves validate the changed installed lifecycle.
 

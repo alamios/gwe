@@ -10,7 +10,8 @@ Original authors, contributor credits and the GPL-3.0-or-later license are retai
 
 The project home is [alamios/gwe](https://github.com/alamios/gwe). Source and native `.deb` packages are
 intended for [GitHub Releases](https://github.com/alamios/gwe/releases). The first candidate is
-**1.0.0-rc1**; publication and final installed acceptance are pending. This fork currently has no Flatpak
+**1.0.0-rc1**; Debian revision `1.0.0~rc1-3` is installed on the current host.
+Publication and final installed recovery acceptance are pending. This fork currently has no Flatpak
 or PyPI distribution.
 
 ## What changed
@@ -20,8 +21,8 @@ or PyPI distribution.
   authenticated ownership, renewable leases, watchdog and post-stop recovery.
 - One native package contains the unprivileged GTK application and helper. Normal launch opens no
   terminal and requests no password; administrator authorization happens during installation/setup.
-- Window controls and links retain the desktop GTK theme with scoped contrast fixes and circular title-button hover feedback. About separates
-  the original authors from the fork maintainer.
+- Window controls and links retain the desktop GTK theme with scoped contrast fixes and circular
+  title-button hover feedback. About separates the original authors from the fork maintainer.
 - The original curve editor, profile persistence and minimize-to-tray preference remain available.
   The last applied curve can be restored at startup. Automatic profiles release fan control.
 - Private configuration is created automatically; existing development profile sources are imported
@@ -63,7 +64,8 @@ sudo apt install ./build/release-rc1-3/gwe-nvml_1.0.0~rc1-3_all.deb
 The package handles helper setup and socket activation; no separate installation script or venv is
 required. The optional `scripts/install_release_candidate.sh` combines installation with development
 checks and a real startup/recovery trial. Those tests are not required for ordinary installation.
-Actual installed candidate acceptance is still pending; the existing installation has been preserved.
+The current-host package is installed and the owner reports successful ordinary use and corrected UI.
+Recorded native startup/quit and fault-recovery acceptance remain pending.
 
 After installation, launch **GreenWithEnvy** from the application menu or run `gwe-nvml`.
 Configuration and curves belong to the desktop user; the root helper stores only its authorization.
