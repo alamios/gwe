@@ -31,6 +31,8 @@ The extracted-package combined power/fan smoke check passes with simulated write
 AppStream and service/socket units pass their installed validators. APT simulation changes only GWE:
 one combined package replaces the two split packages, with no dependency/driver/kernel/CUDA upgrades.
 The grouped installation script rejects unrelated APT changes before sudo and is tested with fake APT.
+Ordinary installation is `sudo apt install ./gwe-nvml_1.0.0~rc1_all.deb`; the package performs its own
+setup. The repository wrapper is optional development acceptance, not a prerequisite for users.
 The current simulated suite passes 564 tests on Python 3.12. Python 3.14 passes 554 backend/package tests;
 ten HTTP update-check tests are excluded because that backend-only environment lacks requests. They pass
 on Python 3.12, and requests is an explicit native package dependency. Reactivex's known datetime

@@ -43,7 +43,11 @@ Replacing the installed development pair intentionally removes only `gwe-nvml-cl
 other proposed package change separately. Do not use force-overwrite or blindly accept driver/CUDA/kernel
 changes. The owner installs missing system dependencies.
 
-For this workspace’s reviewed candidate and already installed dependencies, one command combines
+The APT command above is the normal installation procedure. Package maintainer scripts perform helper
+authorization and socket setup; the desktop creates its writable configuration on first launch.
+No repository installation script, development venv or hardware trial is required to install the package.
+
+For optional development acceptance in this workspace with already installed dependencies, one command combines
 checksums, controller exclusion, an allowlisted APT simulation, installation and unprivileged acceptance:
 
 ```bash
@@ -53,7 +57,8 @@ bash scripts/install_release_candidate.sh
 It permits only the combined GWE package and removal of the old GWE pair; any other proposed package
 change aborts before sudo. It requests administrative authorization for installation only. The grouped
 acceptance requires the configured custom curve and verifies recovery without changing power. This
-command has been tested with fake APT/sudo; the actual installation has not been executed.
+command has been tested with fake APT/sudo; the actual installation has not been executed. It is a
+validation convenience, not an installation dependency or the release's normal user flow.
 
 Installation preserves existing `/etc/gwe-fan-service.json`. Fresh setup uses the installing desktop UID
 from sudo/pkexec and read-only enumeration of exactly one GPU; ambiguous identity or an unrecognized

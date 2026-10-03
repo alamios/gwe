@@ -51,9 +51,17 @@ The maintained build is [the native package builder](docs/packaging-plan.md). It
 modules with their licenses and distribution-provided GTK/Matplotlib libraries, not a frozen executable.
 It does not bundle or replace drivers, kernels or CUDA. Follow the documented package inspection and
 installation procedure; do not run the historical upstream build/reset/install instructions.
-For the reviewed local candidate, `bash scripts/install_release_candidate.sh` combines installation
-and grouped acceptance after other GWE applications have been closed. Actual installed acceptance is
-still pending; the existing installation has been preserved.
+
+Close other GWE applications with **Quit**, then install the reviewed local candidate normally:
+
+```bash
+sudo apt install ./build/release-rc1/gwe-nvml_1.0.0~rc1_all.deb
+```
+
+The package handles helper setup and socket activation; no separate installation script or venv is
+required. The optional `scripts/install_release_candidate.sh` combines installation with development
+checks and a real startup/recovery trial. Those tests are not required for ordinary installation.
+Actual installed candidate acceptance is still pending; the existing installation has been preserved.
 
 After installation, launch **GreenWithEnvy** from the application menu or run `gwe-nvml`.
 Configuration and curves belong to the desktop user; the root helper stores only its authorization.
