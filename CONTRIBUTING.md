@@ -1,8 +1,13 @@
 # Contributing
 
 Maintenance has resumed as an independent continuation of GreenWithEnvy. The initial target is a personal
-RTX 3090 Ti setup on Kubuntu, with custom fan curves as the required feature. Public hosting and a broader
-support policy have not been decided. The archived upstream project is not the destination for this work.
+RTX 3090 Ti setup on Kubuntu, with custom fan curves as the required feature. The validated support scope
+remains limited. The chosen repository is [alamios/gwe](https://github.com/alamios/gwe),
+maintained by alamios for the upcoming 0.16 series. This fork is maintained with AI assistance in
+implementation, testing and documentation. Attribute the original work to
+[Roberto Leinardi and the upstream contributors](https://gitlab.com/leinardi/gwe); that repository is not
+the destination for this fork's changes or bug reports. Source and `.deb` releases are planned on GitHub;
+Flatpak distribution is outside the current release scope.
 
 ## Working branch and scope
 

@@ -8,9 +8,14 @@
 > Our first priorities are preserving custom fan curves, moving GPU control toward NVML for Wayland,
 > and validating driver and CUDA upgrades with a documented recovery procedure.
 >
-> Development continues on **`maintenance/nvml-revival`**. This continuation is independent of the archived
-> upstream project maintained by Roberto Leinardi. No new release or Wayland compatibility is claimed yet.
-> Public hosting and distribution have not been decided.
+> Development continues on **`maintenance/nvml-revival`**. This is an independent fork of
+> [Roberto Leinardi's original GreenWithEnvy](https://gitlab.com/leinardi/gwe), maintained by **alamios**
+> for the upcoming 0.16 series. The main change is moving GPU monitoring and fan/power control to NVML.
+> **This fork is maintained with AI assistance**, including implementation, testing and documentation.
+> The planned home is [alamios/gwe on GitHub](https://github.com/alamios/gwe), with source code and native
+> `.deb` downloads through [GitHub Releases](https://github.com/alamios/gwe/releases). No release has
+> been published by this maintenance session; Wayland compatibility is not yet validated. Flatpak is
+> not a distribution channel for this fork at present.
 
 ## Maintenance documentation
 

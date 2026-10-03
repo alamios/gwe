@@ -1,6 +1,8 @@
 # Local builds and future releases
 
-This maintenance continuation has no published release or chosen public hosting namespace yet.
+The chosen home for this fork is **https://github.com/alamios/gwe**, maintained by **alamios** from the
+0.16 series onward. Source code and `.deb` artifacts will be distributed through that repository and its
+GitHub Releases. This records the destination; no publication or push is authorized by this planning step.
 The installed Flathub application is the historical upstream build, not a build of this branch.
 The current v5 native client/helper candidates are installed on the owner's X11 host. They remain
 development builds; their terminal wrapper, trial UI and read-only profile source are not the release
@@ -52,6 +54,43 @@ automatic recovery and unchanged power unless explicitly applied. Retain earlier
 and rerun affected lifecycle checks when replacing the launcher; do not repeat unrelated hardware trials.
 An independently captured suspend/resume trace remains pending and must be described honestly.
 
+## Attribution, public text and links: agreed requirements
+
+Complete this audit before the 0.16 release; current development UI/metadata still contain upstream links.
+
+- Identify the project as a fork of [Roberto Leinardi's original GWE](https://gitlab.com/leinardi/gwe).
+  Preserve original authors, contributor credits, copyright and GPL license notices. Add alamios as the
+  fork maintainer beginning with 0.16; do not imply original authors maintain or endorse this continuation.
+- Clearly disclose in the README and relevant project documentation that this fork is maintained with
+  AI assistance, including implementation, testing and documentation. Do not present the work as wholly
+  human-written or claim that AI assistance is a substitute for the recorded validation.
+- Briefly describe the change to NVML monitoring and fan/power control. Distinguish X11 validation from
+  future Wayland support and do not imply overclock support has been ported.
+- Use https://github.com/alamios/gwe as the project website/source link and
+  https://github.com/alamios/gwe/releases for release downloads. Update issue/support links to this fork;
+  do not send its bug reports or maintenance requests to the original author. Do not invent a maintainer
+  email address where none has been supplied.
+- Make the in-application changelog link target CHANGELOG.md in the new repository, using an actual
+  published release tag (or the correct development ref). Review the existing version-derived link logic
+  rather than merely replacing the hostname. Keep original changelog history and add fork release notes.
+- Update About to retain the original creators and explicitly state that, from version 0.16, this is an
+  independent fork maintained by alamios. Set the website to the new repository and retain licensing and
+  attribution. Review both runtime overrides and the Glade defaults.
+- Remove obsolete Flatpak/Flathub installation, update and distribution claims from the current README,
+  user-facing help and release instructions. This fork initially ships source and `.deb` GitHub Releases
+  only. Keep necessary historical/provenance and backup/rollback references clearly labeled as such;
+  their removal must not erase the origin of saved profiles or break recovery documentation. Flatpak
+  publication may be considered later and is not a release requirement.
+- Audit badges, screenshots, AppStream homepage/bugtracker/contact fields, desktop metadata, package
+  maintainer fields, update checking, contribution instructions and release automation for obsolete
+  upstream destinations. Do not rename application/settings identities without the separately required
+  settings migration and rollback procedure.
+
+Known implementation locations include `gwe/conf.py`, `gwe/view/main_view.py`,
+`gwe/presenter/main_presenter.py` (changelog), `data/ui/main.glade`,
+`data/com.leinardi.gwe.appdata.xml` and `scripts/build_debs.py`. These are audit starting points,
+not permission to perform a blind replacement of upstream author/license references.
+
 ## Current preparation phase
 
 - Work on `maintenance/nvml-revival` and follow the [maintenance plan](docs/maintenance-plan.md).
@@ -63,8 +102,8 @@ An independently captured suspend/resume trace remains pending and must be descr
 
 ## Before a public release
 
-1. Choose the owner's hosting namespace, application ID and support/contact destinations. Honor upstream's
-   request not to publish a continuation under `leinardi` or `com.leinardi.gwe`.
+1. Use the chosen `alamios/gwe` hosting namespace; finalize the application ID and support/contact metadata.
+   Honor upstream's request not to publish a continuation under `leinardi` or `com.leinardi.gwe`.
 2. Update application metadata, desktop entries, schemas, build scripts and package manifests together.
    Provide an explicit settings/profile migration and rollback procedure before changing identifiers.
 3. Validate the target Python/UI stack, the NVIDIA backend and the fan recovery scenarios in the plan.
