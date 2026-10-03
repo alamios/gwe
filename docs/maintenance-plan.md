@@ -1,6 +1,7 @@
 # Maintenance plan
 
-Working branch: `maintenance/nvml-revival`.
+Working branch: `main`. The completed `maintenance/nvml-revival` phase is merged without squash;
+`upstream-baseline` preserves the inherited original code.
 Initial target: NVIDIA GeForce RTX 3090 Ti, preserving custom fan curves during migration from Kubuntu 24.04/X11
 and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-compatibility.md).
 
@@ -8,8 +9,8 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 - Release preparation on 2026-10-03: the 1.0.0-rc1 source now contains one native package, authenticated
   socket activation, writable profile import/editor, startup persistence and original tray/automatic
-  controls. The extracted package passes its isolated GTK check using system Python. The owner’s installed
-  split v5 packages are unchanged; actual unified activation/recovery and target OS acceptance remain pending.
+  controls. The extracted package passes its isolated GTK check using system Python. The unified rc1-3 package is now installed and the owner reports successful ordinary use;
+  recorded recovery and target OS acceptance remain pending.
   See [native desktop](native-desktop.md) and [current packaging](packaging-plan.md).
 - Firefox/YouTube zero video readings were reproduced by direct NVML, the installed backend and nvidia-smi.
   Firefox reported hardware decoding blocklisted after a failed decoding test. This is distinct from the

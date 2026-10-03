@@ -11,7 +11,8 @@ Flatpak distribution is outside the current release scope.
 
 ## Working branch and scope
 
-Development currently takes place on `maintenance/nvml-revival`; `release` preserves the upstream baseline.
+Development takes place on `main`. The annotated `upstream-baseline` tag preserves the inherited
+original code. Use version tags for releases; a separate release branch is not required.
 Repository-specific instructions for coding agents are in [AGENTS.md](AGENTS.md).
 
 Read the [assessment](docs/setup-compatibility.md), [plan](docs/maintenance-plan.md) and

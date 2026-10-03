@@ -25,3 +25,6 @@ __pycache__/
 
 # Private local configuration backups
 /.local-backups/
+
+# Private reference screenshots
+/.screenshots/

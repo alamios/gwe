@@ -42,6 +42,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--native', action='store_true', help='Check the installed unified package and socket lifecycle')
     args = parser.parse_args()
+    from check_controllers import main as check_controllers
+    if check_controllers() or state('gwe-fan-service.service') not in ('inactive', 'failed'):
+        raise RuntimeError('Quit all GWE controllers and finish recovery before acceptance')
     if args.native:
         sys.path.insert(0, '/usr/share/gwe-nvml/vendor')
     import pynvml
@@ -55,8 +58,9 @@ def main():
     if before['temperature_c'] >= 80 or not before['policies'] or any(before['policies']):
         raise RuntimeError('Wait for temperature below 80 C and verified automatic fan policies')
     cooler = state('coolercontrold.service')
-    environment = dict(os.environ, GWE_STATE_HOME=str(prefix / 'state'),
-                       GWE_STARTUP_PROFILE=config['startup_profile'])
+    environment = dict(os.environ, GWE_STATE_HOME=str(prefix / 'state'))
+    if config.get('startup_profile'):
+        environment['GWE_STARTUP_PROFILE'] = config['startup_profile']
     command = (['/usr/bin/gwe-nvml', '--check-startup'] if args.native else
                ['bash', str(release / 'scripts/run_control_session.sh'), config['python'],
                 config['database'], '--installed', '--check-startup'])

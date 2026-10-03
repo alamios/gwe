@@ -624,5 +624,5 @@ class MainPresenter:
 
     @staticmethod
     def _get_changelog_uri(version: str = None) -> str:
-        reference = f'v{version}' if version is not None else 'maintenance/nvml-revival'
+        reference = f'v{version}' if version is not None else 'main'
         return f"{APP_SOURCE_URL}/blob/{reference}/CHANGELOG.md"

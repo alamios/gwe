@@ -4,8 +4,8 @@
 
 - Read `README.md` before working. For GPU changes, also read `docs/setup-compatibility.md`,
   `docs/maintenance-plan.md` and the relevant entries in `docs/technical-references.md`.
-- Continue this maintenance phase on `maintenance/nvml-revival`. Preserve the inherited `release`
-  baseline and any user changes. Do not reset to upstream using historical README commands.
+- Develop on `main`; `maintenance/nvml-revival` records the completed integration phase. Preserve the
+  inherited baseline identified by `upstream-baseline` and any user changes. Do not reset to upstream using historical README commands.
 - Keep repository documentation, code comments and commit descriptions in English.
 - Keep user-specific environment paths and preferences in the user's global instructions, not project docs.
 - Update affected documentation and keep README links and status accurate. Distinguish proposed behavior

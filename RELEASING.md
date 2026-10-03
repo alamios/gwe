@@ -142,12 +142,33 @@ not permission to perform a blind replacement of upstream author/license referen
 
 ## Current preparation phase
 
-- Work on `maintenance/nvml-revival` and follow the [maintenance plan](docs/maintenance-plan.md).
+- Work on `main` and follow the [maintenance plan](docs/maintenance-plan.md).
 - Keep upstream history in `CHANGELOG.md`; mark candidate notes as unreleased until publication.
 - Establish a reproducible environment, dependency set and build before providing new installation commands.
 - Review `build.sh` before running it: it regenerates `CHANGELOG.md` from AppStream metadata and clears build output.
 - Review the uninitialized `flatpak` submodule before fetching it. It targets the historical Flathub repository.
 - Keep experimental builds separate from the installed application and its profiles.
+
+Local integration follow-up: `main` retains all maintenance commits through a merge without squash.
+The development changelog now targets `main`. A grouped native fault check preserves the observed
+power rather than the old 250 W baseline and refuses an active competing session. The final hardware
+check is blocked by the still-running installed GUI/service and missing noninteractive sudo credentials;
+no new fault result is claimed. Revision `1.0.0~rc1-4` is the prepared main-branch candidate, not yet
+installed or tagged. Privacy inspection found no tracked databases/backups/screenshots; UUID literals
+are deliberately synthetic test fixtures. Source and packages remain local.
+
+Final simulated validation on `main`: 573 tests pass on Python 3.12; 563 backend/package tests pass
+on Python 3.14, excluding the ten HTTP tests for the previously documented missing requests dependency.
+The known Reactivex datetime warning remains non-fatal.
+
+## Branches and publishing
+
+`main` now contains the maintenance work through a merge commit without squash. The annotated
+`upstream-baseline` tag preserves the inherited original commit; existing upstream version tags and
+historical branches are retained. Fork releases use tags such as `v1.0.0-rc1`, with binary assets attached
+to GitHub Releases. No separate release branch is required. See [the publication guide](docs/github-releases.md).
+A release tag is created only after the recorded installed recovery gate passes. No push/publication
+has been performed.
 
 ## Before a public release
 

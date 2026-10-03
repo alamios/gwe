@@ -1,0 +1,74 @@
+# Source and binary releases on GitHub
+
+The fork develops on `main`. The annotated `upstream-baseline` tag preserves the inherited original
+commit; the maintenance branch is merged without squash. Existing upstream tags and historical branches
+are retained, but are not new fork releases. A separate `release` branch is not needed.
+
+## Candidate gate
+
+The first fork version is `1.0.0-rc1`, targeting the tested KDE/X11 host. Before tagging or publishing,
+record installed startup/editor/tray/Quit and SIGKILL/watchdog recovery using the unified package:
+
+```bash
+/usr/bin/python3 scripts/check_native_recovery.py
+```
+
+Run as the desktop user after **Quit**, with the GPU idle and cool. The command authenticates sudo for
+two service faults, keeps GTK unprivileged, restores automatic fans and verifies the current power
+unchanged. It does not apply a power limit or clock offset. Do not substitute the old power trial,
+which uses a historical 250 W baseline. If recovery is not verified, stop and inspect the service.
+
+Wayland/Kubuntu 26.04, other GPUs and driver/host failure guarantees are outside the candidate's
+validated scope. The installed package gate is still pending; no release tag or publication is claimed.
+
+## Generate local assets
+
+Use the reviewed Python 3.12 build environment described in [packaging](packaging-plan.md).
+The `.deb` contains GTK application source, reviewed Python modules and a privileged helper; it is the
+installable binary distribution. GitHub does not generate this package automatically from a tag.
+Use a fresh directory and a monotonically increasing Debian revision, preserving earlier artifacts:
+
+```bash
+python scripts/build_debs.py build/release-rc1-4 --version 1.0.0~rc1-4 --epoch 1790985600
+```
+
+After final checks, create an annotated local version tag on the reviewed commit. Archive that exact
+tag with `git archive`, record it in `BUILD_INFO`, and checksum the `.deb`, source archive and build
+information in `SHA256SUMS`. Upload only those four files; review trees and service bundles are local
+inspection material. Never attach personal configuration, databases, screenshots or diagnostic logs.
+Inspect the archive/package contents and verify checksums before upload. Publication should use the
+exact tested package; source-only documentation changes must be recorded separately from its build.
+
+## Publish manually (owner action)
+
+Preparation does not authorize a push or publication. Once acceptance passes and the owner chooses to
+publish, push `main` and the specific fork version tag to `alamios/gwe`. Avoid `git push --tags`, which
+would also publish every inherited upstream tag. Push `upstream-baseline` explicitly if desired.
+Once the local version tag exists, the owner can push explicitly:
+
+```bash
+git push -u origin main
+git push origin v1.0.0-rc1 upstream-baseline
+```
+
+These commands publish repository history/tags; they have not been run during preparation.
+Set `main` as the GitHub repository's default branch.
+
+1. Open **Releases → Draft a new release** in `alamios/gwe`.
+2. Select the existing `v1.0.0-rc1` tag and title the release `GreenWithEnvy 1.0.0-rc1`.
+3. Paste the reviewed release notes and select **Set as a pre-release**.
+4. Attach the `.deb`, source archive, `BUILD_INFO` and `SHA256SUMS`.
+5. Save a draft, inspect its assets/notes, then publish when approved.
+
+GitHub also provides source ZIP/tar archives for the tag. Those are source downloads, not `.deb`
+installers. Follow [GitHub's release guide](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
+
+Users download the `.deb`, verify it against `SHA256SUMS`, quit other controllers and install normally:
+
+```bash
+sudo apt install ./gwe-nvml_1.0.0~rc1-4_all.deb
+```
+
+No development venv or repository installation wrapper is required. For future releases, change the
+application version, AppStream and changelog together, run appropriate checks, build new assets and
+create a new tag. Never replace a published package with different bytes under the same name/version.

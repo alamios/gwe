@@ -58,7 +58,7 @@ installation procedure; do not run the historical upstream build/reset/install i
 Close other GWE applications with **Quit**, then install the reviewed local candidate normally:
 
 ```bash
-sudo apt install ./build/release-rc1-3/gwe-nvml_1.0.0~rc1-3_all.deb
+sudo apt install ./build/release-rc1-4/gwe-nvml_1.0.0~rc1-4_all.deb
 ```
 
 The package handles helper setup and socket activation; no separate installation script or venv is
@@ -74,7 +74,9 @@ controller before beginning a control session. Closing can minimize to the tray;
 
 ## Development and recovery documentation
 
-Development continues on `maintenance/nvml-revival`; `release` preserves the upstream baseline.
+Development continues on `main`. The annotated `upstream-baseline` tag preserves the inherited
+original code; version tags identify fork releases. The maintenance branch has been merged with its
+full history. See [publishing source and packages](docs/github-releases.md).
 Documentation and code comments are in English. Tests do not authorize writes to a live GPU.
 
 - [Contributing](CONTRIBUTING.md), [agent instructions](AGENTS.md) and [release checklist](RELEASING.md)
