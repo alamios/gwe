@@ -42,7 +42,7 @@ current X11 host with administrator privileges. Recovery after worker SIGTERM, S
 stalls is also verified with the supervisor alive. Kubuntu 26.04 and driver/host failure recovery remain unvalidated.
 The read-only NVML backend and diagnostics pass on Python 3.12 and 3.14, including GPU selection by UUID
 and real reads without display variables. An opt-in monitor-only UI integration is implemented;
-508 automated tests pass on both Python versions, including the socket-to-process service, client loss
+514 automated tests pass on both Python versions, including the socket-to-process service, client loss
 and recovery. The isolated Python
 3.12 GTK monitor has passed a live startup, telemetry, disabled-controls and shutdown check on the current
 X11 desktop. Wayland remains untested. The separate fan trial held a 40% target for ten seconds on both
@@ -118,6 +118,10 @@ declared native dependencies, bundled reviewed Python modules and guarded packag
 not installed. Read-only follow-up found kernel 7.0.0-38, retained 330 W and the previously reported DKMS/
 repository/utility issues. Encoder/decoder zeros were also observed directly through NVML during a small
 synthetic video check; higher-resolution validation stopped on VRAM allocation failure during CUDA use.
+After VRAM became available, 1080p60 completed but per-snapshot NVML initialization still returned zeros.
+Keeping the monitoring session alive restored encoder/decoder readings, confirmed against nvidia-smi
+and the actual UI telemetry model. The monitor/service GUI now retains its read-only NVML reference
+until cleanup, resetting it after read errors; one-shot probes remain balanced. See migration readiness.
 Run `python -m gwe.nvml_probe` for terminal diagnostics, or `python scripts/run_monitor.py` in the prepared
 Python 3.12 UI environment for the isolated graphical monitor. See the guides above.
 

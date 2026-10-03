@@ -56,7 +56,7 @@ class NvidiaRepository:
         if self.monitor_only:
             from gwe.nvml_backend import NvmlBackend
             from gwe.nvml_monitor import NvmlMonitor
-            self._monitor = NvmlMonitor(NvmlBackend())
+            self._monitor = NvmlMonitor(NvmlBackend(keep_alive=True))
 
     @staticmethod
     def is_nvidia_smi_available() -> bool:
@@ -256,6 +256,7 @@ class NvidiaRepository:
 
     def set_all_gpus_fan_to_auto(self) -> None:
         if self.monitor_only:
+            self._monitor.close()
             return
         for gpu_index in range(self._gpu_count):
             self.set_fan_speed(gpu_index, manual_control=False)

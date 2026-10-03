@@ -30,6 +30,9 @@ class NvmlMonitor:
     def is_available(self):
         return "device_count" in self._backend.read_snapshot()
 
+    def close(self):
+        self._backend.close()
+
     def get_status(self):
         snapshot = self._backend.read_snapshot(self._uuid)
         device = {}

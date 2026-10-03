@@ -78,6 +78,30 @@ No fan/power/clock setter is called. It creates a synthetic clip, performs six s
 compares raw NVML with backend counters. Ordinary playback does not require encoder activity.
 The inherited zero-reading cause remains unresolved; do not invent nonzero values or claim it fixed.
 
+### Available-GPU follow-up and telemetry correction
+
+Later on 2026-10-03, the owner reported the GPU available. Preflight found 44 C and about 21808 MiB
+free VRAM, retaining 330 W. Both 1080p60 phases completed successfully, but repeated NVML init/shutdown
+between samples still produced zeros. Holding one NVML monitoring reference across the same phases
+produced encoder/decoder peaks of 18%/22%, independently confirmed by `nvidia-smi dmon`.
+
+The GUI repository now uses an opt-in persistent read-only backend session. Handles are still reacquired
+by pinned UUID for every snapshot. Errors/device loss release the reference for fresh initialization on a
+later read; no missing telemetry is replaced with stale values. Cleanup closes only the reader's reference,
+with no fan, clock or power setter. One-shot probes retain per-call balanced initialization/shutdown.
+
+A further real-media check observed matching raw/backend encoder/decoder peaks of 37%/8%, also seen
+through the actual UI repository/model. The isolated GTK simulated-startup/Restore check passed. These
+observations establish the correction for this branch's monitoring lifetime; they do not establish why
+every previously reported playback/old-app reading was zero. Idle or non-NVDEC playback can still show
+zero legitimately. The earlier unresolved branch observation is superseded by these current-host results.
+
+Full simulated validation passed with 514 tests on each interpreter, including preserved sampling
+history, initialization failures, lost-device reinitialization, balanced probes and retryable close failures.
+The local snapshot is updated only after confirming no competing control window; no root service or
+power/fan setting is changed by that update. Earlier native candidates are retained; the rebuilt client
+includes this correction.
+
 ## Remaining target acceptance
 
 Use the native-package build/review procedure in [packaging](packaging-plan.md). Artifacts are local

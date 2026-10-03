@@ -90,6 +90,71 @@ def test_invalid_selection_never_initializes(identified, uuid):
     assert identified.calls == []
 
 
+def test_monitor_session_keeps_video_history_until_explicit_close(identified):
+    samples = [0]
+    def initialize():
+        samples[0] = 0
+        identified.calls.append('nvmlInit')
+    def encoder(_):
+        samples[0] += 1
+        return (0 if samples[0] == 1 else 18, 100000)
+    identified.nvmlInit = initialize
+    identified.nvmlDeviceGetEncoderUtilization = encoder
+    backend = NvmlBackend(identified, keep_alive=True)
+    assert backend.read_snapshot()['gpus'][0]['encoder_utilization']['value']['percent'] == 0
+    assert backend.read_snapshot()['gpus'][0]['encoder_utilization']['value']['percent'] == 18
+    assert identified.calls.count('nvmlInit') == 1
+    assert 'nvmlShutdown' not in identified.calls
+    backend.close()
+    backend.close()
+    assert identified.calls.count('nvmlShutdown') == 1
+    with pytest.raises(RuntimeError, match='closed'):
+        backend.read_snapshot()
+
+
+def test_one_shot_backend_remains_balanced(identified):
+    backend = NvmlBackend(identified)
+    backend.read_snapshot()
+    backend.read_snapshot()
+    backend.close()
+    assert identified.calls.count('nvmlInit') == identified.calls.count('nvmlShutdown') == 2
+
+
+def test_persistent_session_reinitializes_after_lost_device(identified):
+    backend = NvmlBackend(identified, keep_alive=True)
+    backend.read_snapshot('GPU-test')
+    identified.nvmlDeviceGetTemperature = fail(pynvml.NVML_ERROR_GPU_IS_LOST)
+    assert backend.read_snapshot('GPU-test')['status'] == 'error'
+    assert identified.calls.count('nvmlShutdown') == 1
+    identified.nvmlDeviceGetTemperature = lambda *_: 50
+    result = backend.read_snapshot('GPU-test')
+    assert result['gpus'][0]['temperature_c']['value'] == 50
+    assert identified.calls.count('nvmlInit') == 2
+    backend.close()
+    assert identified.calls.count('nvmlShutdown') == 2
+    assert 'nvmlDeviceGetHandleByIndex' not in identified.calls
+
+
+def test_persistent_initialization_failure_does_not_shutdown_or_retry_in_same_read(identified):
+    backend = NvmlBackend(identified, keep_alive=True)
+    identified.nvmlInit = fail(pynvml.NVML_ERROR_NO_PERMISSION)
+    result = backend.read_snapshot()
+    assert result['status'] == 'error' and result['errors'][0]['operation'] == 'nvmlInit'
+    backend.close()
+    assert 'nvmlShutdown' not in identified.calls
+
+
+def test_persistent_close_failure_can_be_retried(identified):
+    backend = NvmlBackend(identified, keep_alive=True)
+    backend.read_snapshot()
+    identified.nvmlShutdown = fail(pynvml.NVML_ERROR_UNKNOWN)
+    with pytest.raises(pynvml.NVMLError):
+        backend.close()
+    identified.nvmlShutdown = lambda: identified.calls.append('nvmlShutdown')
+    backend.close()
+    assert identified.calls.count('nvmlShutdown') == 1
+
+
 def test_power_units_and_independent_clock_queries(identified):
     identified.nvmlDeviceGetPowerManagementLimit = lambda h: 250000
     identified.nvmlDeviceGetPowerManagementDefaultLimit = lambda h: 450000

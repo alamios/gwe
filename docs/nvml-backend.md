@@ -1,5 +1,20 @@
 # Read-only NVML backend
 
+## Persistent GUI monitoring: 2026-10-03
+
+`NvmlBackend(keep_alive=True)` retains one read-only library session between successful snapshots and
+requires `close()` at shutdown. It reacquires handles each time and releases/reinitializes the session
+after read errors or device disappearance. Close is idempotent after success; a failed shutdown can be
+retried. Reads after successful close are refused. Initialization failures remain explicit reports.
+Default backends and standalone probes retain balanced per-snapshot lifecycle behavior.
+
+Live 1080p60 NVENC/NVDEC testing demonstrated zeros with per-sample initialization and nonzero readings
+with a retained session. Raw NVML, the backend and actual UI telemetry model matched at 37%/8% peaks;
+an earlier retained-session run matched nvidia-smi at 18%/22%. This fixes observed current-host GUI
+sampling without changing GPU settings. See [full evidence](migration-readiness.md).
+[NVIDIA initialization/cleanup](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlInitializationAndCleanup.html)
+documents matching library references; it does not guarantee cross-driver video sampling behavior.
+
 `gwe.nvml_backend.NvmlBackend` provides telemetry independently of GTK, X11, settings and profile databases.
 The diagnostic CLI now shares its collector. The default GUI still uses the legacy `NvidiaRepository` path. The opt-in [monitor mode](monitor-mode.md)
 now routes that repository to this backend and bypasses the NV-CONTROL startup gate; its Python 3.12 GTK launch has passed the current-host smoke check.
@@ -21,7 +36,7 @@ Selection resolves the requested UUID on each call and checks the returned ident
 identity never falls back to another device. Indices are current NVML indices, not persistent identifiers.
 A device whose identity cannot be read is reported as an error and its telemetry is not collected.
 
-Each call initializes NVML and attempts shutdown after successful initialization, including on unexpected
+By default each call initializes NVML and attempts shutdown after successful initialization, including on unexpected
 exceptions. Calls on one backend instance are serialized. Handles and readings are not cached between calls,
 so transient failures cannot return a previous temperature as if it were fresh. Monotonic start/end timestamps
 bound the collection interval; individual NVML calls do not form an atomic hardware snapshot.
@@ -33,7 +48,8 @@ Consumers must treat failed temperature reads as unusable for future fan control
 
 The JSON-compatible collector uses schema version 2. The public diagnostic command omits identity queries;
 the application backend includes UUIDs and must not be logged wholesale. See [diagnostics](nvml-diagnostics.md)
-for status meanings. Neither this class nor the CLI monitors continuously or restores fan policies.
+for status meanings. Neither this class nor the CLI starts a polling loop or restores fan policies;
+the GUI schedules snapshots while its persistent backend retains NVML's sampling state.
 
 ## Validation
 

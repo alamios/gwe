@@ -98,4 +98,8 @@ completed rollback/return without launching a controller. The later snapshot als
 hardware-acceptance flag. Full simulated regression validation passed with 508 tests per interpreter;
 real startup/close acceptance awaits user-terminal sudo authentication. See
 [migration readiness](migration-readiness.md) for the one-command procedure and current system findings.
+After the GPU became available, the video-counter lifecycle correction passed real-media/model and GTK
+checks and was installed into the closed local snapshot. The requested startup preference was preserved.
+The root service was not updated or started by this UI update; 330 W was retained. Real installed
+startup/window-close acceptance still needs the user's sudo-authenticated command.
 Target-OS/Wayland, suspend/resume and driver/host failure recovery remain pending.

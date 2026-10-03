@@ -6,6 +6,12 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- Corrected on 2026-10-03: the monitor/service UI retains its read-only NVML session so video counters
+  can accumulate. Available-GPU 1080p60 checks produced matching raw/backend/UI-model nonzero readings;
+  nvidia-smi independently confirmed the earlier held-session result. Device-loss reinitialization,
+  balanced probes and cleanup are covered by 514 passing tests per interpreter. Old-app playback causes
+  and target-driver/Wayland behavior are not inferred from this result.
+
 - Owner follow-up on 2026-10-03: installed menu client works; suspend/resume was reported tested,
   without an independently captured recovery trace. Named startup curve reapplication is now opt-in
   in source with once-per-launch acquisition, fresh-telemetry gating and no fault/release rearming.

@@ -15,16 +15,48 @@ class NvmlBackend:
     to control hardware. This backend exposes no write operations.
     """
 
-    def __init__(self, nvml=None):
+    def __init__(self, nvml=None, *, keep_alive=False):
         self._nvml = nvml if nvml is not None else importlib.import_module("pynvml")
         self._lock = threading.Lock()
+        self._keep_alive = keep_alive
+        self._initialized = False
+        self._closed = False
+
+    def close(self):
+        """Release this reader's library reference; never change GPU settings."""
+        with self._lock:
+            if self._initialized:
+                self._nvml.nvmlShutdown()
+                self._initialized = False
+            self._closed = True
 
     def read_snapshot(self, gpu_uuid=None):
         if gpu_uuid is not None and (not isinstance(gpu_uuid, str) or not gpu_uuid.strip()):
             raise ValueError("GPU UUID must be a non-empty string")
         with self._lock:
+            if self._closed:
+                raise RuntimeError('NVML reader is closed')
             started = time.monotonic()
-            result = collect_report(self._nvml, gpu_uuid=gpu_uuid, include_identity=True)
+            result = None
+            if self._keep_alive and not self._initialized:
+                try:
+                    self._nvml.nvmlInit()
+                    self._initialized = True
+                except self._nvml.NVMLError as error:
+                    result = {'schema_version': 2, 'status': 'error', 'gpus': [], 'errors': [
+                        {'operation': 'nvmlInit', 'error_code': error.value, 'message': str(error)}]}
+            if result is None:
+                result = collect_report(self._nvml, gpu_uuid=gpu_uuid, include_identity=True,
+                                        manage_lifecycle=not self._keep_alive)
+            if self._initialized and result['status'] in ('error', 'no_devices'):
+                # Reinitialize after a read failure; never reuse a lost-device handle/cache.
+                try:
+                    self._nvml.nvmlShutdown()
+                    self._initialized = False
+                except self._nvml.NVMLError as error:
+                    result['status'] = 'error'
+                    result['errors'].append({'operation': 'nvmlShutdown', 'error_code': error.value,
+                                             'message': str(error)})
             result["started_monotonic_s"] = started
             result["finished_monotonic_s"] = time.monotonic()
             return result
@@ -69,7 +101,7 @@ def _indexed_fan_rpm(nvml):
     return read_rpm
 
 
-def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
+def collect_report(nvml, *, gpu_uuid=None, include_identity=False, manage_lifecycle=True):
     """Collect one snapshot using an injected binding, without opening a display.
 
     Unsupported optional queries are distinguished from failures. No setter is
@@ -107,12 +139,13 @@ def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
                 errors.append({"operation": name, **result})
             return result
 
-    try:
-        nvml.nvmlInit()
-    except nvml.NVMLError as error:
-        report["status"] = "error"
-        errors.append({"operation": "nvmlInit", "error_code": error.value, "message": str(error)})
-        return report
+    if manage_lifecycle:
+        try:
+            nvml.nvmlInit()
+        except nvml.NVMLError as error:
+            report["status"] = "error"
+            errors.append({"operation": "nvmlInit", "error_code": error.value, "message": str(error)})
+            return report
 
     try:
         report["driver"] = read("nvmlSystemGetDriverVersion")
@@ -202,10 +235,11 @@ def collect_report(nvml, *, gpu_uuid=None, include_identity=False):
                         "speed_rpm": read("nvmlDeviceGetFanSpeedRPM", handle, fan),
                     })
     finally:
-        try:
-            nvml.nvmlShutdown()
-        except nvml.NVMLError as error:
-            errors.append({"operation": "nvmlShutdown", "error_code": error.value, "message": str(error)})
+        if manage_lifecycle:
+            try:
+                nvml.nvmlShutdown()
+            except nvml.NVMLError as error:
+                errors.append({"operation": "nvmlShutdown", "error_code": error.value, "message": str(error)})
         if errors:
             report["status"] = "error"
     return report

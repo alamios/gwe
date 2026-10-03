@@ -34,6 +34,13 @@ def test_cleanup_does_not_reset_live_fans(repository):
     repository.set_all_gpus_fan_to_auto()
 
 
+def test_cleanup_releases_only_the_read_only_library_session(repository, monkeypatch):
+    calls = []
+    monkeypatch.setattr(repository._monitor._backend, 'close', lambda: calls.append('close'))
+    repository.set_all_gpus_fan_to_auto()
+    assert calls == ['close']
+
+
 def test_startup_skips_x11_and_old_binding(repository, monkeypatch):
     monkeypatch.setattr(repository._monitor, "is_available", lambda: True)
     interactor = HasNvidiaDriverInteractor(repository)

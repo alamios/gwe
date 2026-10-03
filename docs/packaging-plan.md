@@ -66,9 +66,12 @@ absence of personal DB/config, guard rejection, precompiled resources and a stag
 Restore check with simulated control. Builds export code from the reviewed installed build environment;
 fully independent clean-room builds still need immutable dependency archives/hashes and target-native
 dependency acceptance. Do not treat version pins alone as supply-chain authentication.
-The final local artifacts are retained in `build/native-debs-v3/` with version
+The initial complete local artifacts are retained in `build/native-debs-v3/` with version
 `0.15.9+nvml20261003.3`. A second complete build produced identical archive hashes. The client extracted
 from the final `.deb` passed the simulated GTK startup/Restore check; native installation remains pending.
+The later `build/native-debs-v4/` candidates, version `0.15.9+nvml20261003.4`, include the verified
+persistent read-only NVML session correction for encoder/decoder telemetry. Earlier candidates remain
+retained; no native package was installed automatically.
 
 ## Flatpak option
 

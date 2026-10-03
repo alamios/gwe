@@ -17,21 +17,21 @@ from gwe.nvml_backend import NvmlBackend
 def run_phase(command, log, nvml, uuid, engine, *, duration=10):
     maxima = {'raw_percent': 0, 'backend_percent': 0}
     process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=log)
+    initialized = False
     try:
+        # Keep the monitoring session alive across samples and nested backend snapshots.
+        nvml.nvmlInit()
+        initialized = True
         deadline = time.monotonic() + duration
         backend = NvmlBackend(nvml)
         while process.poll() is None:
             if time.monotonic() >= deadline:
                 raise RuntimeError('Video diagnostic timeout')
-            nvml.nvmlInit()
-            try:
-                handle = nvml.nvmlDeviceGetHandleByUUID(uuid)
-                if nvml.nvmlDeviceGetTemperature(handle, 0) >= 80:
-                    raise RuntimeError('Video diagnostic thermal stop')
-                function = getattr(nvml, f'nvmlDeviceGet{engine.title()}Utilization')
-                raw, period = function(handle)
-            finally:
-                nvml.nvmlShutdown()
+            handle = nvml.nvmlDeviceGetHandleByUUID(uuid)
+            if nvml.nvmlDeviceGetTemperature(handle, 0) >= 80:
+                raise RuntimeError('Video diagnostic thermal stop')
+            function = getattr(nvml, f'nvmlDeviceGet{engine.title()}Utilization')
+            raw, period = function(handle)
             sample = backend.read_snapshot(uuid)['gpus'][0][engine + '_utilization']
             if sample['status'] != 'ok':
                 raise RuntimeError('Backend video telemetry unavailable')
@@ -43,13 +43,17 @@ def run_phase(command, log, nvml, uuid, engine, *, duration=10):
             raise RuntimeError('FFmpeg failed; review the private diagnostic log')
         return maxima
     finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
+        try:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+        finally:
+            if initialized:
+                nvml.nvmlShutdown()
 
 
 def main():
