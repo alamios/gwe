@@ -129,7 +129,7 @@ class FanService:
     provisioning uses an explicitly supplied root-owned runtime directory.
     """
     def __init__(self, path, backend, *, allowed_uid, clock=boot_time, provision=False, power=None,
-                 power_with_fan=False):
+                 power_with_fan=False, listener=None, initial_peer=None):
         self.path = Path(path)
         parent = self.path.parent.stat()
         if type(allowed_uid) is not int or allowed_uid < 0:
@@ -144,21 +144,33 @@ class FanService:
         self.power = power
         self.power_with_fan = power_with_fan
         self.selector = selectors.DefaultSelector()
-        self.listener = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
-        try:
-            self.listener.bind(str(self.path))  # Never remove or replace an existing endpoint.
-        except BaseException:
-            self.listener.close()
-            self.selector.close()
-            raise
+        self.owns_endpoint = listener is None
+        self.listener = listener or socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+        if self.owns_endpoint:
+            try:
+                self.listener.bind(str(self.path))  # Never remove or replace an existing endpoint.
+            except BaseException:
+                self.listener.close()
+                self.selector.close()
+                raise
         self.inode = self.path.stat().st_ino
-        os.chmod(self.path, 0o600)
-        if provision:
-            os.chown(self.path, allowed_uid, -1)
-        self.listener.listen(8)
+        if self.owns_endpoint:
+            os.chmod(self.path, 0o600)
+            if provision:
+                os.chown(self.path, allowed_uid, -1)
+            self.listener.listen(8)
         self.listener.setblocking(False)
         self.selector.register(self.listener, selectors.EVENT_READ)
         self.clients = set()
+        if initial_peer is not None:
+            uid = struct.unpack('3i', initial_peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))[1]
+            if uid != self.allowed_uid:
+                initial_peer.close()
+                self.close()
+                raise PermissionError('Unauthorized initial peer')
+            initial_peer.setblocking(False)
+            self.clients.add(initial_peer)
+            self.selector.register(initial_peer, selectors.EVENT_READ)
 
     def _drop(self, client):
         self.lease.disconnect(client)
@@ -232,7 +244,7 @@ class FanService:
             self._drop(client)
         self.listener.close()
         self.selector.close()
-        if self.path.exists() and self.path.stat().st_ino == self.inode:
+        if self.owns_endpoint and self.path.exists() and self.path.stat().st_ino == self.inode:
             self.path.unlink()
 
 

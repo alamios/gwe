@@ -127,6 +127,26 @@ def build(destination, version, epoch, *, split=False):
     unit = helper / 'usr/lib/systemd/system/gwe-fan-service.service'
     unit.parent.mkdir(parents=True)
     shutil.copyfile(bundle / 'gwe-fan-service.service', unit)
+    if not split:
+        content = unit.read_text().replace(' (60 second trial)', ' (desktop session)')
+        content = content.replace('entry.py run\n', 'entry.py run --desktop\n')
+        content = content.replace('RuntimeMaxSec=60s', 'RuntimeMaxSec=infinity')
+        content = content.replace('TimeoutStartSec=10s', 'TimeoutStartSec=25s')
+        content = content.replace('TimeoutStopSec=25s', 'TimeoutStopSec=50s').replace('KillMode=control-group', 'KillMode=mixed')
+        write(unit, content)
+        write(helper / 'usr/lib/systemd/system/gwe-fan-service.socket', '''[Unit]
+Description=GreenWithEnvy authorized desktop control socket
+
+[Socket]
+ListenSequentialPacket=/run/gwe-fan-service/control.sock
+SocketMode=0600
+DirectoryMode=0711
+RemoveOnStop=yes
+Service=gwe-fan-service.service
+
+[Install]
+WantedBy=sockets.target
+''')
     write(helper / 'DEBIAN/preinst', GUARD + '''
 if [ -L /opt/gwe-fan-service ]; then echo 'Untrusted helper symlink' >&2; exit 1; fi
 if [ "${1:-}" = install ] && [ -e /opt/gwe-fan-service ]; then
@@ -138,6 +158,34 @@ fi
     write(helper / 'DEBIAN/prerm', GUARD, True)
     write(helper / 'DEBIAN/postinst', '#!/bin/sh\nset -eu\nsystemctl daemon-reload\n', True)
     write(helper / 'DEBIAN/postrm', '#!/bin/sh\nsystemctl daemon-reload || true\n', True)
+    if not split:
+        # Stop only activation; recheck that no connection activated a session in the meantime.
+        quiesce = GUARD + '''if [ "$(systemctl show gwe-fan-service.socket -p LoadState --value)" = loaded ]; then
+    systemctl stop gwe-fan-service.socket
+fi
+''' + GUARD.split('set -eu\n', 1)[1]
+        original = (helper / 'DEBIAN/preinst').read_text()
+        write(helper / 'DEBIAN/preinst', original.replace(GUARD, quiesce, 1), True)
+        write(helper / 'DEBIAN/prerm', quiesce, True)
+        write(helper / 'DEBIAN/postinst', '''#!/bin/sh
+set -eu
+if [ "${1:-}" = configure ]; then
+    uid=${SUDO_UID:-${PKEXEC_UID:-}}
+    if [ -n "$uid" ]; then
+        /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py setup --allowed-uid "$uid"
+    else
+        /usr/bin/python3 -I -B /opt/gwe-fan-service/entry.py setup
+    fi
+    systemctl daemon-reload
+    systemctl enable --now gwe-fan-service.socket
+fi
+''', True)
+        write(helper / 'DEBIAN/postrm', '''#!/bin/sh
+if [ "${1:-}" = remove ] || [ "${1:-}" = purge ]; then
+    systemctl disable gwe-fan-service.socket 2>/dev/null || true
+fi
+systemctl daemon-reload || true
+''', True)
 
     client = destination / 'client-tree' if split else helper
     application = client / 'usr/share/gwe-nvml'
@@ -146,6 +194,8 @@ fi
     (application / 'scripts').mkdir()
     for name in SCRIPTS:
         shutil.copyfile(ROOT / 'scripts' / name, application / 'scripts' / name)
+    if not split:
+        shutil.copyfile(ROOT / 'scripts/run_native.py', application / 'scripts/run_native.py')
     (application / 'resources').mkdir()
     prepare_resources(application, application / 'resources')
     vendor(application / 'vendor')
@@ -171,6 +221,11 @@ if config.get('startup_profile'):
 os.execve('/bin/bash', ['bash', '/usr/share/gwe-nvml/scripts/run_control_session.sh',
                       '/usr/bin/python3', config['database'], '--installed'], environment)
 ''', True)
+    if not split:
+        write(client / 'usr/bin/gwe-nvml', '''#!/usr/bin/python3
+import os
+os.execv('/usr/bin/python3', ['python3', '/usr/share/gwe-nvml/scripts/run_native.py'])
+''', True)
     write(client / 'usr/share/applications/gwe-nvml-native.desktop', '''[Desktop Entry]
 Type=Application
 Name=GreenWithEnvy (NVML native)
@@ -180,6 +235,9 @@ Terminal=true
 Categories=System;
 StartupNotify=false
 ''')
+    if not split:
+        desktop_entry = client / 'usr/share/applications/gwe-nvml-native.desktop'
+        desktop_entry.write_text(desktop_entry.read_text().replace('Terminal=true', 'Terminal=false'))
     if split:
         write(client / 'DEBIAN/preinst', GUARD, True)
         write(client / 'DEBIAN/prerm', GUARD, True)

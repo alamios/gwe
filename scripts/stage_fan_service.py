@@ -7,7 +7,7 @@ from importlib import metadata, util
 from pathlib import Path
 import shutil
 
-MODULES = ('fan_curve', 'fan_service', 'fan_process', 'fan_daemon', 'nvml_fan_control', 'nvml_power', 'power_process', 'power_trial')
+MODULES = ('fan_curve', 'fan_service', 'fan_process', 'fan_daemon', 'desktop_activation', 'native_setup', 'nvml_fan_control', 'nvml_power', 'power_process', 'power_trial')
 
 
 def stage(destination):

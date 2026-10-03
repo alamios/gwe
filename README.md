@@ -43,7 +43,8 @@
 
 The next local X11 release will use one package, writable profile configuration and the regular desktop
 controls without the trial terminal or status band. The combined package builder is implemented; the
-remaining desktop/configuration changes are specified and pending.
+socket-activated desktop launcher without sudo/terminal is implemented in the development package.
+The remaining desktop/configuration changes and privileged activation acceptance are pending.
 See the [agreed release requirements](RELEASING.md#first-local-x11-release-agreed-requirements).
 
 The reviewed local `.deb` candidates have a guarded first-install procedure:

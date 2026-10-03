@@ -15,6 +15,14 @@ Preparation progress: the native builder now emits one `gwe-nvml` package by def
 transition and rollback pass in an isolated dpkg root; host transition and the remaining requirements below
 are pending. Historical split builds remain available with `--split` for recovery validation.
 
+The combined development package now uses socket activation and `Terminal=false`. Installation preserves
+existing private GPU/user authorization or generates it from an explicitly authorized desktop UID and one
+read-only GPU identity. Only the owner-readable socket is enabled; opening the authorized desktop session
+activates the helper. Kernel peer credentials, pidfd supervision, lease expiry and post-stop recovery
+remain enforced. Normal launch has no sudo invocation. User configuration/editor and trial UI cleanup are
+still pending. Both complete simulated suites pass with 531 tests; actual systemd activation/recovery
+acceptance requires the prepared package to be installed and run from the owner's desktop.
+
 ## First local X11 release: agreed requirements
 
 These are acceptance requirements, not claims of implemented behavior. The initial release targets the

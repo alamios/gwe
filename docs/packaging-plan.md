@@ -22,7 +22,8 @@ The UI and root helper remain separate processes but now share one `gwe-nvml` `.
 and distro dependencies. The package declares `Conflicts` and `Replaces` against both development packages
 so they cannot coexist at shared paths. Its maintainer scripts retain inactive/recovery guards, reject an
 unmanaged helper, preserve private configuration and never start or enable the control service.
-The terminal/session launcher and trial UI remain unchanged at this packaging-only step; this is not the
+The first packaging-only artifact retained the terminal/session launcher. A subsequent development
+artifact adds socket activation as described below; trial UI cleanup is still pending. These are not the
 final 1.0.0 release UX. Do not install intermediate packages during an active control session.
 
 Build a combined review artifact with the existing explicit destination/version/epoch arguments.
@@ -42,6 +43,33 @@ archive's restore script targets only the split names and must not be used over 
 package without first removing that combined package through the package manager.
 
 Packaging reference: [Debian Policy: Conflicts and Replaces](https://www.debian.org/doc/debian-policy/ch-relationships.html).
+
+### Desktop socket activation preparation
+
+`build/unified-package-v2/gwe-nvml_1.0.0~dev2_all.deb` contains `gwe-fan-service.socket` and the new
+unprivileged native launcher. Its desktop entry has `Terminal=false`; normal launch uses no sudo. The
+install-time `setup` action preserves existing authorization, or requires the installing desktop UID
+(SUDO_UID/PKEXEC_UID) and exactly one GPU before writing new private configuration. Its GPU queries are
+read-only. An installation lacking explicit user identity fails rather than guessing an account.
+The socket owner is the configured UID, mode 0600, in the root-owned 0711 runtime directory. Installation
+enables only socket activation, not an active controller or automatic curve. Root accepts only an inherited
+SEQPACKET listener matching that endpoint and authenticates the first peer with SO_PEERCRED; its pidfd
+then supervises the actual GUI across launcher exec. The first connection is handed intact to the protocol
+server. The GUI keeps the session lock, bootstraps idle service status and never calls a GPU setter.
+
+The service records previous CoolerControl state before stopping it, checks competing controllers, and
+restores its recorded state after verified GPU recovery. Connection loss/lease expiry still restores fans;
+GUI process exit stops the session, including the independent power worker. Ordinary committed power
+changes remain committed. Faults preserve recovery records and block new sessions. The systemd-owned
+activation endpoint is retained on helper close, allowing a later desktop session. Socket-only startup
+does not apply a curve or change GPU power/clocks. Package changes quiesce activation and recheck recovery
+guards before replacing files; removal disables activation but retains private authorization.
+
+Validation includes real local sockets with simulated backends, wrong peer/descriptor/mode rejection,
+initial-connection continuity, restored lease on disconnect, unchanged existing authorization and ambiguous
+new GPU refusal. Full suites: 531 passed on Python 3.12 and 3.14. Service/socket unit syntax was checked
+with systemd-analyze. No installed unit, package or GPU setting was changed. Actual privileged socket
+activation/watchdog/post-stop acceptance is pending and must occur before calling the release validated.
 
 The desktop client contains Python modules, a launcher, compiled GTK resources/settings schemas, icons
 and application metadata. It runs without root and owns only a renewable fan-control lease. The host

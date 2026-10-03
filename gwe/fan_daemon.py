@@ -224,19 +224,28 @@ def serve(service, backend, power, stopping, *, continuous=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('run', 'recover', 'check', 'prepare-power-trial', 'prepare-session'))
+    parser.add_argument('action', choices=('run', 'recover', 'check', 'setup', 'prepare-power-trial', 'prepare-session'))
     parser.add_argument('--config', default='/etc/gwe-fan-service.json')
     parser.add_argument('--continuous', action='store_true', help='Manual session without the trial lifetime')
+    parser.add_argument('--desktop', action='store_true', help='Authenticated systemd socket activation')
     parser.add_argument('--owner-pid', type=int, help='Desktop launcher process to supervise')
+    parser.add_argument('--allowed-uid', type=int, help='Installation-time desktop account authorization')
     args = parser.parse_args(argv)
+    if args.desktop:
+        if args.action != 'run':
+            parser.error('--desktop is valid only for run')
+        args.continuous = True
     if args.continuous and args.action != 'run':
         parser.error('--continuous is valid only for run')
     if args.owner_pid is not None and args.action != 'prepare-session':
         parser.error('--owner-pid is valid only for prepare-session')
+    if args.allowed_uid is not None and args.action != 'setup':
+        parser.error('--allowed-uid is valid only for setup')
     if os.geteuid() != 0:
         parser.error('This installed service requires root')
     lock = None
     owner_fd = None
+    listener = peer = None
     try:
         if args.action != 'check' and RUNTIME.exists():
             trusted(RUNTIME)
@@ -254,6 +263,10 @@ def main(argv=None):
             if failures:
                 raise RuntimeError('Post-stop recovery failed')
             recover_session()
+            return 0
+        if args.action == 'setup':
+            from gwe.native_setup import configure
+            configure(args.config, args.allowed_uid)
             return 0
         config = load_config(args.config)
         if args.action == 'check':
@@ -274,6 +287,16 @@ def main(argv=None):
         trusted(RUNTIME)
         if stat.S_IMODE(RUNTIME.stat().st_mode) != 0o711:
             raise ValueError('Unexpected runtime directory permissions')
+        if args.desktop:
+            from gwe.desktop_activation import activated_listener
+            if any((RUNTIME / name).exists() or (RUNTIME / name).is_symlink()
+                   for name in ('session.json', 'owned.json', 'power-pending.json', 'power-trial.json')):
+                raise RuntimeError('Recovery pending before desktop activation')
+            listener, peer, pid = activated_listener(RUNTIME / 'control.sock', config['allowed_uid'])
+            prepare_session(pid, config['allowed_uid'])
+            owner_fd = session_owner(config['allowed_uid'])
+            if session_record()['cooler_active']:
+                subprocess.run(['systemctl', 'stop', 'coolercontrold.service'], check=True, timeout=5)
         # Do not stop cooling services implicitly. Operator arranges exclusivity.
         result = subprocess.run(['systemctl', 'is-active', 'coolercontrold.service'], capture_output=True, timeout=2)
         if result.returncode != 3 or result.stdout.strip() not in (b'inactive', b'failed'):
@@ -290,12 +313,12 @@ def main(argv=None):
         record = OwnershipRecord(RUNTIME / 'owned.json', config['gpu_uuid'])
         if args.continuous and (RUNTIME / 'power-trial.json').exists():
             raise RuntimeError('Acceptance guard must be recovered before a continuous session')
-        if args.continuous:
+        if args.continuous and owner_fd is None:
             owner_fd = session_owner(config['allowed_uid'])
         if record.path.exists() or (RUNTIME / 'power-pending.json').exists():
             raise RuntimeError('Unresolved recovery record; refusing new control')
         endpoint = RUNTIME / 'control.sock'
-        if endpoint.exists():
+        if endpoint.exists() and not args.desktop:
             if not stat.S_ISSOCK(endpoint.lstat().st_mode):
                 raise RuntimeError('Unexpected existing endpoint')
             endpoint.unlink()  # Root-owned parent, only after an old service has stopped.
@@ -303,7 +326,8 @@ def main(argv=None):
                                  record=record.record, clear=record.clear)
         power = PowerBackend(config['gpu_uuid'], RUNTIME)
         service = FanService(endpoint, backend, allowed_uid=config['allowed_uid'], provision=True,
-                             power=power, power_with_fan=args.continuous)
+                             power=power, power_with_fan=args.continuous, listener=listener, initial_peer=peer)
+        listener = peer = None  # Service now owns the descriptors, systemd owns the socket path.
         stopping = False
         def stop(signum, frame):
             nonlocal stopping
@@ -329,6 +353,10 @@ def main(argv=None):
         print(f'Service failed: {type(error).__name__}', flush=True)
         return 1
     finally:
+        if peer is not None:
+            peer.close()
+        if listener is not None:
+            listener.close()
         if owner_fd is not None:
             os.close(owner_fd)
         if lock is not None:
