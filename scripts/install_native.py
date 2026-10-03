@@ -10,10 +10,10 @@ import subprocess
 import sys
 import tempfile
 
-VERSION = '0.15.9+nvml20261003.4'
+VERSION = '0.15.9+nvml20261003.5'
 HASHES = {
-    'client': '2046129d9feafd4f0da53deff52acd6eb4c675174951cc183529208d98426b2f',
-    'service': '1336327048692d766ee43b0ff04f57d5e77405664fbce33c372d9c8cb126d298',
+    'client': 'de24e169ffb7d4d5131152a182097483bbed6dafa6c79853a9d57c68aafee80d',
+    'service': '8c08d98f88f1891a1a807ad8f04ab1e03cf9652b515d8208aeb7204b4f892392',
 }
 DEPENDENCIES = set('''fonts-lyx liblbfgsb0 libqhull-r8.0 python-matplotlib-data
 python3-appdirs python3-attr python3-contourpy python3-cycler python3-decorator
@@ -89,7 +89,7 @@ def main():
         if result.returncode == 0 and result.stdout[:2] != 'un':
             raise RuntimeError('This first-install migration refuses an existing package record')
     run('/usr/bin/python3', '-I', '-B', str(HELPER / 'entry.py'), 'check')
-    source = Path(__file__).resolve().parents[1] / 'build/native-debs-v4'
+    source = Path(__file__).resolve().parents[1] / 'build/native-debs-v5'
     # Root-owned copies prevent artifact changes between verification and installation.
     with tempfile.TemporaryDirectory(prefix='gwe-native-', dir='/var/tmp') as temporary:
         packages = []

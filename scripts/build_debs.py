@@ -16,7 +16,7 @@ from run_monitor import prepare_resources
 
 ROOT = Path(__file__).resolve().parents[1]
 VENDORS = {
-    'injector': ('0.21.0', 'injector'), 'peewee': ('3.17.0', 'peewee.py'),
+    'injector': ('0.21.0', 'injector'), 'peewee': ('3.17.0', ('peewee.py', 'playhouse')),
     'reactivex': ('4.0.4', 'reactivex'), 'typing-extensions': ('4.16.0', 'typing_extensions.py'),
     'nvidia-ml-py': ('13.615.71', 'pynvml.py'), 'py3nvml': ('0.2.7', 'py3nvml'),
     'xmltodict': ('1.0.4', 'xmltodict.py'),
@@ -49,6 +49,7 @@ def write(path, content, executable=False):
 def vendor(destination):
     versions = []
     for name, (expected, component) in VENDORS.items():
+        components = (component,) if isinstance(component, str) else component
         distribution = metadata.distribution(name)
         if distribution.version != expected:
             raise RuntimeError(f'Review the changed {name} version before bundling')
@@ -57,7 +58,7 @@ def vendor(destination):
             relative = Path(str(entry))
             if relative.is_absolute() or '..' in relative.parts:
                 continue
-            module = relative.parts[0] == component
+            module = relative.parts[0] in components
             info = relative.parts[0].endswith('.dist-info')
             legal = any('license' in part.lower() or 'copying' in part.lower() for part in relative.parts[1:])
             if (module and relative.suffix in ('.py', '.typed')) or (info and (relative.name == 'METADATA' or legal)):

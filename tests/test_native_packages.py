@@ -89,3 +89,26 @@ def test_precompiled_resources_need_no_runtime_compiler(tmp_path, monkeypatch):
     monkeypatch.setattr(run_monitor.shutil, 'which', lambda _: None)
     result = run_monitor.prepare_resources(root, build)
     assert result.read_bytes() == b'com.leinardi.gwe.gresource'
+
+
+def test_peewee_vendor_includes_playhouse_without_native_extensions(tmp_path, monkeypatch):
+    module = builder(monkeypatch)
+    monkeypatch.setattr(module, 'VENDORS', {'peewee': module.VENDORS['peewee']})
+    files = ['peewee.py', 'playhouse/__init__.py', 'playhouse/signals.py',
+             'playhouse/sqlite_ext.py', 'playhouse/migrate.py', 'playhouse/_sqlite_ext.so',
+             'peewee-3.17.0.dist-info/METADATA', 'peewee-3.17.0.dist-info/LICENSE',
+             'peewee-3.17.0.dist-info/direct_url.json']
+    source = tmp_path / 'source'
+    for name in files:
+        module.write(source / name, '# test payload\n')
+    class Distribution:
+        version = '3.17.0'
+        def locate_file(self, entry):
+            return source / entry
+    distribution = Distribution()
+    distribution.files = files
+    monkeypatch.setattr(module.metadata, 'distribution', lambda name: distribution)
+    destination = tmp_path / 'vendor'
+    module.vendor(destination)
+    for name in files:
+        assert (destination / name).exists() == (not name.endswith(('.so', 'direct_url.json')))

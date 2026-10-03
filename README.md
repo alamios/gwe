@@ -38,7 +38,9 @@
 
 The reviewed local `.deb` candidates have a guarded first-install procedure:
 `bash scripts/install_native.sh`. See [installation and recovery](docs/packaging-plan.md#installing-the-reviewed-candidates).
-Native installation/acceptance and Kubuntu 26.04/Wayland validation remain pending. Decoder utilization
+The first native installation exposed missing bundled Peewee `playhouse` modules. Corrected v5 packages
+pass the extracted-client GTK check with system Python; updating the installed v4 packages is pending.
+Kubuntu 26.04/Wayland validation remains pending. Decoder utilization
 during ordinary playback is still reported as zero despite successful controlled NVDEC telemetry checks.
 
 All maintained documentation is written in English. The default control mode still requires X11 NV-CONTROL.

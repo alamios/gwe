@@ -6,7 +6,9 @@ No driver, kernel, CUDA, DKMS registration or repository configuration was chang
 Follow-up: the owner still observes zero decoder utilization during ordinary video playback. Controlled
 NVDEC telemetry success does not resolve that workload-specific report. Native candidate installation is
 prepared through `scripts/install_native.sh`, including dependency guards and manual-helper recovery;
-actual package installation and system-Python GUI acceptance remain pending.
+v4 package installation completed but its GTK check found missing bundled `playhouse` modules. The v5
+correction passes the extracted-package GTK startup/Restore check with system Python and simulated
+control; upgrading the installed pair and real native-session acceptance remain pending.
 
 ## Current system and remaining maintenance
 

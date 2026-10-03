@@ -1,7 +1,9 @@
 # Packaging the NVML continuation
 
-Reviewed on 2026-10-03. Two local native `.deb` candidates can now be built and inspected; installation
-and target-OS acceptance remain pending. There is no new Flatpak release. The current menu installation
+Reviewed on 2026-10-03. Two local native `.deb` candidates can now be built and inspected. Initial v4
+installation completed but GTK startup exposed omitted Peewee modules; the v5 correction passes the
+extracted-client check with system Python. Installed update and target-OS acceptance remain pending.
+There is no new Flatpak release. The earlier menu installation
 is a user-owned source snapshot using a prepared external Python environment; the installed root helper
 is a separately reviewed directory and systemd unit.
 
@@ -82,7 +84,7 @@ bash scripts/install_native.sh
 ```
 
 This owner-run system installation requires sudo authentication. It pins both version
-`0.15.9+nvml20261003.4` artifact hashes, copies them to private root-owned staging, verifies an inactive
+`0.15.9+nvml20261003.5` artifact hashes, copies them to private root-owned staging, verifies an inactive
 helper with no pending recovery, and validates the existing private service configuration without NVML
 calls. The desktop wrapper checks competing GWE clients and holds the existing session lock.
 
@@ -107,9 +109,29 @@ code and unit, and reloads systemd. It neither overwrites live configuration nor
 If package removal fails, the archive is retained and recovery stops for review. Newly installed desktop
 dependencies are intentionally retained on rollback.
 
-Validation: focused installer/package tests cover rejection of unexpected dependency changes and
-preserving the archive when rollback package removal fails. Actual sudo installation and native
-system-Python GTK acceptance still require the owner's terminal run.
+Validation: 15 focused installer/package tests pass on both Python versions, including rejection of
+unexpected dependency changes, rollback removal failure, and bundling Peewee's additional `playhouse`
+package without optional compiled extensions or private origin metadata.
+
+### Correcting the first native installation
+
+Both v4 packages are confirmed installed. Their client omitted `playhouse`, required by GWE's database
+models and migrations. Previous venv-based checks accidentally supplied that module from the environment.
+The v5 builder includes the full pure-Python `playhouse` package from the pinned Peewee distribution.
+The actual v5 client archive was extracted and validated using system Python without user-site packages
+or PYTHONPATH: its own Peewee/Playhouse imports, an in-memory SQLite migration, and the complete GTK
+simulated startup/Restore check passed. No real fan or power writes occurred.
+
+With both GWE clients closed, upgrade the already installed native packages from the repository:
+
+```bash
+sudo dpkg -i build/native-debs-v5/*.deb
+```
+
+Do not repeat the first-install migration script for an existing packaged installation. Both packages
+must be updated together because the client depends on the exact helper version. Package guards still
+refuse active/pending control. The existing private configuration and original recovery archive remain
+untouched. Launch `gwe-nvml` after the update; its real configured startup curve will then apply.
 
 ## Flatpak option
 
