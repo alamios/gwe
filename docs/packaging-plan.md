@@ -1,6 +1,6 @@
 # Packaging the NVML continuation
 
-Release decision: the upcoming 0.16 fork maintained by alamios will ship one combined `.deb` and source
+Release decision: the upcoming 1.0.0 fork maintained by alamios will ship one combined `.deb` and source
 through [alamios/gwe GitHub Releases](https://github.com/alamios/gwe/releases). This fork is maintained
 with AI assistance. The two-package builds below describe the existing development implementation;
 consolidation and the production desktop flow remain pending. Flatpak is outside this release's scope.

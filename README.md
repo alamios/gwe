@@ -10,7 +10,7 @@
 >
 > Development continues on **`maintenance/nvml-revival`**. This is an independent fork of
 > [Roberto Leinardi's original GreenWithEnvy](https://gitlab.com/leinardi/gwe), maintained by **alamios**
-> for the upcoming 0.16 series. The main change is moving GPU monitoring and fan/power control to NVML.
+> for the upcoming 1.0.0 release. The main change is moving GPU monitoring and fan/power control to NVML.
 > **This fork is maintained with AI assistance**, including implementation, testing and documentation.
 > The planned home is [alamios/gwe on GitHub](https://github.com/alamios/gwe), with source code and native
 > `.deb` downloads through [GitHub Releases](https://github.com/alamios/gwe/releases). No release has

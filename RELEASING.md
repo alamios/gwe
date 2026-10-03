@@ -1,12 +1,15 @@
 # Local builds and future releases
 
 The chosen home for this fork is **https://github.com/alamios/gwe**, maintained by **alamios** from the
-0.16 series onward. Source code and `.deb` artifacts will be distributed through that repository and its
+1.0.0 onward. Source code and `.deb` artifacts will be distributed through that repository and its
 GitHub Releases. This records the destination; no publication or push is authorized by this planning step.
 The installed Flathub application is the historical upstream build, not a build of this branch.
 The current v5 native client/helper candidates are installed on the owner's X11 host. They remain
 development builds; their terminal wrapper, trial UI and read-only profile source are not the release
 user experience. See [packaging](docs/packaging-plan.md) for the existing implementation.
+
+The first candidate is **1.0.0-rc1**, followed by **1.0.0** after release acceptance.
+Original upstream 0.x version history and attribution are preserved.
 
 ## First local X11 release: agreed requirements
 
@@ -56,11 +59,11 @@ An independently captured suspend/resume trace remains pending and must be descr
 
 ## Attribution, public text and links: agreed requirements
 
-Complete this audit before the 0.16 release; current development UI/metadata still contain upstream links.
+Complete this audit before the 1.0.0 release; current development UI/metadata still contain upstream links.
 
 - Identify the project as a fork of [Roberto Leinardi's original GWE](https://gitlab.com/leinardi/gwe).
   Preserve original authors, contributor credits, copyright and GPL license notices. Add alamios as the
-  fork maintainer beginning with 0.16; do not imply original authors maintain or endorse this continuation.
+  fork maintainer beginning with 1.0.0; do not imply original authors maintain or endorse this continuation.
 - Clearly disclose in the README and relevant project documentation that this fork is maintained with
   AI assistance, including implementation, testing and documentation. Do not present the work as wholly
   human-written or claim that AI assistance is a substitute for the recorded validation.
@@ -73,7 +76,7 @@ Complete this audit before the 0.16 release; current development UI/metadata sti
 - Make the in-application changelog link target CHANGELOG.md in the new repository, using an actual
   published release tag (or the correct development ref). Review the existing version-derived link logic
   rather than merely replacing the hostname. Keep original changelog history and add fork release notes.
-- Update About to retain the original creators and explicitly state that, from version 0.16, this is an
+- Update About to retain the original creators and explicitly state that, from version 1.0.0, this is an
   independent fork maintained by alamios. Set the website to the new repository and retain licensing and
   attribution. Review both runtime overrides and the Glade defaults.
 - Remove obsolete Flatpak/Flathub installation, update and distribution claims from the current README,
