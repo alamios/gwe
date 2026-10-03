@@ -11,6 +11,8 @@ def prepare_windows(*windows):
         window.get_style_context().add_class('gwe-window')
         screen = window.get_screen()
         if screen not in screens:
-            Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            # Desktop integration can load title-button rules at USER priority.
+            # Override those only within the explicitly scoped GWE stylesheet.
+            Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_USER + 1)
             screens.add(screen)
     return provider

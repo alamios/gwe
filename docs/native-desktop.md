@@ -48,7 +48,9 @@ ordinary filesystem copy or overwrite the historical source with the native data
 The desktop uses the host GTK theme and icon theme rather than forcing a Flatpak/runtime appearance.
 An application-scoped stylesheet makes title controls inherit the normal foreground, gives them a
 24-pixel minimum target with 16-pixel icons, and adds readable, underlined links. It does not change
-the desktop theme or other applications. About retains Roberto Leinardi and Gabriele Musco as authors;
+the desktop theme or other applications. All three title buttons use the same light circular hover
+and a slightly darker pressed state. These scoped rules take precedence over desktop-provided user
+styles, which can otherwise reintroduce Breeze's red square on close. About retains Roberto Leinardi and Gabriele Musco as authors;
 `alamios (since 1.0.0)` appears in a separate **Maintainer** section.
 
 Standalone GTK checks passed under Breeze and Adwaita light/dark: opaque title icons at least 16 pixels
