@@ -3,6 +3,11 @@
 Observed on 2026-10-03. Readiness for the current host is distinct from acceptance on Kubuntu 26.04/Wayland.
 No driver, kernel, CUDA, DKMS registration or repository configuration was changed during this follow-up.
 
+Follow-up: the owner still observes zero decoder utilization during ordinary video playback. Controlled
+NVDEC telemetry success does not resolve that workload-specific report. Native candidate installation is
+prepared through `scripts/install_native.sh`, including dependency guards and manual-helper recovery;
+actual package installation and system-Python GUI acceptance remain pending.
+
 ## Current system and remaining maintenance
 
 Read-only checks reported kernel 7.0.0-38-generic and driver 580.178.04. NVIDIA DKMS reports this driver

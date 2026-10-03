@@ -36,6 +36,11 @@
 - [Repository instructions for coding agents](AGENTS.md)
 - [Local builds and future releases](RELEASING.md)
 
+The reviewed local `.deb` candidates have a guarded first-install procedure:
+`bash scripts/install_native.sh`. See [installation and recovery](docs/packaging-plan.md#installing-the-reviewed-candidates).
+Native installation/acceptance and Kubuntu 26.04/Wayland validation remain pending. Decoder utilization
+during ordinary playback is still reported as zero despite successful controlled NVDEC telemetry checks.
+
 All maintained documentation is written in English. The default control mode still requires X11 NV-CONTROL.
 Both fans have passed a supervised NVML manual-control trial and normal automatic restoration on the
 current X11 host with administrator privileges. Recovery after worker SIGTERM, SIGKILL and SIGSTOP-induced

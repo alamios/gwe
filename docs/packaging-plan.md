@@ -73,6 +73,44 @@ The later `build/native-debs-v4/` candidates, version `0.15.9+nvml20261003.4`, i
 persistent read-only NVML session correction for encoder/decoder telemetry. Earlier candidates remain
 retained; no native package was installed automatically.
 
+## Installing the reviewed candidates
+
+For the existing manual installation only, close both GWE clients and run from a desktop terminal:
+
+```bash
+bash scripts/install_native.sh
+```
+
+This owner-run system installation requires sudo authentication. It pins both version
+`0.15.9+nvml20261003.4` artifact hashes, copies them to private root-owned staging, verifies an inactive
+helper with no pending recovery, and validates the existing private service configuration without NVML
+calls. The desktop wrapper checks competing GWE clients and holds the existing session lock.
+
+The current dependency simulation requires 25 new desktop packages (Matplotlib, Xlib and dependencies),
+with no upgrades/removals; the two GWE packages make 27 new packages total. Recommended packages are
+omitted. The installer refuses unrelated packages, upgrades and removals in the dependency simulation.
+It installs pinned dependency versions before moving the manual helper. It does not run apt update,
+autoremove, change repository priorities or request driver/kernel/CUDA changes.
+
+The original helper and shadowing `/etc` unit are retained in a private, uniquely named
+`/var/backups/gwe-native-*` directory, together with a verified private configuration copy. The live
+configuration is preserved. The archive path and rollback command are printed before package installation.
+The original Flatpak, profile backup, local snapshots and startup preference remain intact.
+After installation, the wrapper checks the installed GTK client using system Python and simulated
+startup/Restore control. It does not activate the real curve. Afterwards, launch with `gwe-nvml` or
+**GreenWithEnvy (NVML native)**; the configured startup curve then applies as usual.
+
+If installation fails after moving the manual helper, retain the printed archive and do not launch GWE.
+Recovery: `sudo sh /var/backups/gwe-native-<printed-suffix>/restore.sh`.
+This refuses active/pending control, removes only the two GWE packages through dpkg, restores the original
+code and unit, and reloads systemd. It neither overwrites live configuration nor starts the service.
+If package removal fails, the archive is retained and recovery stops for review. Newly installed desktop
+dependencies are intentionally retained on rollback.
+
+Validation: focused installer/package tests cover rejection of unexpected dependency changes and
+preserving the archive when rollback package removal fails. Actual sudo installation and native
+system-Python GTK acceptance still require the owner's terminal run.
+
 ## Flatpak option
 
 A Flatpak would package the desktop client; the host helper remains a separately installed native package.
