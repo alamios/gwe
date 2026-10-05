@@ -2,6 +2,7 @@
 """Small local diagnostic log with explicit fields, redaction and bounded retention."""
 from datetime import datetime, timezone
 import json
+import math
 import os
 from pathlib import Path
 import stat
@@ -9,15 +10,16 @@ import threading
 
 EVENTS = {'preview_opened', 'control_window_opened', 'acquire_requested', 'starting', 'active',
           'release_requested', 'stopping', 'recovery_verified', 'failed', 'disconnected', 'window_closed',
-          'power_verified', 'power_rolled_back', 'power_failed'}
+          'power_verified', 'power_rolled_back', 'power_failed', 'heartbeat_expired'}
 STATES = {'idle', 'starting', 'active', 'stopping', 'fault'}
-OPERATIONS = {'preview', 'connect', 'status', 'acquire', 'renew', 'release', 'ui_tick',
+OPERATIONS = {'preview', 'connect', 'status', 'acquire', 'renew', 'release', 'ui_tick', 'worker_tick',
               'power_status', 'power_apply'}
 ERRORS = {'invalid_response', 'request_refused', 'service_busy', 'service_fault',
           'service_recovery_failed', 'service_not_owner', 'service_worker_unavailable',
           'service_not_idle', 'socket_timeout', 'socket_permission_denied',
           'service_connection_unavailable', 'client_error', 'ui_heartbeat_expired',
-          'recovery_not_verified', 'ownership_or_state_lost'}
+          'recovery_not_verified', 'ownership_or_state_lost', 'worker_heartbeat_expired',
+          'unexpected_automatic_recovery'}
 ERRORS |= {'trial_guard_active', 'stale_power', 'outside_limits', 'power_busy', 'busy',
            'recovery_pending', 'recovery_failed', 'worker_unavailable', 'worker_lost',
            'worker_stuck', 'driver_error', 'verification_failed', 'identity_mismatch'}
@@ -57,6 +59,11 @@ class FanGuiLog:
                'state': state if state in STATES else 'fault',
                'operation': operation if operation in OPERATIONS else 'preview',
                'error': error if error in ERRORS else ('client_error' if error is not None else None)}
+        if event == 'heartbeat_expired':
+            for key in ('heartbeat_age_seconds', 'tick_gap_seconds'):
+                value = ignored.get(key)
+                if type(value) in (int, float) and math.isfinite(value):
+                    row[key] = round(max(-86400, min(86400, value)), 3)
         line = json.dumps(row, separators=(',', ':')) + '\n'
         with self.lock:
             if self.path.stat().st_size + len(line.encode('utf-8')) > self.max_bytes:

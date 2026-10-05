@@ -1,5 +1,9 @@
 # Native packaging
 
+**Publication hold (2026-10-05):** rc1-5 lost continuous control on UI heartbeat expiry. See the
+[incident and correction](continuous-control-incident.md). The historical package below passed short
+checks only; corrected package acceptance is pending. New builds must preserve its existing assets.
+
 The 1.0.0 fork maintained by alamios ships one **gwe-nvml** `.deb` containing an unprivileged GTK desktop
 and a separately privileged NVML helper. Source and packages are intended for
 [GitHub Releases](https://github.com/alamios/gwe/releases); no publication has occurred in this session.
@@ -31,8 +35,8 @@ Debian revision `1.0.0~rc1-5` retains the scoped contrast/circular title-button 
 maintainer credits, points the development changelog to `main`, and keeps native error notices nonblocking;
 the application version remains `1.0.0-rc1`. It upgrades the original candidate through ordinary APT.
 Earlier package/source artifacts and diagnostics are retained in a private, checksummed
-Git-ignored `.local-backups/` archive. Generated build trees were cleaned; only
-`build/publish-v1.0.0-rc1/` remains, with the original accepted assets unchanged.
+Git-ignored `.local-backups/` archive. Generated build trees were cleaned;
+`build/publish-v1.0.0-rc1/` retains the original assets unchanged. Correction builds use fresh directories.
 
 ## Installing the reviewed candidates
 

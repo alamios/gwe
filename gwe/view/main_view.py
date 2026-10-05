@@ -20,7 +20,7 @@ from collections import OrderedDict
 from typing import Optional, Dict, List, Tuple, Any
 
 from injector import inject, singleton
-from gi.repository import Gtk
+from gi.repository import Gio, Gtk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCanvas
 
@@ -216,6 +216,22 @@ class MainView(MainViewInterface):
             self._window.hide()
         else:
             self._window.show()
+
+    def show_service_control_fault(self, message: Optional[str]) -> None:
+        """Keep control loss visible; ordinary native status has no banner."""
+        if message is not None:
+            self._main_infobar.set_message_type(Gtk.MessageType.ERROR)
+            self._main_infobar.set_show_close_button(False)
+            self._main_infobar.show()
+            self.show_main_infobar_message(message)
+            if getattr(self, '_service_control_fault', None) != message:
+                self._service_control_fault = message
+                application = self._window.get_application()
+                if application is not None:
+                    notification = Gio.Notification.new('GPU fan curve stopped')
+                    notification.set_body('The selected fan curve is no longer active. Open GWE to review the error.')
+                    notification.set_priority(Gio.NotificationPriority.URGENT)
+                    application.send_notification('fan-control-fault', notification)
 
     def get_power_limit(self) -> Tuple[int, int]:
         return 0, self._power_limit_adjustment.get_value()

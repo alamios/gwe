@@ -274,7 +274,7 @@ def test_continuous_session_renews_past_trial_deadline_until_explicit_release(se
     assert 'recovery verified' in instance.message
 
 
-def test_continuous_ui_stall_still_disconnects_without_rearming(session):
+def test_continuous_worker_stall_still_disconnects_without_rearming(session):
     instance, client, now = session
     instance.continuous = True
     instance.begin(CURVE, (30, 100))
@@ -282,4 +282,15 @@ def test_continuous_ui_stall_still_disconnects_without_rearming(session):
     now[0] = 4
     instance.tick(4)
     assert instance.state == 'fault' and client.closed
-    assert instance.last_error == 'ui_heartbeat_expired'
+    assert instance.last_error == 'worker_heartbeat_expired'
+
+
+def test_unrequested_service_recovery_is_a_visible_fault(session):
+    instance, client, now = session
+    instance.begin(CURVE, (30, 100))
+    instance.tick(0)
+    client.state, client.owned = 'idle', False
+    now[0] = 1
+    instance.tick(1)
+    assert instance.state == 'fault' and client.closed
+    assert instance.last_error == 'unexpected_automatic_recovery'

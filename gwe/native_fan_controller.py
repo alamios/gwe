@@ -89,7 +89,9 @@ class NativeFanController(FanMainController):
         self.view.set_apply_fan_profile_button_enabled(bool(
             self.telemetry_available and not busy and not self.problem()
             and not (self.power and self.power.operation_id is not None)))
-        self.view.set_service_fan_hint(self.problem() or 'Apply the selected fan profile')
+        self.view.set_service_fan_hint(self.session.message if self.session.state == 'fault'
+                                       else self.problem() or 'Apply the selected fan profile')
+        self.view.show_service_control_fault(self.session.message if self.session.state == 'fault' else None)
         from gwe.model.fan_profile import FanProfile
         profile = FanProfile.get_or_none(id=self.selected.identifier) if self.selected else None
         self.view.set_edit_fan_profile_button_enabled(bool(profile and not profile.read_only and not self.closed))
@@ -99,6 +101,7 @@ class NativeFanController(FanMainController):
 
     def apply(self):
         if (self.closed or not self.selected or not self.telemetry_available or self.problem()
+                or self.session.state not in ('idle', 'active')
                 or self.desired is not None or (self.power and self.power.busy)):
             return
         self.startup_pending = False

@@ -50,9 +50,12 @@ bash scripts/run_control_session.sh /path/to/prepared/python3.12 "$BACKUP_DB" --
 
 ## Recovery and limitations
 
-The GUI renews the same five-second service lease once per second; continuous mode removes only the
-ten-second GUI deadline. Lost/stale telemetry, a stale UI heartbeat, socket loss, explicit release and
-application exit still initiate recovery. A service/worker failure cannot rely solely on GUI cleanup;
+Corrected source renews the same five-second service lease once per second from a dedicated I/O
+thread, independently of GTK. The service owns temperature freshness and thermal validation; display
+telemetry is required for new Apply, not continued renewal. A stale I/O heartbeat, socket loss, explicit
+release and application exit still initiate recovery. Bounded trials retain their UI heartbeat.
+See the [2026-10-05 incident](continuous-control-incident.md) for the confirmed flaw in rc1-5 and pending
+installed acceptance of this correction. A service/worker failure cannot rely solely on GUI cleanup;
 the existing watchdog and independent post-stop recovery remain in place. Startup never imports,
 migrates or applies a saved profile. Faults never automatically reacquire a curve.
 

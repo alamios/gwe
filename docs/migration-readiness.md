@@ -1,5 +1,10 @@
 # Migration readiness: current-host follow-up
 
+**2026-10-05: release and migration readiness are on hold** after extended-use curve loss in rc1-5.
+The [incident report](continuous-control-incident.md) distinguishes the confirmed UI heartbeat fault,
+source correction, simulated coverage and pending installed acceptance. Earlier short checks below
+do not supersede this finding.
+
 Current release preparation (2026-10-03): the unified 1.0.0-rc1 package and ordinary native desktop are
 implemented and installed as unified Debian revision `1.0.0~rc1-3`. Isolated package/UI validation uses
 system Python, and the owner reports successful ordinary use. Read-only inspection confirms active

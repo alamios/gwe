@@ -1,0 +1,68 @@
+# Continuous fan-control loss: 2026-10-05
+
+## Release hold and evidence
+
+Do not publish the prepared rc1-5 candidate as ready for continuous use. Its short installed
+startup/exit and service fault-recovery checks passed, but did not establish reliability over hours.
+The original tag and publication assets remain unchanged as evidence; corrected packages need their
+own acceptance. No installed files or GPU settings were changed during this investigation.
+
+The owner reported that the Custom curve stopped after hours, fan control reverted to the firmware,
+temperatures rose, and profile selection/Apply were disabled. The installed package was
+`1.0.0~rc1-5`. A private copy of the client log was preserved before implementation.
+
+The log records acquisition on 2026-10-03 at 22:27 UTC, followed by `ui_heartbeat_expired` during
+`ui_tick` on 2026-10-05 at 10:33:07 UTC (12:33 local), about 36 hours later. It records disconnect
+and a latched fault, followed by window close at 18:22 UTC and a new session. The exact cause of the
+UI scheduling delay and the peak temperature are unknown. The log alone does not independently
+verify fan policies at the instant of failure. Subsequent read-only inspection found an active manual
+session, so the investigation did not stop it or apply a competing controller.
+
+The service has no continuous-session lifetime cap. The client instead required a GTK-scheduled
+tick at least every 2.5 seconds, in addition to the service's five-second lease. An expired UI
+heartbeat closes its connection and latches `fault`; native selection/Apply then stay disabled.
+Nonblocking error dialogs in rc1-5 addressed one possible delay, not this underlying dependency.
+
+## Source correction
+
+Continuous sessions now use one dedicated in-process I/O thread. It serializes Apply/Release/Close
+and renews the existing lease once per second without GTK callbacks or display telemetry refresh.
+The service's fan worker already reads and validates its own temperature, identity, fan limits,
+write results and timing. Losing UI telemetry still blocks new Apply; it no longer interrupts an
+otherwise healthy continuous worker. Bounded ten-second development trials retain their UI heartbeat.
+
+The safety boundaries are unchanged: a delayed I/O worker, full-process stop, suspend interval,
+socket loss or service/thermal failure cannot silently reacquire. Process death still has socket EOF
+and pidfd detection; the service and native workers retain lease expiry and independent watchdog
+recovery. A Python extension holding the GIL or system-wide starvation can still stop the I/O thread;
+this change does not promise survival of all host stalls. No thresholds were increased.
+
+An unexpected service return to idle is now a fault rather than a quiet successful restoration.
+Only an explicitly requested release reports normal verified recovery. A fault shows a persistent
+error-only banner, an explanatory tooltip, the existing nonblocking dialog and a desktop notification
+(subject to desktop notification settings). Healthy operation has no status band. Controls stay
+disabled until recovery is reviewed and GWE is restarted; there is no automatic retry.
+Fault display requires GTK to run again; the control thread itself never calls GTK.
+
+The private diagnostic log now distinguishes UI and I/O-worker heartbeats and records bounded
+numeric heartbeat age/tick gap on expiration. It still excludes profile data, device identity,
+arbitrary exceptions and paths, with its existing size/rotation limits.
+
+## Validation and next acceptance
+
+- Python 3.12: 587 simulated/backend/package tests passed.
+- Python 3.14: 577 passed; ten HTTP-update tests excluded because requests is absent there. They pass
+  on 3.12. No dependencies were installed.
+- A real threaded client and simulated lease remained active with no GTK pulses for over six seconds,
+  beyond the service lease, and disconnected on Close. All requests used one I/O thread.
+- A 48-hour accelerated-clock session retained ownership and released normally. This is simulated
+  duration coverage, not 48 hours of hardware acceptance.
+- Delayed worker, expired service lease, backend fault and socket loss latch failure without reacquisition.
+  Existing missing/stale telemetry, partial writes, permissions and independent recovery tests still pass.
+- The isolated native GTK check passed editor/profile/tray operations, ten seconds with an error notice,
+  a six-second deliberate GTK block with uninterrupted simulated renewals, and persistent fault display.
+
+The next package must be checked using its extracted system-Python payload, then installed only after
+the current session is closed and recovery completes. Real extended CUDA use and installed lifecycle
+acceptance of the correction remain pending. Preserve the current power limit; historical trial wattages
+are not rollback targets. Wayland/Kubuntu 26.04 and independently recorded suspend/resume remain pending.

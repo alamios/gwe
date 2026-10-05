@@ -1,5 +1,10 @@
 # Native desktop candidate
 
+Release hold: see the [2026-10-05 continuous-control incident](continuous-control-incident.md).
+In corrected source, continuous lease renewal is independent of GTK; the service owns thermal
+validation. A lost curve shows a persistent error banner and desktop notification, while ordinary
+status remains hidden. Faults require recovery review and restart, not automatic reacquisition.
+
 The unified development package uses the original GTK window with NVML monitoring and supervised
 fan/power control. Normal launch uses `gwe-nvml`, without a terminal or sudo. Only installation/setup
 authorizes the root helper. Installed socket activation still requires hardware acceptance; the older

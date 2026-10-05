@@ -190,7 +190,7 @@ def main(argv=None):
     from gwe import __main__ as entry
     passed, phase = [], [0]
     power_edit_started = [0]
-    deadline = time.monotonic() + 30
+    deadline = time.monotonic() + (50 if args.smoke_native else 30)
     if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.smoke_native or args.check_startup:
         def check():
             app = entry.INJECTOR.get(entry.Application)
@@ -206,7 +206,8 @@ def main(argv=None):
                       'PASS' if valid else 'FAIL', flush=True)
                 app.quit()
                 return GLib.SOURCE_REMOVE
-            if time.monotonic() >= deadline or session.state == 'fault':
+            expected_fault = args.smoke_native and phase[0] in (52, 53)
+            if time.monotonic() >= deadline or (session.state == 'fault' and not expected_fault):
                 return finish(False)
             if controller is None or not controller.telemetry_available:
                 return GLib.SOURCE_CONTINUE
@@ -306,6 +307,27 @@ def main(argv=None):
                     if not notice_open or session.state != 'active' or backend.stops != 2 or backend.renewals < 5:
                         return finish(False)
                     print('Native error notice: PASS; control renews and Quit remains available', flush=True)
+                    renewals = backend.renewals
+                    time.sleep(6)  # Deliberately block GTK beyond the five-second lease.
+                    if session.state != 'active' or backend.stops != 2 or backend.renewals < renewals + 4:
+                        return finish(False)
+                    print('Blocked GTK: PASS; simulated curve stays active', flush=True)
+                    from gwe.fan_gui_session import GuiTrialError
+                    controller.executor.submit(session._fail, GuiTrialError('service_fault'))
+                    phase[0] = 52
+                elif phase[0] == 52 and session.state == 'fault':
+                    controller.refresh()
+                    if (not view._main_infobar.get_visible() or not view._main_infobar.get_revealed()
+                            or view._main_infobar.get_show_close_button()
+                            or 'no longer' not in view._main_infobar_label.get_text()
+                            or view._fan_apply_button.get_sensitive() or view._fan_combobox.get_sensitive()):
+                        return finish(False)
+                    print('Control loss: PASS; persistent warning and disabled Apply', flush=True)
+                    power_edit_started[0] = time.monotonic()
+                    phase[0] = 53
+                elif phase[0] == 53 and time.monotonic() - power_edit_started[0] >= .6:
+                    if not view._main_infobar_label.get_mapped():
+                        return finish(False)
                     from gwe.interactor.settings_interactor import SettingsInteractor
                     SettingsInteractor.set_bool('settings_minimize_to_tray', False)
                     phase[0] = 6
@@ -489,7 +511,7 @@ def main(argv=None):
                         widget.destroy()
                 entry.INJECTOR.get(entry.Application).quit()
                 return GLib.SOURCE_REMOVE
-            GLib.timeout_add(35000, abort_native)
+            GLib.timeout_add(55000, abort_native)
 
     sys.argv = ['gwe-nvml' if args.native else 'gwe-service-trial']
     if args.hide_window:

@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from html import escape
 
 from gwe.fan_service import boot_time
+from gwe.fan_session_worker import FanSessionWorker
 
 _factory = None
 
@@ -34,7 +35,8 @@ class FanMainController:
             startup = matches[0]
         self.view, self.profiles, self.limits = view, profiles, limits
         self.session, self.allow_control, self.clock = session, allow_control, clock
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.executor = (FanSessionWorker(session) if session.continuous
+                         else ThreadPoolExecutor(max_workers=1))
         self.pending = None
         self.pending_transition = False
         self.release_pending = False
@@ -165,12 +167,15 @@ class FanMainController:
             # One attempt per application start; recovery/release must never rearm it.
             self.startup_pending = False
             self.apply()
-        if self.pending is None and self.session.client is not None:
+        if not self.session.continuous and self.pending is None and self.session.client is not None:
             if not self.telemetry_available and self.session.state in ('starting', 'active'):
                 self.release()
             elif now >= self.next_tick:
                 self.next_tick = now + 1
                 self._submit(self.session.tick, now)
+        if self.session.continuous:
+            # The worker can change state while GTK is delayed or hidden.
+            self.refresh()
         return True
 
     def close(self):

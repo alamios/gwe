@@ -3,6 +3,12 @@ Version 1.0.0-rc1 (unreleased candidate)
 
 Independent fork maintained by alamios with AI assistance. Original GWE authors and license retained.
 
+Source correction after rc1-5 (installed acceptance pending; publication on hold):
+
+ * Renew continuous fan leases independently of GTK scheduling; retain service thermal checks and recovery.
+ * Report unexpected recovery as a fault with a persistent error banner and desktop notification.
+ * Log bounded heartbeat timing and test prolonged UI stalls and 48 simulated hours of ownership.
+
  * Move desktop monitoring and fan/power control to NVML; clock-offset control remains unsupported.
  * Supervise privileged writes with authenticated leases, watchdog and verified post-stop recovery.
  * Prepare one native package with terminal-free socket activation and installation-time authorization.

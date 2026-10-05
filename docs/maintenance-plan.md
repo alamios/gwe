@@ -7,6 +7,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- Release hold on 2026-10-05: rc1-5 lost its curve after about 36 hours with `ui_heartbeat_expired`.
+  Continuous renewal is now independent of GTK in source; persistent fault reporting and regression
+  coverage were added. Installed extended-use acceptance remains pending. See the
+  [incident report](continuous-control-incident.md); the previous readiness statement below is superseded.
+
 - Candidate acceptance on 2026-10-04: installed rc1-5 passes startup/editor/tray/Quit and privileged
   SIGKILL/SIGSTOP-watchdog recovery, with automatic fans, unchanged power and CoolerControl restored.
   The X11 prerelease is ready for owner publication; Wayland/26.04 and the original rc1-3 hang cause

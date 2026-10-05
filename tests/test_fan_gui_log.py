@@ -65,3 +65,23 @@ def test_power_rejection_preserves_safe_operation_and_reason(tmp_path):
     assert row['operation'] == 'power_apply'
     assert row['error'] == 'trial_guard_active'
     assert 'private' not in path.read_text()
+
+
+def test_heartbeat_timings_are_bounded_and_whitelisted(tmp_path):
+    path = tmp_path / 'trial.log'
+    log = FanGuiLog(path)
+    log.record('heartbeat_expired', operation='worker_tick', error='worker_heartbeat_expired',
+               heartbeat_age_seconds=.001234, tick_gap_seconds=4.876543,
+               uuid='private identity', arbitrary_seconds=123)
+    row = json.loads(path.read_text())
+    assert row['heartbeat_age_seconds'] == .001
+    assert row['tick_gap_seconds'] == 4.877
+    assert row['operation'] == 'worker_tick' and row['error'] == 'worker_heartbeat_expired'
+    assert 'private' not in path.read_text() and 'arbitrary_seconds' not in row
+
+
+@pytest.mark.parametrize('value', ['private', None, float('inf'), float('nan'), True])
+def test_invalid_heartbeat_timing_is_not_serialized(tmp_path, value):
+    path = tmp_path / 'trial.log'
+    FanGuiLog(path).record('heartbeat_expired', tick_gap_seconds=value)
+    assert 'tick_gap_seconds' not in json.loads(path.read_text())

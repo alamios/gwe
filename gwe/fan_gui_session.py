@@ -8,7 +8,7 @@ class GuiTrialError(RuntimeError):
 
 
 class FanGuiSession:
-    """Serialize calls in one I/O worker. Renew only in response to fresh UI ticks."""
+    """Serialize calls in one I/O worker; continuous renewals are independent of GTK."""
     def __init__(self, path, *, factory=FanClient, clock=boot_time, event_sink=None, continuous=False):
         self.path, self.factory, self.clock = path, factory, clock
         self.client = None
@@ -21,11 +21,11 @@ class FanGuiSession:
         self.log_failed = False
         self.continuous = continuous
 
-    def _emit(self, event):
+    def _emit(self, event, **timing):
         if self.event_sink is not None:
             try:
                 self.event_sink(event, state=self.state, operation=self.last_operation,
-                                error=self.last_error)
+                                error=self.last_error, **timing)
             except Exception:
                 # A disk failure must never interrupt disconnect or service recovery.
                 self.log_failed = True
@@ -57,7 +57,8 @@ class FanGuiSession:
         self.close()
         self.state = 'fault'
         self.message = (f'Control stopped ({code} during {self.last_operation}). '
-                        'Automatic recovery is not verified; check the service.')
+                        'The selected fan curve is no longer being maintained by this application. '
+                        'Automatic recovery is not verified; check the service before restarting GWE.')
         self._emit('failed')
 
     def begin(self, curve, limits):
@@ -102,8 +103,10 @@ class FanGuiSession:
         try:
             now = self.clock()
             if now - heartbeat > 2 or heartbeat < self.last_tick or now - self.last_tick > 2.5:
-                self.last_operation = 'ui_tick'
-                raise GuiTrialError('ui_heartbeat_expired')
+                self.last_operation = 'worker_tick' if self.continuous else 'ui_tick'
+                self._emit('heartbeat_expired', heartbeat_age_seconds=now - heartbeat,
+                           tick_gap_seconds=now - self.last_tick)
+                raise GuiTrialError('worker_heartbeat_expired' if self.continuous else 'ui_heartbeat_expired')
             self.last_tick = now
             if self.state in ('starting', 'active') and self.deadline is not None and now >= self.deadline:
                 self.release()
@@ -112,6 +115,8 @@ class FanGuiSession:
             status = self._request('status')
             state = status.get('state')
             if state == 'idle' and status.get('owned') is False:
+                if self.state != 'stopping':
+                    raise GuiTrialError('unexpected_automatic_recovery')
                 self.close()
                 self.state = 'idle'
                 self.message = 'Both fans restored to automatic; recovery verified by the service.'

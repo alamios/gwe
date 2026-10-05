@@ -4,7 +4,13 @@ The fork develops on `main`. The annotated `upstream-baseline` tag preserves the
 commit; the maintenance branch is merged without squash. Existing upstream tags and historical branches
 are retained, but are not new fork releases. A separate `release` branch is not needed.
 
-## Accepted candidate
+## Publication hold
+
+The 2026-10-05 [continuous-control incident](continuous-control-incident.md) supersedes readiness of
+rc1-5. Preserve its tag and prepared assets, but do not publish them as ready. The correction needs
+new package acceptance and a distinct future release tag; the instructions below describe the older assets.
+
+## Previous candidate acceptance
 
 The first fork version is `1.0.0-rc1`, targeting the tested KDE/X11 host. Before tagging or publishing,
 record installed startup/editor/tray/Quit and SIGKILL/watchdog recovery using the unified package:

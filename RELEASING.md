@@ -5,9 +5,16 @@ This independent fork is maintained by **alamios** with AI assistance at
 are retained. Source and native `.deb` assets are intended for GitHub Releases; no push or publication
 has occurred during local preparation. This fork has no Flatpak or PyPI distribution.
 
-## Accepted X11 candidate
+## Publication hold
 
-**1.0.0-rc1**, Debian revision **1.0.0~rc1-5**, is ready for owner publication as a **prerelease**.
+The extended-use curve loss reported on 2026-10-05 supersedes rc1-5 readiness. Do not publish the
+prepared assets as a validated continuous-control release. See [the incident and new acceptance
+requirements](docs/continuous-control-incident.md). Preserve the existing tag/assets; do not retag
+them to the correction or infer extended reliability from the earlier short checks.
+
+## Previous X11 acceptance
+
+**1.0.0-rc1**, Debian revision **1.0.0~rc1-5**, passed the following short acceptance checks.
 On 2026-10-04 the owner completed the installed unified-package check with system Python:
 
 - Saved-curve startup, original editor, tray hide/show retaining ownership and explicit Quit passed.

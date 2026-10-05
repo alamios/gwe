@@ -11,7 +11,9 @@ Original authors, contributor credits and the GPL-3.0-or-later license are retai
 The project home is [alamios/gwe](https://github.com/alamios/gwe). Source and native `.deb` packages are
 intended for [GitHub Releases](https://github.com/alamios/gwe/releases). The first candidate is
 **1.0.0-rc1**; Debian revision `1.0.0~rc1-5` passed installed X11 acceptance on the current host.
-The prerelease is prepared locally; publication remains an owner action. This fork currently has no Flatpak
+**Publication is on hold:** an extended-use curve loss was confirmed on 2026-10-05. The source correction
+and remaining acceptance are recorded in [the incident report](docs/continuous-control-incident.md).
+The old assets are preserved for reference. This fork currently has no Flatpak
 or PyPI distribution.
 
 ## What changed
@@ -26,6 +28,8 @@ or PyPI distribution.
 - The original curve editor, profile persistence and minimize-to-tray preference remain available.
   The last applied curve can be restored at startup. Automatic profiles release fan control.
 - Native error notices keep the control loop running and do not block Quit.
+- Continuous lease renewal runs independently of GTK. Control loss has a persistent error notice and
+  desktop notification; this correction still requires installed extended-use acceptance.
 - Private configuration is created automatically; existing development profile sources are imported
   through a verified copy with recovery backups. Trial controls and the development status band are removed.
 
@@ -63,7 +67,8 @@ Close other GWE applications with **Quit**, then install the reviewed local cand
 sudo apt install ./build/publish-v1.0.0-rc1/gwe-nvml_1.0.0~rc1-5_all.deb
 ```
 
-After local cleanup, `build/` retains only `publish-v1.0.0-rc1/`. Earlier package snapshots and
+After local cleanup, `build/publish-v1.0.0-rc1/` retains the original candidate assets. New correction
+builds use separate directories. Earlier package snapshots and
 diagnostic evidence were archived privately under Git-ignored `.local-backups/`; generated review
 trees, smoke states and synthetic media were removed. The four publication assets are unchanged.
 
@@ -95,6 +100,7 @@ Documentation and code comments are in English. Tests do not authorize writes to
   [monitor mode](docs/monitor-mode.md) and [GUI environment](docs/gui-development.md)
 - [Fan service](docs/fan-service.md), [power control](docs/power-control.md) and
   [migration readiness](docs/migration-readiness.md)
+- [Continuous-control incident and correction](docs/continuous-control-incident.md)
 
 Earlier supervised experiments remain documented in [fan trials](docs/nvml-fan-trial.md),
 [curve recovery](docs/nvml-fan-curves.md), [profile review](docs/fan-gui.md),
