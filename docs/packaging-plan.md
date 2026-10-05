@@ -4,6 +4,11 @@
 [incident and correction](continuous-control-incident.md). The historical package below passed short
 checks only; corrected package acceptance is pending. New builds must preserve its existing assets.
 
+The correction is staged at `build/curve-fix-rc1-6/gwe-nvml_1.0.0~rc1-6_all.deb` (source `8c6ad03`).
+Its extracted system-Python GTK check passes with simulated control, including a six-second GTK stall
+and persistent fault display. It has not been installed or accepted for extended hardware use.
+`BUILD_INFO` and `SHA256SUMS` accompany the package; the original rc1-5 assets remain unchanged.
+
 The 1.0.0 fork maintained by alamios ships one **gwe-nvml** `.deb` containing an unprivileged GTK desktop
 and a separately privileged NVML helper. Source and packages are intended for
 [GitHub Releases](https://github.com/alamios/gwe/releases); no publication has occurred in this session.

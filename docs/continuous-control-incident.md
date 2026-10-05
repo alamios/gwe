@@ -62,7 +62,12 @@ arbitrary exceptions and paths, with its existing size/rotation limits.
 - The isolated native GTK check passed editor/profile/tray operations, ten seconds with an error notice,
   a six-second deliberate GTK block with uninterrupted simulated renewals, and persistent fault display.
 
-The next package must be checked using its extracted system-Python payload, then installed only after
-the current session is closed and recovery completes. Real extended CUDA use and installed lifecycle
+The new package `build/curve-fix-rc1-6/gwe-nvml_1.0.0~rc1-6_all.deb` contains correction commit
+`8c6ad03`. Its extracted system-Python payload passes the expanded GTK check, including a rendered
+persistent error banner and clean Quit. Packaged Python modules match the source; the GUI launcher
+has only the reviewed vendor-import insertion. New and original asset checksums verify. No private
+profile databases or diagnostic logs are bundled. `BUILD_INFO` records these limits next to the package.
+
+Install only after the current session is closed and recovery completes. Real extended CUDA use and installed lifecycle
 acceptance of the correction remain pending. Preserve the current power limit; historical trial wattages
 are not rollback targets. Wayland/Kubuntu 26.04 and independently recorded suspend/resume remain pending.

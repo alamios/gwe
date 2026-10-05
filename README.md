@@ -61,10 +61,12 @@ modules with their licenses and distribution-provided GTK/Matplotlib libraries, 
 It does not bundle or replace drivers, kernels or CUDA. Follow the documented package inspection and
 installation procedure; do not run the historical upstream build/reset/install instructions.
 
-Close other GWE applications with **Quit**, then install the reviewed local candidate normally:
+The corrected local package is `1.0.0~rc1-6`: simulated suites and the extracted system-Python GTK check
+pass, but installed extended-use acceptance is pending. Pause GPU work and close GWE applications with
+**Quit**, allowing recovery to finish, before updating:
 
 ```bash
-sudo apt install ./build/publish-v1.0.0-rc1/gwe-nvml_1.0.0~rc1-5_all.deb
+sudo apt install ./build/curve-fix-rc1-6/gwe-nvml_1.0.0~rc1-6_all.deb
 ```
 
 After local cleanup, `build/publish-v1.0.0-rc1/` retains the original candidate assets. New correction
