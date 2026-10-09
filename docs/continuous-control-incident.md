@@ -42,6 +42,32 @@ interactive sudo authentication (`sudo -n true` reported authentication required
 run in this follow-up. Publication remains pending that service-level acceptance. Suspend/resume
 and driver/host failure guarantees remain outside this evidence.
 
+## Service fault-injection failure and manual recovery: 2026-10-10
+
+The owner ran the grouped privileged check. Normal startup/editor/tray/Quit passed again, but
+service SIGKILL recovery failed. Independent readback found both policies manual, 36 C, unchanged
+250 W, service failed/signal and CoolerControl inactive. The ownership and session journals remained;
+there were no pending power journals and no remaining service processes.
+
+On systemd 259.5, the journal and ExecStopPost metadata show that the bulk
+`systemctl kill --kill-whom=all --signal=SIGKILL` also killed the newly started recovery process
+with SIGKILL. The failure is real and must not be counted as recovery acceptance. The indicator
+warning is unrelated. Other historical shutdown errors in the journal are not attributed to this test.
+
+The owner then ran the reviewed root-owned helper's `recover` action. Independent readback verified
+both policies automatic, 35 C, unchanged 250 W, CoolerControl active, activation socket active and
+all four recovery/session journals absent. The service retained its expected failed state from the
+injected SIGKILL; this is distinct from pending GPU recovery.
+
+The developer harness now targets `--kill-whom=main` for SIGKILL/SIGSTOP and cleanup SIGCONT.
+This tests supervisor loss/hang and lets systemd manage teardown/ExecStopPost. It does not claim
+survival of a bulk kill that also targets the recovery process. If final checks find incomplete
+recovery, the harness invokes the installed helper only after the unit is inactive/failed and its
+main/control PIDs are zero. Successful emergency cleanup never turns the failed test into a pass.
+Sixteen simulated acceptance tests pass on system Python 3.14.4, including that failure path.
+No packaged application/helper files were changed. Privileged hardware acceptance of the corrected
+harness remains pending; the subsequent watchdog stage was not reached in the failed run.
+
 ## Release hold and evidence
 
 Do not publish the prepared rc1-5 candidate as ready for continuous use. Its short installed

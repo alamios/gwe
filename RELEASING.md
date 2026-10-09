@@ -1,5 +1,10 @@
 # Preparing and publishing fork releases
 
+The first privileged service fault check failed: bulk SIGKILL also killed ExecStopPost. Manual
+recovery is independently verified, preserving 250 W. The corrected harness targets only the service
+supervisor; its real SIGKILL/watchdog acceptance remains pending. See the
+[failure and recovery record](docs/continuous-control-incident.md#service-fault-injection-failure-and-manual-recovery-2026-10-10).
+
 Installed checks on 2026-10-10 passed saved-curve startup/editor/tray/Quit and application
 SIGKILL/SIGSTOP recovery on the migrated host. Both fans returned to automatic, the current 250 W
 limit was preserved and CoolerControl was restored. Service-level SIGKILL/watchdog injection remains

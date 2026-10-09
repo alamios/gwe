@@ -50,8 +50,8 @@ recurrence of curve loss on rc1-6. Read-only inspection confirms Ubuntu 26.04.1 
 session and installed `1.0.0~rc1-6`. This is initial real-use evidence, not a measured uninterrupted
 soak test or confirmation that GWE itself uses native Wayland rather than XWayland. Post-migration
 startup/editor/tray/Quit and client SIGKILL/SIGSTOP recovery now pass, preserving the current 250 W
-limit and restoring both fans to automatic. Service SIGKILL/watchdog injection still requires privileged
-acceptance on the new host. Driver/host failure guarantees and recorded suspend/resume remain pending.
+limit and restoring both fans to automatic. The first service SIGKILL test also killed its recovery process; manual recovery was verified.
+The corrected supervisor-only fault harness still requires privileged acceptance on the new host. Driver/host failure guarantees and recorded suspend/resume remain pending.
 See [migration readiness](docs/migration-readiness.md) for evidence and remaining work.
 
 Encoder/decoder telemetry has been checked against direct NVML and `nvidia-smi`. Firefox/YouTube returned

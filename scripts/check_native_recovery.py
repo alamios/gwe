@@ -18,6 +18,23 @@ def admin(*args):
     subprocess.run(['sudo', '-n', 'systemctl', *args], check=True, timeout=65)
 
 
+def inject_fault(signal):
+    if signal not in ('SIGKILL', 'SIGSTOP'):
+        raise ValueError('Unsupported supervisor fault')
+    # Bulk cgroup SIGKILL can also kill the newly started ExecStopPost process.
+    # Target the supervisor; systemd owns teardown and independent recovery.
+    admin('kill', '--kill-whom=main', f'--signal={signal}', UNIT)
+
+
+def emergency_recover():
+    """Recover retained journals only after the unit has no live control process."""
+    if (state(UNIT) not in ('inactive', 'failed')
+            or state(UNIT, 'MainPID') != '0' or state(UNIT, 'ControlPID') != '0'):
+        raise RuntimeError('Service still running; manual recovery requires inspection')
+    subprocess.run(['sudo', '-n', '/usr/bin/python3', '-I', '-B',
+                    '/opt/gwe-fan-service/entry.py', 'recover'], check=True, timeout=65)
+
+
 def verify_fault(before, after, *, result, expected, service, socket, cooler_before, cooler_after):
     if (not before['policies'] or len(after['policies']) != len(before['policies'])
             or any(after['policies']) or before['power_mw'] != after['power_mw']
@@ -48,7 +65,7 @@ def fault(nvml, signal, expected):
             if process.poll() is not None or time.monotonic() >= deadline:
                 raise RuntimeError('Startup curve did not acquire all fans')
             time.sleep(.2)
-        admin('kill', '--kill-whom=all', f'--signal={signal}', UNIT)
+        inject_fault(signal)
         deadline = time.monotonic() + 65
         while state(UNIT) not in ('inactive', 'failed'):
             if time.monotonic() >= deadline:
@@ -58,7 +75,7 @@ def fault(nvml, signal, expected):
         verify_fault(before, after, result=state(UNIT, 'Result'), expected=expected,
                      service=state(UNIT), socket=state(SOCKET), cooler_before=cooler,
                      cooler_after=state('coolercontrold.service'))
-        print(f'{signal}: PASS; fans automatic, current power unchanged, cooling state restored', flush=True)
+        print(f'Service supervisor {signal}: PASS; fans automatic, current power unchanged, cooling state restored', flush=True)
     finally:
         if process.poll() is None:
             process.terminate()
@@ -68,10 +85,18 @@ def fault(nvml, signal, expected):
                 process.kill()
                 process.wait(timeout=5)
         if state(UNIT) not in ('inactive', 'failed'):
-            admin('kill', '--kill-whom=all', '--signal=SIGCONT', UNIT)
+            admin('kill', '--kill-whom=main', '--signal=SIGCONT', UNIT)
             admin('stop', UNIT)
         _, after = readings(nvml, uuid)
-        if any(after['policies']) or after['power_mw'] != before['power_mw']:
+        if (not after['policies'] or any(after['policies']) or after['power_mw'] != before['power_mw']
+                or state('coolercontrold.service') != cooler):
+            emergency_recover()
+            _, after = readings(nvml, uuid)
+            if (after['policies'] != before['policies'] or after['power_mw'] != before['power_mw']
+                    or state('coolercontrold.service') != cooler):
+                raise RuntimeError('Final recovery unverified; inspect service before restarting GWE')
+            print('Emergency recovery verified; this does not turn a failed fault test into a pass', flush=True)
+        if after['policies'] != before['policies'] or after['power_mw'] != before['power_mw']:
             raise RuntimeError('Final recovery unverified; inspect service before restarting GWE')
 
 
