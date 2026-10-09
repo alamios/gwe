@@ -29,7 +29,7 @@ or PyPI distribution.
   The last applied curve can be restored at startup. Automatic profiles release fan control.
 - Native error notices keep the control loop running and do not block Quit.
 - Continuous lease renewal runs independently of GTK. Control loss has a persistent error notice and
-  desktop notification; the owner reports no recurrence with rc1-6; post-migration recovery checks remain pending.
+  desktop notification; the owner reports no recurrence with rc1-6; post-migration client recovery checks pass; service fault injection remains pending.
 - Private configuration is created automatically; existing development profile sources are imported
   through a verified copy with recovery backups. Trial controls and the development status band are removed.
 
@@ -49,7 +49,9 @@ fans, unchanged power and restored CoolerControl.
 recurrence of curve loss on rc1-6. Read-only inspection confirms Ubuntu 26.04.1 LTS, KDE, a Wayland
 session and installed `1.0.0~rc1-6`. This is initial real-use evidence, not a measured uninterrupted
 soak test or confirmation that GWE itself uses native Wayland rather than XWayland. Post-migration
-startup/Quit and fault recovery, driver/host failure guarantees and recorded suspend/resume remain pending.
+startup/editor/tray/Quit and client SIGKILL/SIGSTOP recovery now pass, preserving the current 250 W
+limit and restoring both fans to automatic. Service SIGKILL/watchdog injection still requires privileged
+acceptance on the new host. Driver/host failure guarantees and recorded suspend/resume remain pending.
 See [migration readiness](docs/migration-readiness.md) for evidence and remaining work.
 
 Encoder/decoder telemetry has been checked against direct NVML and `nvidia-smi`. Firefox/YouTube returned
@@ -65,7 +67,8 @@ It does not bundle or replace drivers, kernels or CUDA. Follow the documented pa
 installation procedure; do not run the historical upstream build/reset/install instructions.
 
 The corrected local package is `1.0.0~rc1-6`: simulated suites and the extracted system-Python GTK check
-pass, and the owner reports successful use on 26.04/Wayland. Post-migration recovery acceptance is pending. Pause GPU work and close GWE applications with
+pass, and the owner reports successful use on 26.04/Wayland. Post-migration service fault acceptance is pending.
+Pause GPU work and close GWE applications with
 **Quit**, allowing recovery to finish, before updating:
 
 ```bash

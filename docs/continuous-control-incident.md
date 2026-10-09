@@ -11,9 +11,36 @@ not whether the GWE window uses native Wayland or XWayland.
 This is positive owner-reported real-use evidence. The installation time, uninterrupted session
 length and workload coverage were not measured; do not describe the interval as a five-day soak.
 No application was launched, stopped or fault-injected, and no GPU settings were changed during
-this follow-up. A consolidated installed startup/Quit and fault-recovery check on the new host is
+the initial read-only follow-up. The later authorized checks are recorded below. A consolidated installed startup/Quit and fault-recovery check on the new host is
 still pending, as is independently recorded suspend/resume. Publication remains on hold pending
 that acceptance; the preserved rc1-5 artifacts must not be substituted for the correction.
+
+## Post-migration installed checks: 2026-10-10
+
+With the GPU available and GWE closed by the owner, read-only preflight found driver 580.178.04,
+kernel 7.0.0-38-generic, system Python 3.14.4, intact rc1-6 package files, both fans automatic,
+33–34 C and a current 250 W limit. KDE reported Wayland and a read-only GDK initialization selected
+`GdkWaylandDisplay`. A compute context belonged to the desktop `code` process; no process was
+stopped to remove it and no synthetic GPU load was generated.
+
+The installed application passed saved-curve startup, six seconds of verified ownership, the native
+editor, tray hide/show retaining ownership and explicit Quit. Both fans returned to automatic, the
+250 W limit remained unchanged, CoolerControl returned to its original active state, and the helper
+ended inactive/success with its activation socket active.
+
+Two further installed sessions passed client SIGKILL and client SIGSTOP recovery. Signals targeted
+only the application subprocess launched by the check, not the privileged service or unrelated
+processes. With SIGSTOP, both fans were verified automatic while the application was still frozen;
+only then was that child terminated to finish pidfd-driven session cleanup. Both sessions ended
+with automatic fans, unchanged 250 W, restored CoolerControl and helper inactive/success.
+The local check script is retained in ignored `build/wayland-acceptance-20261010/`.
+
+An Ayatana indicator deprecation warning was non-fatal. No profiles, power limits, frequencies,
+packages or drivers were modified. These results validate client failure recovery on the new host;
+they do not replace service SIGKILL/watchdog injection. That remaining grouped check requires
+interactive sudo authentication (`sudo -n true` reported authentication required), and has not been
+run in this follow-up. Publication remains pending that service-level acceptance. Suspend/resume
+and driver/host failure guarantees remain outside this evidence.
 
 ## Release hold and evidence
 

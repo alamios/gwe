@@ -1,5 +1,11 @@
 # Preparing and publishing fork releases
 
+Installed checks on 2026-10-10 passed saved-curve startup/editor/tray/Quit and application
+SIGKILL/SIGSTOP recovery on the migrated host. Both fans returned to automatic, the current 250 W
+limit was preserved and CoolerControl was restored. Service-level SIGKILL/watchdog injection remains
+pending interactive sudo authentication; client fault checks do not replace it. See the
+[full acceptance record](docs/continuous-control-incident.md#post-migration-installed-checks-2026-10-10).
+
 This independent fork is maintained by **alamios** with AI assistance at
 **https://github.com/alamios/gwe**. Original authors, credits, history and GPL-3.0-or-later licensing
 are retained. Source and native `.deb` assets are intended for GitHub Releases; no push or publication
@@ -9,7 +15,7 @@ has occurred during local preparation. This fork has no Flatpak or PyPI distribu
 
 On 2026-10-10 the owner reports successful rc1-6 use without recurrence after migration; read-only
 inspection confirms Ubuntu 26.04.1 LTS and KDE/Wayland. This is initial real-use evidence. The remaining
-gate is consolidated installed lifecycle/fault-recovery acceptance on the new host; see the
+gate is privileged service fault-recovery acceptance on the new host; see the
 [dated follow-up](docs/continuous-control-incident.md#owner-follow-up-2026-10-10).
 
 The extended-use curve loss reported on 2026-10-05 supersedes rc1-5 readiness. Do not publish the

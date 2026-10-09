@@ -1,5 +1,11 @@
 # Migration readiness: current-host follow-up
 
+Installed checks on 2026-10-10 passed saved-curve startup/editor/tray/Quit and application
+SIGKILL/SIGSTOP recovery on the migrated host. Both fans returned to automatic, the current 250 W
+limit was preserved and CoolerControl was restored. Service-level SIGKILL/watchdog injection remains
+pending interactive sudo authentication; client fault checks do not replace it. See the
+[full acceptance record](continuous-control-incident.md#post-migration-installed-checks-2026-10-10).
+
 **2026-10-10:** the owner has migrated to Kubuntu 26.04 and reports successful rc1-6 use without
 recurrence of curve loss. Read-only inspection confirms Ubuntu 26.04.1 LTS, KDE/Wayland and installed
 `1.0.0~rc1-6`. This supersedes earlier statements that target-desktop use was entirely untested.

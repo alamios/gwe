@@ -1,5 +1,11 @@
 # Maintenance plan
 
+Installed checks on 2026-10-10 passed saved-curve startup/editor/tray/Quit and application
+SIGKILL/SIGSTOP recovery on the migrated host. Both fans returned to automatic, the current 250 W
+limit was preserved and CoolerControl was restored. Service-level SIGKILL/watchdog injection remains
+pending interactive sudo authentication; client fault checks do not replace it. See the
+[full acceptance record](continuous-control-incident.md#post-migration-installed-checks-2026-10-10).
+
 Working branch: `main`. The completed `maintenance/nvml-revival` phase is merged without squash;
 `upstream-baseline` preserves the inherited original code.
 Initial target: NVIDIA GeForce RTX 3090 Ti, preserving custom fan curves during migration from Kubuntu 24.04/X11
