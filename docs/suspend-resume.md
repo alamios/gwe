@@ -53,6 +53,9 @@ trials, release/Quit and applied-profile deletion. The native GTK check uses a s
 read-only hardware telemetry, exercises clock-based resume, then verifies the persistent fault UI.
 The full suite passes 613 tests on system Python 3.14.4, including actual subprocess recovery with
 shared simulated NVML state. Existing Reactivex datetime and Ayatana deprecation warnings are non-fatal.
+The final extracted rc1-7 package passes the expanded GTK check with system Python. Both desktop and
+helper modules match source commit `e279950`; package checksums verify and no private databases or
+logs are bundled. These graphical checks use simulated fan control, not hardware fan writes.
 
 The correction is staged in `build/resume-fix-rc1-7/gwe-nvml_1.0.0~rc1-7_all.deb`.
 Exact build provenance and validation limits belong in its `BUILD_INFO`; checksums identify the bytes.
