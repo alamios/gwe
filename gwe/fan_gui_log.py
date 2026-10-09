@@ -22,6 +22,7 @@ ERRORS = {'invalid_response', 'request_refused', 'service_busy', 'service_fault'
           'recovery_not_verified', 'ownership_or_state_lost', 'worker_heartbeat_expired',
           'unexpected_automatic_recovery', 'resume_recovery_timeout', 'resume_service_not_idle'}
 ERRORS |= {'trial_guard_active', 'stale_power', 'outside_limits', 'power_busy', 'busy',
+           'saved_power_invalid', 'power_save_failed',
            'recovery_pending', 'recovery_failed', 'worker_unavailable', 'worker_lost',
            'worker_stuck', 'driver_error', 'verification_failed', 'identity_mismatch'}
 

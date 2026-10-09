@@ -479,7 +479,8 @@ class MainView(MainViewInterface):
         self._power_limit_scale.set_sensitive(enabled)
         self._power_limit_apply_button.set_sensitive(enabled)
         self._power_limit_apply_button.set_tooltip_text(message)
-        if native_desktop() and message.startswith(('Power:', 'Invalid power limit', 'Power operation failed')):
+        if native_desktop() and (message.startswith(('Power:', 'Invalid power limit', 'Power operation failed'))
+                                 or 'Could not save the limit for next startup.' in message):
             if getattr(self, '_native_power_error', None) != message:
                 self._native_power_error = message
                 self.show_error_message_dialog('Power control', message)

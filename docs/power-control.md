@@ -11,12 +11,48 @@ Launch the isolated main window with an explicit backup and `--allow-power-contr
 Power slider and Apply button become available only after a matching-GPU service status response,
 fresh usable telemetry, and absence of conflicting fan/power work. `--allow-control` separately enables bounded
 fan trials; neither flag implies the other. Preview and monitor-only launchers never enable power writes.
-No power setting is applied at startup or imported from a profile. Overclock remains disabled.
+The isolated development launcher does not apply power at startup or import it from a profile.
+The native desktop's saved-power behavior is described below. Overclock remains disabled.
 
 Power is a one-shot operation, not a renewable fan lease. A verified successful limit is retained on
 client disconnection, window close and normal service shutdown. It is not reset to the factory default.
-The UI reports the previous value so the user can explicitly apply it again. No reboot persistence is
-configured; NVIDIA documents that these limits are not persistent across reboot or driver unload.
+The UI reports the previous value so the user can explicitly apply it again. NVIDIA documents that the
+hardware limit does not persist across reboot or driver unload; native startup persistence handles
+reapplication when the desktop opens, rather than configuring an unattended boot-time setter.
+
+## Native startup persistence
+
+Implemented in corrected source on 2026-10-10 after the owner reported losing the configured limit
+on system reboot. Earlier rc1-7 and older packages did not save/reapply a power target.
+
+The ordinary native desktop saves only an exactly verified successful Apply, as a versioned setting
+in its existing private SQLite database (`settings_native_verified_power`). It includes the GPU UUID
+and integer milliwatt target; neither is emitted in diagnostic logs. No private profile is rewritten,
+no schema migration is needed and no historical current limit is implicitly adopted as a preference.
+After updating, apply the desired limit once to establish the saved target.
+
+On each normal launch, wait for fresh valid telemetry, matching service identity and stable fan control.
+Load and validate the saved target against that exact GPU's current power constraints. If it already
+matches telemetry, send no setter. Otherwise make one ordinary supervised compare-and-set transaction,
+with the same worker readback and rollback protections as explicit Apply. GPU replacement, changed
+constraints, corrupt settings, missing permissions, service faults or an uncertain response do not
+trigger a retry. Explicit Apply cancels pending startup restoration. A rejected or rolled-back operation
+never replaces the saved preference; a storage failure reports that hardware verification succeeded
+but saving did not. Quit cancels pending restoration and retains an already committed hardware limit.
+
+This setting is independent of the fan-profile startup preference. It may raise or lower power when GWE
+opens, including login autostart; it does nothing before the application starts. Suspend/resume recovery
+does not rearm it. Monitor/preview launchers, simulated graphical smoke checks and `--check-startup`
+hardware recovery checks neither save nor restore power, preserving their unchanged-power contract.
+
+Simulated tests cover database reopening, identity and changed limits, stale telemetry, fan transitions,
+service errors, compare-and-set rejection, rollback, exact verification, corrupted settings, storage
+failure, explicit override and Quit. Installed restoration after an actual reboot remains **pending**;
+no live power writes were performed for this change.
+
+The complete source suite passes **632 tests** on system Python 3.14.4; the isolated native GTK check
+also passes with synthetic control and read-only telemetry. The only suite warning is the existing
+Reactivex datetime deprecation (dependency behavior, not a failing test).
 
 The authenticated SOCK_SEQPACKET protocol adds `power_status` and `power_apply` to version 1. Apply
 requires exact fields `limit_mw`, `expected_mw` and `expected_uuid` in addition to version/op. Milliwatts

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Explicit power UI actions; the GUI never calls an NVML setter."""
+"""Verified power actions and optional startup restoration through the supervised service."""
 from concurrent.futures import ThreadPoolExecutor
 import math
 import time
@@ -9,6 +9,8 @@ from gwe.runtime_mode import native_desktop
 
 
 POWER_ERRORS = {
+    'saved_power_invalid': 'The saved power preference is invalid; apply a limit to replace it.',
+    'power_save_failed': 'The verified limit could not be saved for next startup.',
     'trial_guard_active': 'The trial accepts only 240 W or 250 W. Select one and press Apply.',
     'stale_power': 'The live limit changed. Wait for telemetry before pressing Apply again.',
     'outside_limits': 'The requested power is outside the live GPU limits.',
@@ -49,7 +51,7 @@ def to_mw(watts):
 class PowerController:
     def __init__(self, view, path, *, allowed=False, factory=FanClient, clock=time.monotonic,
                  fan_busy=lambda: False, fan_active=lambda: False, event_sink=lambda *args, **kwargs: None,
-                 telemetry_ttl=2.5):
+                 telemetry_ttl=2.5, preference=None):
         self.view, self.path, self.allowed = view, path, allowed
         self.factory, self.clock, self.fan_busy, self.event_sink = factory, clock, fan_busy, event_sink
         self.fan_active = fan_active
@@ -68,6 +70,8 @@ class PowerController:
         self.operation_id = None
         self.requested = self.expected = None
         self.service_uuid = None
+        self.preference = preference
+        self.startup_pending = preference is not None
         self.message = 'Power control requires an explicit Apply. Closing preserves a verified limit.'
 
     @property
@@ -103,14 +107,18 @@ class PowerController:
                    and not self.fan_busy() and (not self.fan_active() or self.power_with_fan) and not self.closed)
         self.view.set_service_power_enabled(enabled, self.message)
 
-    def apply(self):
+    def apply(self, requested_mw=None):
+        # An explicit user action supersedes the saved startup target, even if blocked.
+        self.startup_pending = False
         self.refresh()
         if not (self.allowed and self.available and self.valid() and not self.busy
                 and self.service_uuid == self.snapshot.info.uuid
                 and not self.fan_busy() and (not self.fan_active() or self.power_with_fan) and not self.closed):
             return
         try:
-            requested = to_mw(self.view.get_power_limit()[1])
+            requested = to_mw(self.view.get_power_limit()[1]) if requested_mw is None else requested_mw
+            if type(requested) is not int or not 1 <= requested <= 0xffffffff:
+                raise ValueError('Invalid saved limit')
             gpu = self.snapshot
             if not to_mw(gpu.power.minimum) <= requested <= to_mw(gpu.power.maximum):
                 raise ValueError('Outside limits')
@@ -126,6 +134,33 @@ class PowerController:
                                             expected_mw=expected, expected_uuid=gpu.info.uuid)
         self.pending_operation = 'power_apply'
         self.refresh()
+
+    def _restore_startup(self):
+        if not (self.startup_pending and self.allowed and self.available and self.valid()
+                and self.pending is None and not self.busy and not self.fan_busy()
+                and (not self.fan_active() or self.power_with_fan)
+                and self.service_uuid == self.snapshot.info.uuid):
+            return
+        # One attempt per launch. Never retry a rejected or uncertain transaction.
+        self.startup_pending = False
+        try:
+            target = self.preference.load()
+            if target is None:
+                return
+            uuid, requested = target
+            if uuid != self.snapshot.info.uuid:
+                raise PowerResponseError('identity_mismatch')
+            if not to_mw(self.snapshot.power.minimum) <= requested <= to_mw(self.snapshot.power.maximum):
+                raise PowerResponseError('outside_limits')
+            if requested == to_mw(self.snapshot.power.limit):
+                self.message = 'Saved power limit already matches live telemetry.'
+                return
+        except Exception as error:
+            code = error.code if isinstance(error, PowerResponseError) else 'saved_power_invalid'
+            self.message = f'Power: Saved power was not restored: {POWER_ERRORS[code]} [{code}].'
+            self.event_sink('power_failed', operation='power_status', error=code)
+            return
+        self.apply(requested)
 
     def pulse(self):
         if self.closed:
@@ -152,6 +187,8 @@ class PowerController:
                     raise PowerResponseError('invalid_response')
                 if state == 'fault':
                     raise PowerResponseError(result.get('error', 'recovery_failed'))
+                if self.startup_pending and state == 'failed':
+                    raise PowerResponseError(result.get('error', 'recovery_failed'))
                 self.remote_busy = state == 'busy'
                 if self.operation_id == -1:
                     self.operation_id = result.get('operation_id')
@@ -166,6 +203,13 @@ class PowerController:
                         self.message = f'Power verified: {applied / 1000:g} W (previous {previous / 1000:g} W). Closing preserves this limit.'
                         self.operation_id = None
                         self.event_sink('power_verified', operation=operation)
+                        if self.preference is not None:
+                            try:
+                                self.preference.save(self.service_uuid, applied)
+                                self.message += ' Saved for next application startup.'
+                            except Exception:
+                                self.message += ' Could not save the limit for next startup.'
+                                self.event_sink('power_failed', operation=operation, error='power_save_failed')
                     elif state == 'rolled_back':
                         if (type(result.get('applied_mw')) is not int or result['applied_mw'] != self.expected
                                 or result.get('previous_mw') != self.expected):
@@ -177,9 +221,10 @@ class PowerController:
                         raise PowerResponseError(result.get('error'))
                 if (self.last_error in ('service_connection_unavailable', 'socket_timeout')
                         and self.operation_id is None and state == 'idle'):
-                    self.message = 'Power service connected. Select a limit and press Apply; startup changes nothing.'
+                    self.message = 'Power service connected. Select a limit and press Apply.'
                 self.last_error = None
             except Exception as error:
+                self.startup_pending = False
                 if isinstance(error, PowerResponseError):
                     code = error.code
                 elif isinstance(error, TimeoutError):
@@ -197,6 +242,7 @@ class PowerController:
                 self.message = f'Power: {POWER_ERRORS[code]} [{code}]; no automatic retry.'
                 self.event_sink('power_failed', operation=operation, error=code)
             self.next_poll = self.clock() + (.2 if self.remote_busy else 2)
+        self._restore_startup()
         if (self.allowed and self.pending is None and self.valid() and not self.fan_busy()
                 and self.clock() >= self.next_poll):
             self.next_poll = self.clock() + 2
@@ -208,6 +254,7 @@ class PowerController:
         if self.closed:
             return
         self.closed = True
+        self.startup_pending = False
         # One-shot service transaction continues independently; no reset at close.
         self.executor.shutdown(wait=True, cancel_futures=True)
         self.refresh()

@@ -3,6 +3,12 @@ Version 1.0.0-rc1 (unreleased candidate)
 
 Independent fork maintained by alamios with AI assistance. Original GWE authors and license retained.
 
+Further source correction (installed reboot acceptance pending):
+
+ * Save the native desktop's last exactly verified power limit and restore it once on normal launch.
+ * Validate the saved GPU and current limits; retain compare-and-set/readback and reject automatic retries.
+ * Keep simulated and hardware recovery checks free of saved-power reapplication.
+
 Rc1-7 correction (installed suspend/resume acceptance pending):
 
  * Detect suspend separately from scheduling stalls and reapply the previously active curve once.

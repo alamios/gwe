@@ -45,6 +45,10 @@ ordinary filesystem copy or overwrite the historical source with the native data
   Enable login launch through native preferences and disable any historical GWE login entry first.
 - Routine lease renewal and read-only power-status polling do not disable the controls. Actual writes,
   stale telemetry, transitions and faults retain their guards. Clock-offset control remains unsupported.
+- Corrected source saves the last verified Power Apply in private settings and restores it once on normal
+  launch after fresh identity/range checks. It does not restore power during suspend/resume or without
+  the desktop running. Apply once after updating to establish the saved target; installed reboot
+  acceptance is pending. See [power persistence](power-control.md#native-startup-persistence).
 - Trial titles/status band and temporary Apply/Restore labels are absent. Actionable failures use ordinary
   dialogs; bounded private diagnostic logs remain in the launcher state directory.
 

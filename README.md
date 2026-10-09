@@ -36,9 +36,12 @@ This fork currently has no Flatpak or PyPI distribution.
 - Private configuration is created automatically; existing development profile sources are imported
   through a verified copy with recovery backups. Trial controls and the development status band are removed.
 
-Clock-offset/overclock control is **not supported** by the NVML desktop. Power changes require explicit
-Apply and readback verification; a committed limit remains in effect after normal exit. No boot-time
-power-limit persistence is configured. Missing readings remain unavailable rather than becoming zero.
+Clock-offset/overclock control is **not supported** by the NVML desktop. Explicit Power Apply requires
+readback verification; a committed limit remains in effect after normal exit. Corrected source also saves
+that verified target in the private native database and restores it once when GWE next opens, after matching
+GPU identity, live constraints and fresh telemetry. It does not set power during system boot without GWE,
+or reapply it on suspend/resume. Installed reboot acceptance is pending. Missing readings remain unavailable
+rather than becoming zero. See [power persistence](docs/power-control.md#native-startup-persistence).
 
 ## Validation and limitations
 
@@ -73,12 +76,13 @@ It does not bundle or replace drivers, kernels or CUDA. Follow the documented pa
 installation procedure; do not run the historical upstream build/reset/install instructions.
 
 The accepted rc1-6 package passes post-migration lifecycle and supervisor fault checks.
-The new rc1-7 package adds automatic curve resume, with installed hardware acceptance pending.
+The new rc1-8 package includes automatic curve resume and saved-power startup restoration,
+with installed suspend/reboot acceptance pending.
 Pause GPU work and close GWE applications with
 **Quit**, allowing recovery to finish, before updating:
 
 ```bash
-sudo apt install ./build/resume-fix-rc1-7/gwe-nvml_1.0.0~rc1-7_all.deb
+sudo apt install ./build/power-persistence-rc1-8/gwe-nvml_1.0.0~rc1-8_all.deb
 ```
 
 After local cleanup, `build/publish-v1.0.0-rc1/` retains the original candidate assets. New correction

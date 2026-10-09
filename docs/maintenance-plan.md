@@ -22,6 +22,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- 2026-10-10 power persistence: corrected native source saves the last verified Apply and restores
+  that GPU's target once on normal launch after current telemetry/constraint checks. This handles
+  reboot reset when the desktop opens; installed reboot acceptance remains pending. Monitor and
+  acceptance launchers retain their unchanged-power contract. See [power control](power-control.md).
+
 - 2026-10-10 suspend follow-up: rc1-6 restored automatic fans at unchanged 250 W after recorded
   suspension, but did not reapply Custom. Rc1-7 now distinguishes suspend from stalls and reacquires
   once after verified recovery. Installed resume acceptance remains pending; see

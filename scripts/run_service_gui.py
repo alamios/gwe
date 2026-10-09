@@ -150,8 +150,12 @@ def main(argv=None):
             telemetry_ttl = max(2.5, min(60, SettingsInteractor.get_int('settings_refresh_interval') + 1))
         else:
             telemetry_ttl = 2.5
+        preference = None
+        if args.native and not (args.smoke_native or args.check_startup):
+            from gwe.power_preference import PowerPreference
+            preference = PowerPreference()
         power = PowerController(view, endpoint, allowed=True, event_sink=log.record,
-                                telemetry_ttl=telemetry_ttl) if (
+                                telemetry_ttl=telemetry_ttl, preference=preference) if (
             args.allow_power_control or args.smoke_power or args.smoke_combined) else None
         if args.native:
             from peewee import SqliteDatabase
