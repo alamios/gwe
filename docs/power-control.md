@@ -53,6 +53,8 @@ no live power writes were performed for this change.
 The complete source suite passes **632 tests** on system Python 3.14.4; the isolated native GTK check
 also passes with synthetic control and read-only telemetry. The only suite warning is the existing
 Reactivex datetime deprecation (dependency behavior, not a failing test).
+The rc1-8 package built from `4acec67` also passes the extracted-package native GTK check, with
+source correspondence and checksum verified. No installation or actual reboot acceptance ran.
 
 The authenticated SOCK_SEQPACKET protocol adds `power_status` and `power_apply` to version 1. Apply
 requires exact fields `limit_mw`, `expected_mw` and `expected_uuid` in addition to version/op. Milliwatts

@@ -1,5 +1,10 @@
 # Preparing and publishing fork releases
 
+The newer local rc1-8 package includes the rc1-7 resume correction and saved-power startup restoration.
+Its source passes 632 tests and its extracted native GTK check passes. Installed suspend/resume and
+power restoration after reboot are still pending; do not describe those scenarios as accepted.
+See [power persistence](docs/power-control.md#native-startup-persistence).
+
 The rc1-7 resume correction is prepared separately from accepted rc1-6. A recorded rc1-6 suspend
 verified automatic fan restoration; automatic Custom reapplication in rc1-7 requires installed
 acceptance before publishing that correction. See [suspend/resume](docs/suspend-resume.md).

@@ -103,6 +103,14 @@ source is copied and archived, never modified. Applying custom profiles at start
 
 ## Validation and rollback
 
+The local `build/power-persistence-rc1-8/gwe-nvml_1.0.0~rc1-8_all.deb` was built from source
+commit `4acec67`. All packaged desktop Python modules match that source; the privileged helper is
+unchanged from rc1-7. The checksum and absence of private databases were verified. All 632 source
+tests and the final extracted-package native GTK check pass on system Python 3.14.4, with isolated
+configuration, synthetic control and read-only telemetry. Actual installed reboot power restoration
+and the included suspend/reapplication correction remain pending. Older dated acceptance remains
+evidence for its tested revision only; the package has not been installed or published by the agent.
+
 Automated checks cover real sockets with synthetic backends, rejected credentials/descriptors/modes,
 maintainer-script races, deterministic archives, private-data exclusion and a real split/combined/rollback
 dpkg transaction in an isolated root. Source GTK checks use simulated writes and live telemetry. Final
