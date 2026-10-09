@@ -7,6 +7,11 @@ has occurred during local preparation. This fork has no Flatpak or PyPI distribu
 
 ## Publication hold
 
+On 2026-10-10 the owner reports successful rc1-6 use without recurrence after migration; read-only
+inspection confirms Ubuntu 26.04.1 LTS and KDE/Wayland. This is initial real-use evidence. The remaining
+gate is consolidated installed lifecycle/fault-recovery acceptance on the new host; see the
+[dated follow-up](docs/continuous-control-incident.md#owner-follow-up-2026-10-10).
+
 The extended-use curve loss reported on 2026-10-05 supersedes rc1-5 readiness. Do not publish the
 prepared assets as a validated continuous-control release. See [the incident and new acceptance
 requirements](docs/continuous-control-incident.md). Preserve the existing tag/assets; do not retag

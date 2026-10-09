@@ -1,5 +1,20 @@
 # Continuous fan-control loss: 2026-10-05
 
+## Owner follow-up: 2026-10-10
+
+The owner confirms rc1-6 is installed and reports no recurrence of the curve-loss symptoms,
+including after migrating to Kubuntu 26.04. Read-only inspection confirms installed
+`gwe-nvml 1.0.0~rc1-6`, `/etc/os-release` reporting Ubuntu 26.04.1 LTS, and the current session
+environment reporting `XDG_SESSION_TYPE=wayland` and KDE. This establishes the desktop session type,
+not whether the GWE window uses native Wayland or XWayland.
+
+This is positive owner-reported real-use evidence. The installation time, uninterrupted session
+length and workload coverage were not measured; do not describe the interval as a five-day soak.
+No application was launched, stopped or fault-injected, and no GPU settings were changed during
+this follow-up. A consolidated installed startup/Quit and fault-recovery check on the new host is
+still pending, as is independently recorded suspend/resume. Publication remains on hold pending
+that acceptance; the preserved rc1-5 artifacts must not be substituted for the correction.
+
 ## Release hold and evidence
 
 Do not publish the prepared rc1-5 candidate as ready for continuous use. Its short installed
@@ -68,6 +83,7 @@ persistent error banner and clean Quit. Packaged Python modules match the source
 has only the reviewed vendor-import insertion. New and original asset checksums verify. No private
 profile databases or diagnostic logs are bundled. `BUILD_INFO` records these limits next to the package.
 
-Install only after the current session is closed and recovery completes. Real extended CUDA use and installed lifecycle
-acceptance of the correction remain pending. Preserve the current power limit; historical trial wattages
-are not rollback targets. Wayland/Kubuntu 26.04 and independently recorded suspend/resume remain pending.
+At package preparation, installation and real-use acceptance were pending; the dated follow-up above
+records subsequent installed use on 26.04/Wayland. Measured extended CUDA coverage, post-migration
+lifecycle/fault recovery and independently recorded suspend/resume remain pending. Preserve the current
+power limit; historical trial wattages are not rollback targets.

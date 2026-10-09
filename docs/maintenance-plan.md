@@ -7,6 +7,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- 2026-10-10: owner reports rc1-6 use without recurrence after migrating to Kubuntu 26.04.
+  Read-only inspection confirms Ubuntu 26.04.1 LTS and KDE/Wayland. This is initial target-desktop
+  real-use evidence; post-migration lifecycle/fault recovery remains pending. See the
+  [dated incident follow-up](continuous-control-incident.md#owner-follow-up-2026-10-10).
+
 - Release hold on 2026-10-05: rc1-5 lost its curve after about 36 hours with `ui_heartbeat_expired`.
   Continuous renewal is now independent of GTK in source; persistent fault reporting and regression
   coverage were added. Installed extended-use acceptance remains pending. See the

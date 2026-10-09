@@ -1,5 +1,11 @@
 # Migration readiness: current-host follow-up
 
+**2026-10-10:** the owner has migrated to Kubuntu 26.04 and reports successful rc1-6 use without
+recurrence of curve loss. Read-only inspection confirms Ubuntu 26.04.1 LTS, KDE/Wayland and installed
+`1.0.0~rc1-6`. This supersedes earlier statements that target-desktop use was entirely untested.
+Installed recovery checks on the new host and a recorded suspend/resume trace remain pending; see
+[the dated incident follow-up](continuous-control-incident.md#owner-follow-up-2026-10-10).
+
 **2026-10-05: release and migration readiness are on hold** after extended-use curve loss in rc1-5.
 The [incident report](continuous-control-incident.md) distinguishes the confirmed UI heartbeat fault,
 source correction, simulated coverage and pending installed acceptance. Earlier short checks below

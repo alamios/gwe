@@ -29,7 +29,7 @@ or PyPI distribution.
   The last applied curve can be restored at startup. Automatic profiles release fan control.
 - Native error notices keep the control loop running and do not block Quit.
 - Continuous lease renewal runs independently of GTK. Control loss has a persistent error notice and
-  desktop notification; this correction still requires installed extended-use acceptance.
+  desktop notification; the owner reports no recurrence with rc1-6; post-migration recovery checks remain pending.
 - Private configuration is created automatically; existing development profile sources are imported
   through a verified copy with recovery backups. Trial controls and the development status band are removed.
 
@@ -39,14 +39,17 @@ power-limit persistence is configured. Missing readings remain unavailable rathe
 
 ## Validation and limitations
 
-Current hardware evidence covers an RTX 3090 Ti with two fans, NVIDIA driver 580.178.04 and Ubuntu/Kubuntu
+Pre-migration hardware evidence covers an RTX 3090 Ti with two fans, NVIDIA driver 580.178.04 and Ubuntu/Kubuntu
 24.04.5 on KDE/X11. Earlier supervised fan and power trials passed, including SIGKILL and watchdog recovery.
 The new native desktop has passed isolated graphical checks with simulated control and real read-only
 telemetry. Installed rc1-5 startup/editor/tray/Quit and service SIGKILL/watchdog recovery passed, with automatic
 fans, unchanged power and restored CoolerControl.
 
-**Kubuntu 26.04 and Wayland remain untested.** Python 3.14 backend tests do not reproduce their native GTK
-stack. Driver/host failure guarantees and an independently recorded suspend/resume trace remain pending.
+**2026-10-10:** the owner reports successful ordinary use after migrating to Kubuntu 26.04, with no
+recurrence of curve loss on rc1-6. Read-only inspection confirms Ubuntu 26.04.1 LTS, KDE, a Wayland
+session and installed `1.0.0~rc1-6`. This is initial real-use evidence, not a measured uninterrupted
+soak test or confirmation that GWE itself uses native Wayland rather than XWayland. Post-migration
+startup/Quit and fault recovery, driver/host failure guarantees and recorded suspend/resume remain pending.
 See [migration readiness](docs/migration-readiness.md) for evidence and remaining work.
 
 Encoder/decoder telemetry has been checked against direct NVML and `nvidia-smi`. Firefox/YouTube returned
@@ -62,7 +65,7 @@ It does not bundle or replace drivers, kernels or CUDA. Follow the documented pa
 installation procedure; do not run the historical upstream build/reset/install instructions.
 
 The corrected local package is `1.0.0~rc1-6`: simulated suites and the extracted system-Python GTK check
-pass, but installed extended-use acceptance is pending. Pause GPU work and close GWE applications with
+pass, and the owner reports successful use on 26.04/Wayland. Post-migration recovery acceptance is pending. Pause GPU work and close GWE applications with
 **Quit**, allowing recovery to finish, before updating:
 
 ```bash
