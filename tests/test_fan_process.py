@@ -64,6 +64,21 @@ def test_release_is_asynchronous_and_verified(setup):
     assert list(device.policies)==[0,0]
 
 
+def test_supervisor_suspend_recovers_then_allows_fresh_acquisition(setup, monkeypatch):
+    device, backend = setup
+    start(backend)
+    assert list(device.policies) == [1, 1]
+    monkeypatch.setattr('gwe.fan_process.boot_time', lambda: boot_time() + 60)
+    backend.poll()
+    until(backend, lambda: backend.state == 'idle')
+    assert not backend.failure and list(device.policies) == [0, 0]
+    start(backend)
+    assert list(device.policies) == [1, 1]
+    backend.stop()
+    until(backend, lambda: backend.state == 'idle')
+    assert list(device.policies) == [0, 0]
+
+
 @pytest.mark.parametrize('fault',[signal.SIGKILL,signal.SIGSTOP])
 def test_worker_fault_latches_after_verified_recovery(setup,fault):
     device,backend=setup

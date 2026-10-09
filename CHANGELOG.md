@@ -3,6 +3,12 @@ Version 1.0.0-rc1 (unreleased candidate)
 
 Independent fork maintained by alamios with AI assistance. Original GWE authors and license retained.
 
+Rc1-7 correction (installed suspend/resume acceptance pending):
+
+ * Detect suspend separately from scheduling stalls and reapply the previously active curve once.
+ * Require verified service recovery and ordinary fresh GPU validation before reacquisition.
+ * Keep faults latched; cancel pending resume on release, Quit or applied-profile deletion.
+
 Source correction after rc1-5 (installed acceptance pending; publication on hold):
 
  * Renew continuous fan leases independently of GTK scheduling; retain service thermal checks and recovery.

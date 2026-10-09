@@ -312,6 +312,15 @@ def main(argv=None):
                     if session.state != 'active' or backend.stops != 2 or backend.renewals < renewals + 4:
                         return finish(False)
                     print('Blocked GTK: PASS; simulated curve stays active', flush=True)
+                    original_clock = session.clock
+                    def simulate_suspend():
+                        session.clock = lambda: original_clock() + 60
+                    controller.executor.submit(simulate_suspend)
+                    phase[0] = 511
+                elif phase[0] == 511 and session.state == 'active' and backend.starts >= 4:
+                    if backend.starts != 4 or backend.stops != 3:
+                        return finish(False)
+                    print('Simulated resume: PASS; verified release then curve reacquisition', flush=True)
                     from gwe.fan_gui_session import GuiTrialError
                     controller.executor.submit(session._fail, GuiTrialError('service_fault'))
                     phase[0] = 52
@@ -542,14 +551,17 @@ def main(argv=None):
         if service is not None:
             # Let the simulated server process socket EOF before checking window-close recovery.
             expires = time.monotonic() + 2
-            while (args.smoke_service or args.smoke_native) and backend.stops < 3 and time.monotonic() < expires:
+            expected_starts = 4 if args.smoke_native else 3
+            while (args.smoke_service or args.smoke_native) and backend.stops < expected_starts and time.monotonic() < expires:
                 time.sleep(.01)
             stop.set()
             worker.join(2)
             service.close()
             temporary.cleanup()
     if args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup or args.smoke_native or args.check_startup:
-        return 0 if passed == [True] and (not (args.smoke_service or args.smoke_native) or backend.starts == backend.stops == 3) else 1
+        expected_starts = 4 if args.smoke_native else 3
+        return 0 if passed == [True] and (not (args.smoke_service or args.smoke_native)
+                                        or backend.starts == backend.stops == expected_starts) else 1
     return result
 
 

@@ -1,5 +1,9 @@
 # Native packaging
 
+The newer resume candidate is `build/resume-fix-rc1-7/gwe-nvml_1.0.0~rc1-7_all.deb`.
+It adds guarded curve reapplication after detected suspend; installed hardware acceptance remains
+pending. See [suspend/resume](suspend-resume.md). Preserve accepted rc1-6 bytes and earlier artifacts.
+
 **Current acceptance (2026-10-10):** the corrected rc1-6 package passes installed lifecycle and
 service supervisor SIGKILL/watchdog recovery on KDE/Wayland and Ubuntu 26.04.1. See the
 [acceptance record](continuous-control-incident.md#corrected-service-acceptance-2026-10-10).

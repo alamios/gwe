@@ -10,8 +10,9 @@ import threading
 
 EVENTS = {'preview_opened', 'control_window_opened', 'acquire_requested', 'starting', 'active',
           'release_requested', 'stopping', 'recovery_verified', 'failed', 'disconnected', 'window_closed',
-          'power_verified', 'power_rolled_back', 'power_failed', 'heartbeat_expired'}
-STATES = {'idle', 'starting', 'active', 'stopping', 'fault'}
+          'power_verified', 'power_rolled_back', 'power_failed', 'heartbeat_expired',
+          'suspend_detected', 'resume_cancelled', 'resume_recovery_verified', 'resume_acquired'}
+STATES = {'idle', 'starting', 'active', 'stopping', 'resuming', 'fault'}
 OPERATIONS = {'preview', 'connect', 'status', 'acquire', 'renew', 'release', 'ui_tick', 'worker_tick',
               'power_status', 'power_apply'}
 ERRORS = {'invalid_response', 'request_refused', 'service_busy', 'service_fault',
@@ -19,7 +20,7 @@ ERRORS = {'invalid_response', 'request_refused', 'service_busy', 'service_fault'
           'service_not_idle', 'socket_timeout', 'socket_permission_denied',
           'service_connection_unavailable', 'client_error', 'ui_heartbeat_expired',
           'recovery_not_verified', 'ownership_or_state_lost', 'worker_heartbeat_expired',
-          'unexpected_automatic_recovery'}
+          'unexpected_automatic_recovery', 'resume_recovery_timeout', 'resume_service_not_idle'}
 ERRORS |= {'trial_guard_active', 'stale_power', 'outside_limits', 'power_busy', 'busy',
            'recovery_pending', 'recovery_failed', 'worker_unavailable', 'worker_lost',
            'worker_stuck', 'driver_error', 'verification_failed', 'identity_mismatch'}

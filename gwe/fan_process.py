@@ -137,7 +137,8 @@ class ProcessBackend:
     responsive; systemd cgroup teardown and ExecStopPost cover service failure.
     """
     def __init__(self, uuid, *, factory=nvml_factory, ceiling=60, heartbeat=5,
-                 recovery_timeout=5, record=lambda fans: None, clear=lambda: None):
+                 recovery_timeout=5, record=lambda fans: None, clear=lambda: None,
+                 active_clock=time.monotonic):
         self.uuid, self.factory, self.ceiling = uuid, factory, ceiling
         self.heartbeat, self.recovery_timeout = heartbeat, recovery_timeout
         self.record, self.clear = record, clear
@@ -151,6 +152,9 @@ class ProcessBackend:
         self.deadline = 0
         self.stop_deadline = 0
         self.recovery_deadline = 0
+        self.active_clock = active_clock
+        self.last_poll_boot = boot_time()
+        self.last_poll_active = active_clock()
 
     def start(self, curve):
         if self.state != 'idle':
@@ -231,8 +235,15 @@ class ProcessBackend:
             self.worker.kill()
 
     def poll(self):
-        self._drain()
         now = boot_time()
+        active_now = self.active_clock()
+        suspended = now - self.last_poll_boot - (active_now - self.last_poll_active) >= 1
+        self.last_poll_boot, self.last_poll_active = now, active_now
+        self._drain()
+        if suspended and self.state in ('starting', 'active'):
+            # Resume ends the old writer and verifies recovery. It does not
+            # grant a new lease or clear a driver fault already seen by _drain.
+            self.stop()
         if self.state in ('starting', 'active'):
             if not self.worker.is_alive():
                 self.unexpected_exit = True

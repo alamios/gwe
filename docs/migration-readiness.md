@@ -1,5 +1,10 @@
 # Migration readiness: current-host follow-up
 
+**Suspend follow-up:** one recorded rc1-6 cycle restored both fans to automatic at unchanged 250 W,
+but required relaunch for Custom. The [rc1-7 correction](suspend-resume.md) implements guarded
+automatic reapplication; installed acceptance is pending. Earlier unrecorded-suspend statements below
+describe their prior stage.
+
 **Current acceptance (2026-10-10): rc1-6 passes** installed startup/editor/tray/Quit,
 application SIGKILL/SIGSTOP and service supervisor SIGKILL/SIGSTOP-watchdog recovery on KDE/Wayland
 and Ubuntu 26.04.1. Final readback confirms both fans automatic, unchanged 250 W, CoolerControl

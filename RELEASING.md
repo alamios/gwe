@@ -1,5 +1,9 @@
 # Preparing and publishing fork releases
 
+The rc1-7 resume correction is prepared separately from accepted rc1-6. A recorded rc1-6 suspend
+verified automatic fan restoration; automatic Custom reapplication in rc1-7 requires installed
+acceptance before publishing that correction. See [suspend/resume](docs/suspend-resume.md).
+
 The fork is maintained by alamios with AI assistance at https://github.com/alamios/gwe.
 Original authors, history and GPL-3.0-or-later licensing are retained. Source and native packages
 are intended for GitHub Releases; no push or publication occurred during preparation.

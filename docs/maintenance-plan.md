@@ -22,6 +22,11 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Status and decisions
 
+- 2026-10-10 suspend follow-up: rc1-6 restored automatic fans at unchanged 250 W after recorded
+  suspension, but did not reapply Custom. Rc1-7 now distinguishes suspend from stalls and reacquires
+  once after verified recovery. Installed resume acceptance remains pending; see
+  [suspend/resume](suspend-resume.md). No drivers, dependencies or installed files were changed.
+
 - 2026-10-10: owner reports rc1-6 use without recurrence after migrating to Kubuntu 26.04.
   Read-only inspection confirms Ubuntu 26.04.1 LTS and KDE/Wayland. This is initial target-desktop
   real-use evidence; post-migration lifecycle/fault recovery remains pending. See the

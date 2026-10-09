@@ -31,6 +31,8 @@ This fork currently has no Flatpak or PyPI distribution.
 - Continuous lease renewal runs independently of GTK. Control loss has a persistent error notice and
   desktop notification. The owner reports no recurrence with rc1-6; installed lifecycle and
   supervisor fault-recovery checks pass on the migrated host.
+- The rc1-7 correction detects actual suspend intervals and reapplies the previously active curve
+  once after verified service recovery. Other faults remain latched; installed resume acceptance is pending.
 - Private configuration is created automatically; existing development profile sources are imported
   through a verified copy with recovery backups. Trial controls and the development status band are removed.
 
@@ -53,7 +55,9 @@ soak test or confirmation that GWE itself uses native Wayland rather than XWayla
 startup/editor/tray/Quit and client SIGKILL/SIGSTOP recovery now pass, preserving the current 250 W
 limit and restoring both fans to automatic. The corrected supervisor-only SIGKILL and SIGSTOP/watchdog checks also pass, preserving 250 W
 and restoring CoolerControl. A GUI timeout during deliberately frozen service operation is expected;
-independent readback verifies recovery. Driver/host failure guarantees and recorded suspend/resume remain pending.
+independent readback verifies recovery. A recorded rc1-6 suspend restored automatic fans and preserved
+250 W, but required relaunch to restore Custom. The [rc1-7 resume correction](docs/suspend-resume.md)
+passes simulated checks; installed automatic reapplication remains pending. Driver/host guarantees remain unvalidated.
 See [migration readiness](docs/migration-readiness.md) for evidence and remaining work.
 
 Encoder/decoder telemetry has been checked against direct NVML and `nvidia-smi`. Firefox/YouTube returned
@@ -68,13 +72,13 @@ modules with their licenses and distribution-provided GTK/Matplotlib libraries, 
 It does not bundle or replace drivers, kernels or CUDA. Follow the documented package inspection and
 installation procedure; do not run the historical upstream build/reset/install instructions.
 
-The corrected local package is `1.0.0~rc1-6`: simulated suites and the extracted system-Python GTK check
-pass, and the owner reports successful use on 26.04/Wayland. Post-migration lifecycle and supervisor fault acceptance pass.
+The accepted rc1-6 package passes post-migration lifecycle and supervisor fault checks.
+The new rc1-7 package adds automatic curve resume, with installed hardware acceptance pending.
 Pause GPU work and close GWE applications with
 **Quit**, allowing recovery to finish, before updating:
 
 ```bash
-sudo apt install ./build/curve-fix-rc1-6/gwe-nvml_1.0.0~rc1-6_all.deb
+sudo apt install ./build/resume-fix-rc1-7/gwe-nvml_1.0.0~rc1-7_all.deb
 ```
 
 After local cleanup, `build/publish-v1.0.0-rc1/` retains the original candidate assets. New correction
@@ -111,6 +115,7 @@ Documentation and code comments are in English. Tests do not authorize writes to
 - [Fan service](docs/fan-service.md), [power control](docs/power-control.md) and
   [migration readiness](docs/migration-readiness.md)
 - [Continuous-control incident and correction](docs/continuous-control-incident.md)
+- [Suspend/resume behavior and acceptance](docs/suspend-resume.md)
 
 Earlier supervised experiments remain documented in [fan trials](docs/nvml-fan-trial.md),
 [curve recovery](docs/nvml-fan-curves.md), [profile review](docs/fan-gui.md),

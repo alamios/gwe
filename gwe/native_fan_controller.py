@@ -61,7 +61,7 @@ class NativeFanController(FanMainController):
         finally:
             self.initializing = False
         self.view.refresh_service_curve(self.selected.curve if self.selected else None)
-        if (self.session.state in ('active', 'starting') and self.applied_identifier is not None
+        if (self.session.state in ('active', 'starting', 'resuming') and self.applied_identifier is not None
                 and self.applied_identifier not in {p.identifier for p in self.profiles}):
             self.desired = next((p for p in self.profiles if p.automatic), None)
             self.release()
@@ -89,7 +89,7 @@ class NativeFanController(FanMainController):
         self.view.set_apply_fan_profile_button_enabled(bool(
             self.telemetry_available and not busy and not self.problem()
             and not (self.power and self.power.operation_id is not None)))
-        self.view.set_service_fan_hint(self.session.message if self.session.state == 'fault'
+        self.view.set_service_fan_hint(self.session.message if self.session.state in ('fault', 'resuming')
                                        else self.problem() or 'Apply the selected fan profile')
         self.view.show_service_control_fault(self.session.message if self.session.state == 'fault' else None)
         from gwe.model.fan_profile import FanProfile
