@@ -1,13 +1,14 @@
 # Native packaging
 
-**Publication hold (2026-10-05):** rc1-5 lost continuous control on UI heartbeat expiry. See the
-[incident and correction](continuous-control-incident.md). The historical package below passed short
-checks only; corrected package acceptance is pending. New builds must preserve its existing assets.
+**Current acceptance (2026-10-10):** the corrected rc1-6 package passes installed lifecycle and
+service supervisor SIGKILL/watchdog recovery on KDE/Wayland and Ubuntu 26.04.1. See the
+[acceptance record](continuous-control-incident.md#corrected-service-acceptance-2026-10-10).
 
-The correction is staged at `build/curve-fix-rc1-6/gwe-nvml_1.0.0~rc1-6_all.deb` (source `8c6ad03`).
-Its extracted system-Python GTK check passes with simulated control, including a six-second GTK stall
-and persistent fault display. It has not been installed or accepted for extended hardware use.
-`BUILD_INFO` and `SHA256SUMS` accompany the package; the original rc1-5 assets remain unchanged.
+The accepted package is `build/curve-fix-rc1-6/gwe-nvml_1.0.0~rc1-6_all.deb` (runtime source
+`8c6ad03`). Its extracted system-Python GTK check also passes, including a six-second GTK stall
+and persistent fault display. Preserve these tested bytes and the original rc1-5 assets.
+`BUILD_INFO` and `SHA256SUMS` accompany the package. A corrected publication set/tag still needs
+preparation; no package was rebuilt or published during the acceptance follow-up.
 
 The 1.0.0 fork maintained by alamios ships one **gwe-nvml** `.deb` containing an unprivileged GTK desktop
 and a separately privileged NVML helper. Source and packages are intended for

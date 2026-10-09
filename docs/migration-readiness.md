@@ -1,5 +1,14 @@
 # Migration readiness: current-host follow-up
 
+**Current acceptance (2026-10-10): rc1-6 passes** installed startup/editor/tray/Quit,
+application SIGKILL/SIGSTOP and service supervisor SIGKILL/SIGSTOP-watchdog recovery on KDE/Wayland
+and Ubuntu 26.04.1. Final readback confirms both fans automatic, unchanged 250 W, CoolerControl
+active and no pending journals. The acceptance hold is cleared for preparing the corrected prerelease;
+preserve the old rc1-5 assets/tag. See the
+[acceptance record](continuous-control-incident.md#corrected-service-acceptance-2026-10-10).
+Earlier pending/hold statements below record their dated stage. Recorded suspend/resume and
+other hardware or driver/host failure guarantees remain unvalidated.
+
 The first privileged service fault check failed: bulk SIGKILL also killed ExecStopPost. Manual
 recovery is independently verified, preserving 250 W. The corrected harness targets only the service
 supervisor; its real SIGKILL/watchdog acceptance remains pending. See the

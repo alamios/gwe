@@ -10,11 +10,11 @@ Original authors, contributor credits and the GPL-3.0-or-later license are retai
 
 The project home is [alamios/gwe](https://github.com/alamios/gwe). Source and native `.deb` packages are
 intended for [GitHub Releases](https://github.com/alamios/gwe/releases). The first candidate is
-**1.0.0-rc1**; Debian revision `1.0.0~rc1-5` passed installed X11 acceptance on the current host.
-**Publication is on hold:** an extended-use curve loss was confirmed on 2026-10-05. The source correction
-and remaining acceptance are recorded in [the incident report](docs/continuous-control-incident.md).
-The old assets are preserved for reference. This fork currently has no Flatpak
-or PyPI distribution.
+**1.0.0-rc1**. Debian revision `1.0.0~rc1-6` passes installed lifecycle and supervisor
+SIGKILL/watchdog recovery on the migrated KDE/Wayland host. The acceptance hold is cleared for
+preparing a corrected prerelease; the previous rc1-5 assets/tag remain historical.
+See [the incident and acceptance record](docs/continuous-control-incident.md).
+This fork currently has no Flatpak or PyPI distribution.
 
 ## What changed
 
@@ -29,7 +29,8 @@ or PyPI distribution.
   The last applied curve can be restored at startup. Automatic profiles release fan control.
 - Native error notices keep the control loop running and do not block Quit.
 - Continuous lease renewal runs independently of GTK. Control loss has a persistent error notice and
-  desktop notification; the owner reports no recurrence with rc1-6; post-migration client recovery checks pass; service fault injection remains pending.
+  desktop notification. The owner reports no recurrence with rc1-6; installed lifecycle and
+  supervisor fault-recovery checks pass on the migrated host.
 - Private configuration is created automatically; existing development profile sources are imported
   through a verified copy with recovery backups. Trial controls and the development status band are removed.
 
@@ -50,8 +51,9 @@ recurrence of curve loss on rc1-6. Read-only inspection confirms Ubuntu 26.04.1 
 session and installed `1.0.0~rc1-6`. This is initial real-use evidence, not a measured uninterrupted
 soak test or confirmation that GWE itself uses native Wayland rather than XWayland. Post-migration
 startup/editor/tray/Quit and client SIGKILL/SIGSTOP recovery now pass, preserving the current 250 W
-limit and restoring both fans to automatic. The first service SIGKILL test also killed its recovery process; manual recovery was verified.
-The corrected supervisor-only fault harness still requires privileged acceptance on the new host. Driver/host failure guarantees and recorded suspend/resume remain pending.
+limit and restoring both fans to automatic. The corrected supervisor-only SIGKILL and SIGSTOP/watchdog checks also pass, preserving 250 W
+and restoring CoolerControl. A GUI timeout during deliberately frozen service operation is expected;
+independent readback verifies recovery. Driver/host failure guarantees and recorded suspend/resume remain pending.
 See [migration readiness](docs/migration-readiness.md) for evidence and remaining work.
 
 Encoder/decoder telemetry has been checked against direct NVML and `nvidia-smi`. Firefox/YouTube returned
@@ -67,7 +69,7 @@ It does not bundle or replace drivers, kernels or CUDA. Follow the documented pa
 installation procedure; do not run the historical upstream build/reset/install instructions.
 
 The corrected local package is `1.0.0~rc1-6`: simulated suites and the extracted system-Python GTK check
-pass, and the owner reports successful use on 26.04/Wayland. Post-migration service fault acceptance is pending.
+pass, and the owner reports successful use on 26.04/Wayland. Post-migration lifecycle and supervisor fault acceptance pass.
 Pause GPU work and close GWE applications with
 **Quit**, allowing recovery to finish, before updating:
 

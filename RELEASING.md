@@ -1,32 +1,23 @@
 # Preparing and publishing fork releases
 
-The first privileged service fault check failed: bulk SIGKILL also killed ExecStopPost. Manual
-recovery is independently verified, preserving 250 W. The corrected harness targets only the service
-supervisor; its real SIGKILL/watchdog acceptance remains pending. See the
-[failure and recovery record](docs/continuous-control-incident.md#service-fault-injection-failure-and-manual-recovery-2026-10-10).
+The fork is maintained by alamios with AI assistance at https://github.com/alamios/gwe.
+Original authors, history and GPL-3.0-or-later licensing are retained. Source and native packages
+are intended for GitHub Releases; no push or publication occurred during preparation.
 
-Installed checks on 2026-10-10 passed saved-curve startup/editor/tray/Quit and application
-SIGKILL/SIGSTOP recovery on the migrated host. Both fans returned to automatic, the current 250 W
-limit was preserved and CoolerControl was restored. Service-level SIGKILL/watchdog injection remains
-pending interactive sudo authentication; client fault checks do not replace it. See the
-[full acceptance record](docs/continuous-control-incident.md#post-migration-installed-checks-2026-10-10).
+## Current corrected candidate acceptance
 
-This independent fork is maintained by **alamios** with AI assistance at
-**https://github.com/alamios/gwe**. Original authors, credits, history and GPL-3.0-or-later licensing
-are retained. Source and native `.deb` assets are intended for GitHub Releases; no push or publication
-has occurred during local preparation. This fork has no Flatpak or PyPI distribution.
+Installed `1.0.0~rc1-6` passes startup/editor/tray/Quit, application SIGKILL/SIGSTOP and service
+supervisor SIGKILL/SIGSTOP-watchdog recovery on the migrated KDE/Wayland, Ubuntu 26.04.1 host.
+Final independent readback confirms automatic fans, unchanged 250 W, restored CoolerControl,
+helper inactive/success, socket active and no pending journals. The GUI timeout during deliberate
+freezing is expected; independent recovery verification passed. See the
+[acceptance record](docs/continuous-control-incident.md#corrected-service-acceptance-2026-10-10).
 
-## Publication hold
-
-On 2026-10-10 the owner reports successful rc1-6 use without recurrence after migration; read-only
-inspection confirms Ubuntu 26.04.1 LTS and KDE/Wayland. This is initial real-use evidence. The remaining
-gate is privileged service fault-recovery acceptance on the new host; see the
-[dated follow-up](docs/continuous-control-incident.md#owner-follow-up-2026-10-10).
-
-The extended-use curve loss reported on 2026-10-05 supersedes rc1-5 readiness. Do not publish the
-prepared assets as a validated continuous-control release. See [the incident and new acceptance
-requirements](docs/continuous-control-incident.md). Preserve the existing tag/assets; do not retag
-them to the correction or infer extended reliability from the earlier short checks.
+The acceptance hold is cleared for preparing a corrected prerelease. Preserve `v1.0.0-rc1` and
+its rc1-5 artifacts as historical evidence; use a new tag and the accepted rc1-6 bytes for the
+correction. The source/runtime correspondence must be recorded before publication. No tag was
+moved and no new release was published. Recorded suspend/resume, other hardware and driver/host
+failure guarantees remain outside validated scope. Older asset instructions below are historical.
 
 ## Previous X11 acceptance
 

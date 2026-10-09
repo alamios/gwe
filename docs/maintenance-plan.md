@@ -1,5 +1,14 @@
 # Maintenance plan
 
+**Current acceptance (2026-10-10): rc1-6 passes** installed startup/editor/tray/Quit,
+application SIGKILL/SIGSTOP and service supervisor SIGKILL/SIGSTOP-watchdog recovery on KDE/Wayland
+and Ubuntu 26.04.1. Final readback confirms both fans automatic, unchanged 250 W, CoolerControl
+active and no pending journals. The acceptance hold is cleared for preparing the corrected prerelease;
+preserve the old rc1-5 assets/tag. See the
+[acceptance record](continuous-control-incident.md#corrected-service-acceptance-2026-10-10).
+Earlier pending/hold statements below record their dated stage. Recorded suspend/resume and
+other hardware or driver/host failure guarantees remain unvalidated.
+
 Installed checks on 2026-10-10 passed saved-curve startup/editor/tray/Quit and application
 SIGKILL/SIGSTOP recovery on the migrated host. Both fans returned to automatic, the current 250 W
 limit was preserved and CoolerControl was restored. Service-level SIGKILL/watchdog injection remains

@@ -4,11 +4,15 @@ The fork develops on `main`. The annotated `upstream-baseline` tag preserves the
 commit; the maintenance branch is merged without squash. Existing upstream tags and historical branches
 are retained, but are not new fork releases. A separate `release` branch is not needed.
 
-## Publication hold
+## Corrected candidate acceptance
 
-The 2026-10-05 [continuous-control incident](continuous-control-incident.md) supersedes readiness of
-rc1-5. Preserve its tag and prepared assets, but do not publish them as ready. The correction needs
-new package acceptance and a distinct future release tag; the instructions below describe the older assets.
+Rc1-6 passed the corrected installed lifecycle and supervisor SIGKILL/watchdog gate on
+2026-10-10 under KDE/Wayland and Ubuntu 26.04.1. See the
+[acceptance record](continuous-control-incident.md#corrected-service-acceptance-2026-10-10).
+The acceptance hold is cleared for preparing a corrected prerelease. Preserve the previous
+rc1-5 tag/assets; use a distinct new tag and the accepted rc1-6 package for publication.
+The older asset commands below are historical, not instructions to publish rc1-5 as the correction.
+No push or publication occurred. Suspend/resume and other hardware remain unvalidated.
 
 ## Previous candidate acceptance
 

@@ -1,5 +1,27 @@
 # Continuous fan-control loss: 2026-10-05
 
+## Corrected service acceptance: 2026-10-10
+
+The owner reran the grouped check with supervisor-only fault injection. Installed startup,
+saved-curve ownership, editor, tray and Quit passed. Service supervisor SIGKILL passed with
+Result=signal; supervisor SIGSTOP passed with a recorded ten-second watchdog timeout and
+Result=watchdog. Both sessions verified automatic fans, unchanged power and restored cooling state.
+The final command reported `Native installed startup, Quit, SIGKILL and watchdog recovery: PASS`.
+
+The GUI showed `socket_timeout during status` during deliberate service freezing. This is an
+expected client fault under that injection, not evidence of failed recovery. Recovery acceptance
+comes from the independent checker, rather than from that GUI notice. Independent final readback
+found both policies automatic, 44 C, unchanged 250 W, helper inactive/success, socket active,
+CoolerControl active and no ownership, session or power journals.
+
+Rc1-6 therefore passes installed lifecycle and supervisor fault-recovery acceptance on this
+RTX 3090 Ti, driver 580.178.04, KDE/Wayland and Ubuntu 26.04.1 host. Together with the owner's
+reported use without recurrence, this clears the acceptance hold for preparing a corrected
+prerelease. The rc1-5 assets/tag remain historical and must not be published as the correction.
+No push, tag replacement or publication was performed. Measured uninterrupted soak duration,
+recorded suspend/resume, other hardware and driver/host failure guarantees remain unvalidated.
+Bulk killing the recovery process remains outside these supervisor fault guarantees.
+
 ## Owner follow-up: 2026-10-10
 
 The owner confirms rc1-6 is installed and reports no recurrence of the curve-loss symptoms,
