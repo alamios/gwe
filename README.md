@@ -82,14 +82,18 @@ The old snapshot launcher and Python 3.12 environment are also retired into priv
 The native configuration and curves remain in place. Rebuilding with Python 3.14 and the preserved
 inputs passes; installed suspend/reboot acceptance is still pending.
 
+Rc1-9 corrects missing KDE tray/window icons by publishing the artwork in the public icon theme,
+advertising its path to the tray host and aligning the GTK program identity. Installed visual acceptance
+is pending; source tests pass and GTK loads the packaged native and symbolic icons.
+
 The accepted rc1-6 package passes post-migration lifecycle and supervisor fault checks.
-The new rc1-8 package includes automatic curve resume and saved-power startup restoration,
+The new rc1-9 package includes the rc1-8 curve resume/power restoration and desktop icon correction,
 with recorded installed suspend/reboot acceptance pending. The owner reports successful power restoration.
 Pause GPU work and close GWE applications with
 **Quit**, allowing recovery to finish, before updating:
 
 ```bash
-sudo apt install ./build/power-persistence-rc1-8/gwe-nvml_1.0.0~rc1-8_all.deb
+sudo apt install ./build/icon-fix-rc1-9/gwe-nvml_1.0.0~rc1-9_all.deb
 ```
 
 After local cleanup, `build/publish-v1.0.0-rc1/` retains the original candidate assets. New correction

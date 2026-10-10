@@ -1,5 +1,11 @@
 # Native packaging
 
+Latest prepared candidate: `build/icon-fix-rc1-9/gwe-nvml_1.0.0~rc1-9_all.deb`, runtime source
+`82f8087`. All 632 tests, GTK public/tray icon lookup and the extracted native Wayland GUI check pass.
+Protocol inspection confirms the isolated `.Smoke` window identity. Checksums, source correspondence
+and absence of private databases in the package were verified. Installed KDE visual acceptance remains
+pending; installed hardware acceptance of earlier revisions does not automatically cover this candidate.
+
 The installed correction is `1.0.0~rc1-8`, adding guarded curve resume and saved-power startup
 restoration. Installed suspend and reboot acceptance remains pending. See
 [suspend/resume](suspend-resume.md) and [power persistence](power-control.md#native-startup-persistence).

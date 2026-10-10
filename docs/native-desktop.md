@@ -61,6 +61,15 @@ icon directory to AppIndicator, installs original and native-identity icon alias
 `hicolor` hierarchy, uses the native icon name in the desktop entry, and sets GLib's program identity
 to the application's desktop identity before window creation. The original artwork is retained.
 Installed KDE visual acceptance of this correction remains pending.
+All 632 tests pass on system Python 3.14.4. An extracted-package GTK probe loads the native,
+original and symbolic public icons, and resolves the advertised tray asset directory. This verifies
+assets and lookup rather than KDE's final rendering. The identity follows
+[GLib program-name semantics](https://docs.gtk.org/glib/func.set_prgname.html); GTK's private icon
+theme alone cannot configure another process's lookup paths.
+The extracted rc1-9 native GTK check also passes with `GDK_BACKEND=wayland`. Captured protocol
+confirms the isolated window advertises `io.github.alamios.gwe.Smoke`; synthetic control exercises
+tray ownership, Quit, stalls, faults and suspend recovery with only real telemetry reads. This does
+not establish that the installed production window's KDE decoration or tray now renders correctly.
 
 The desktop uses the host GTK theme and icon theme rather than forcing a Flatpak/runtime appearance.
 An application-scoped stylesheet makes title controls inherit the normal foreground, gives them a

@@ -1,5 +1,9 @@
 # Preparing and publishing fork releases
 
+Rc1-9 is the latest prepared local package, correcting KDE tray/window icon integration on top of rc1-8.
+Source tests and packaged GTK icon lookup pass; installed KDE visual acceptance remains pending.
+Keep the earlier accepted artifacts and their distinct hardware acceptance scope.
+
 The newer local rc1-8 package includes the rc1-7 resume correction and saved-power startup restoration.
 Its source passes 632 tests and its extracted native GTK check passes. Installed suspend/resume and
 power restoration after reboot are still pending; do not describe those scenarios as accepted.
