@@ -74,6 +74,12 @@ The maintained build is [the native package builder](docs/packaging-plan.md). It
 modules with their licenses and distribution-provided GTK/Matplotlib libraries, not a frozen executable.
 It does not bundle or replace drivers, kernels or CUDA. Follow the documented package inspection and
 installation procedure; do not run the historical upstream build/reset/install instructions.
+After migration, builds and tests use system Python 3.14 with separately preserved reviewed build
+inputs; they no longer require the historical Python 3.12 environment. The obsolete user-local
+**GreenWithEnvy (NVML)** test menu entry has been archived and removed; use **GreenWithEnvy**.
+The old snapshot launcher and Python 3.12 environment are also retired into private recovery archives.
+The native configuration and curves remain in place. Rebuilding with Python 3.14 and the preserved
+inputs passes; installed suspend/reboot acceptance is still pending.
 
 The accepted rc1-6 package passes post-migration lifecycle and supervisor fault checks.
 The new rc1-8 package includes automatic curve resume and saved-power startup restoration,

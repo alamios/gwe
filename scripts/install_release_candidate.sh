@@ -6,7 +6,7 @@ cd -- "$(dirname -- "$0")/.."
 test "$EUID" -ne 0 || { echo 'Run as the desktop user, without prefixing sudo'; exit 1; }
 candidate="$PWD/build/release-rc1/gwe-nvml_1.0.0~rc1_all.deb"
 test -f "$candidate" || { echo 'Build and review the release candidate first'; exit 1; }
-python=${GWE_INSTALL_PYTHON:-"$HOME/.venvs/gwe312/bin/python"}
+python=${GWE_INSTALL_PYTHON:-/usr/bin/python3}
 "$python" scripts/check_controllers.py
 (cd -- "$(dirname -- "$candidate")" && sha256sum --check SHA256SUMS)
 # APT simulation must match the reviewed transition; unrelated changes require separate review.

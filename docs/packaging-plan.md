@@ -1,8 +1,9 @@
 # Native packaging
 
-The newer resume candidate is `build/resume-fix-rc1-7/gwe-nvml_1.0.0~rc1-7_all.deb`.
-It adds guarded curve reapplication after detected suspend; installed hardware acceptance remains
-pending. See [suspend/resume](suspend-resume.md). Preserve accepted rc1-6 bytes and earlier artifacts.
+The installed correction is `1.0.0~rc1-8`, adding guarded curve resume and saved-power startup
+restoration. Installed suspend and reboot acceptance remains pending. See
+[suspend/resume](suspend-resume.md) and [power persistence](power-control.md#native-startup-persistence).
+Preserve accepted rc1-6 bytes and earlier release artifacts.
 
 **Current acceptance (2026-10-10):** the corrected rc1-6 package passes installed lifecycle and
 service supervisor SIGKILL/watchdog recovery on KDE/Wayland and Ubuntu 26.04.1. See the
@@ -21,15 +22,31 @@ The fork is maintained with AI assistance. Flatpak publication is outside the in
 
 ## Build and inspect
 
-Use the prepared Python 3.12 environment with the exact reviewed modules in `scripts/build_debs.py`,
-plus `dpkg-deb`, `glib-compile-resources` and `glib-compile-schemas`. The builder installs no dependencies
-and refuses changed vendor versions. Use a new destination and a fixed source epoch:
+Use system Python 3.14 on the migrated host, plus `dpkg-deb`, `glib-compile-resources` and
+`glib-compile-schemas`. The builder needs the exact reviewed pure-Python distributions declared in
+`scripts/build_debs.py`, including original distribution metadata and licenses. Standalone inputs
+are preserved at `.local-backups/build-dependencies-py314/`, with a `SHA256SUMS` manifest; the old
+3.12 interpreter environment is not required. No dependencies are installed into system Python.
+
+On 2026-10-10, the old 3.12 environment was retired to a private recovery archive. System Python
+3.14.4 passes all 632 tests using the preserved standalone inputs, and builds the native package
+after retirement. The rebuilt executable payload matches rc1-8; only the updated packaged documentation
+and its checksum differ. The installed rc1-8 package passes `dpkg -V`. Generated extraction/staging trees
+and temporary duplicate builds were removed after validation; retained packages, checksums, build records
+and original publication assets remain. Trial state and diagnostics were archived privately.
+
+`scripts/stage_build_dependencies.py SOURCE_SITE_PACKAGES NEW_DESTINATION` prepares those inputs
+from an already reviewed dependency set, refusing changed/missing versions and unsafe file paths.
+The builder independently verifies versions and required licenses. Verify the preserved input
+manifest before building. Use a new destination and a fixed source epoch:
 
 ```bash
-python scripts/build_debs.py build/release-rc1-5 --version 1.0.0~rc1-5 --epoch 1790985600
+(cd .local-backups/build-dependencies-py314 && sha256sum --check SHA256SUMS)
+PYTHONPATH="$PWD/.local-backups/build-dependencies-py314" /usr/bin/python3 \
+  scripts/build_debs.py build/new-candidate --version 1.0.0~rc1-8 --epoch 1791590400
 ```
 
-Verify checksums from their directory with `cd build/release-rc1-5 && sha256sum --check SHA256SUMS`.
+Keep a checksum and build/acceptance record alongside every retained release artifact.
 Inspect with `dpkg-deb --info` and `dpkg-deb --contents`. The directory also contains unpacked review trees,
 licenses, dependency versions and a reviewed service bundle. No private database, UUID or user configuration
 is included. Build destinations are never cleared automatically.

@@ -145,6 +145,12 @@ and preparation for Kubuntu 26.04/Wayland. See the [observed baseline](setup-com
 
 ## Python environment strategy
 
+**Post-migration update (2026-10-10):** system Python 3.14.4 on the actual Kubuntu 26.04 host is now
+the build, test and GTK baseline. Reviewed pure-Python package inputs have been staged independently
+of the old 3.12 environment, retaining distribution metadata, licenses and checksums. See
+[native builds](packaging-plan.md#build-and-inspect). The two-environment strategy below records
+the pre-migration stage; it does not require retaining Python 3.12 after migration.
+
 Use two separate environments during the migration, with different purposes:
 
 | Environment | Purpose | Initial priority |

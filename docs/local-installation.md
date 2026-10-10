@@ -4,6 +4,14 @@ This page describes the earlier user-local development snapshots. The current re
 the [unified native package](packaging-plan.md); do not use this snapshot installer as its installation
 procedure. Earlier snapshots and original profiles remain available for rollback.
 
+On 2026-10-10, the obsolete `applications/gwe-nvml-local.desktop` menu entry was archived privately
+and removed from the user's desktop menu. The maintained entry is `io.github.alamios.gwe.desktop`
+(**GreenWithEnvy**). Do not remove the whole `gwe-nvml/` data directory: the native installation
+shares its configuration/state paths. Original profiles, import backups and diagnostics are retained.
+The obsolete `launch.py`, `releases/`, `current`, `previous` and snapshot install lock were also moved
+to a private recovery archive after verifying that native configuration uses system Python and the
+separate writable database. Shared `config.json`, `state/` and `native-import-backup/` remain in place.
+
 The optional user installation provides **GreenWithEnvy (NVML)** in the desktop menu, separate from
 the installed Flatpak. It snapshots application sources and resources; moving or editing the repository
 does not change an installed snapshot. It uses the existing prepared Python environment and reviewed

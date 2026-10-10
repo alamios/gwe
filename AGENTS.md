@@ -25,8 +25,10 @@
 
 ## Development environments
 
-- Use Python 3.12 for the current-host baseline and Python 3.14 for target compatibility checks, as described
-  in `docs/maintenance-plan.md`. Follow the user's global instructions for environment location and dependencies.
+- On the migrated host, use system Python 3.14 for tests, GTK checks and native builds. The Python 3.12
+  environment belongs to the historical Ubuntu 24.04 baseline and is no longer required. Build with the
+  reviewed standalone dependency inputs described in `docs/packaging-plan.md`; do not install packages
+  into system Python. Follow the user's global instructions for environment location and dependencies.
 - Check dependencies and imports before starting the application. Do not install the historical requirements
   blindly or modify system Python to make them fit.
 - Keep UI integration checks separate from backend tests. A Python 3.14 virtual environment on Ubuntu 24.04

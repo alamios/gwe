@@ -4,7 +4,7 @@
 set -euo pipefail
 cd -- "$(dirname -- "$0")/.."
 test "$EUID" -ne 0 || { echo 'Run as your desktop user, without prefixing sudo'; exit 1; }
-python=${GWE_INSTALL_PYTHON:-"$HOME/.venvs/gwe312/bin/python"}
+python=${GWE_INSTALL_PYTHON:-/usr/bin/python3}
 "$python" scripts/check_controllers.py
 state="${XDG_DATA_HOME:-$HOME/.local/share}/gwe-nvml/state"
 mkdir -p -- "$state"
