@@ -56,6 +56,10 @@ Reactivex datetime deprecation (dependency behavior, not a failing test).
 The rc1-8 package built from `4acec67` also passes the extracted-package native GTK check, with
 source correspondence and checksum verified. No installation or actual reboot acceptance ran.
 
+Owner follow-up on 2026-10-10: installed rc1-8 restores power successfully so far. Read-only inspection
+also found the saved target matching the current hardware limit. This is owner-reported functional
+evidence; no timed reboot/startup/readback acceptance sequence was recorded by the agent.
+
 The authenticated SOCK_SEQPACKET protocol adds `power_status` and `power_apply` to version 1. Apply
 requires exact fields `limit_mw`, `expected_mw` and `expected_uuid` in addition to version/op. Milliwatts
 must be integers (not booleans), positive and within uint32 range. The expected identity is compared to

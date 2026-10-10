@@ -40,7 +40,8 @@ Clock-offset/overclock control is **not supported** by the NVML desktop. Explici
 readback verification; a committed limit remains in effect after normal exit. Corrected source also saves
 that verified target in the private native database and restores it once when GWE next opens, after matching
 GPU identity, live constraints and fresh telemetry. It does not set power during system boot without GWE,
-or reapply it on suspend/resume. Installed reboot acceptance is pending. Missing readings remain unavailable
+or reapply it on suspend/resume. The owner reports working power restoration with rc1-8; a recorded
+controlled reboot check remains pending. Missing readings remain unavailable
 rather than becoming zero. See [power persistence](docs/power-control.md#native-startup-persistence).
 
 ## Validation and limitations
@@ -83,7 +84,7 @@ inputs passes; installed suspend/reboot acceptance is still pending.
 
 The accepted rc1-6 package passes post-migration lifecycle and supervisor fault checks.
 The new rc1-8 package includes automatic curve resume and saved-power startup restoration,
-with installed suspend/reboot acceptance pending.
+with recorded installed suspend/reboot acceptance pending. The owner reports successful power restoration.
 Pause GPU work and close GWE applications with
 **Quit**, allowing recovery to finish, before updating:
 

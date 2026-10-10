@@ -82,6 +82,11 @@ def test_native_build_is_repeatable_and_keeps_private_data_out(tmp_path, monkeyp
     app = helper / 'usr/share/gwe-nvml'
     assert (app / 'resources/gschemas.compiled').is_file()
     assert 'vendor_imports' in (app / 'scripts/run_service_gui.py').read_text()
+    assert 'Icon=io.github.alamios.gwe\n' in (helper / 'usr/share/applications/io.github.alamios.gwe.desktop').read_text()
+    for name in ('com.leinardi.gwe', 'io.github.alamios.gwe'):
+        for suffix in ('', '-symbolic'):
+            assert (helper / f'usr/share/icons/hicolor/scalable/apps/{name}{suffix}.svg').is_file()
+        assert (helper / f'usr/share/icons/hicolor/256x256/apps/{name}.png').is_file()
 
 
 def test_precompiled_resources_need_no_runtime_compiler(tmp_path, monkeypatch):

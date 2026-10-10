@@ -253,9 +253,24 @@ Categories=System;
 StartupNotify=false
 ''')
     if not split:
+        # Install public icons for the desktop/tray host, beyond GTK's private application paths.
+        icons = client / 'usr/share/icons/hicolor'
+        for source in (ROOT / 'data/icons/hicolor').rglob('*.png'):
+            relative = source.relative_to(ROOT / 'data/icons/hicolor')
+            for name in ('com.leinardi.gwe', 'io.github.alamios.gwe'):
+                target = icons / relative.parent / (name + '.png')
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+        for suffix in ('', '-symbolic'):
+            for name in ('com.leinardi.gwe', 'io.github.alamios.gwe'):
+                target = icons / 'scalable/apps' / (name + suffix + '.svg')
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / 'data/icons' / ('com.leinardi.gwe' + suffix + '.svg'), target)
         desktop_entry = client / 'usr/share/applications/gwe-nvml-native.desktop'
         desktop_entry.write_text(desktop_entry.read_text().replace('Terminal=true', 'Terminal=false')
                                  .replace('Name=GreenWithEnvy (NVML native)', 'Name=GreenWithEnvy')
+                                 .replace('Icon=/usr/share/gwe-nvml/data/icons/hicolor/256x256/apps/com.leinardi.gwe.png',
+                                          'Icon=io.github.alamios.gwe')
                                  + 'StartupWMClass=io.github.alamios.gwe\n')
         desktop_entry.rename(desktop_entry.with_name('io.github.alamios.gwe.desktop'))
         shutil.copyfile(ROOT / 'data/com.leinardi.gwe.appdata.xml',

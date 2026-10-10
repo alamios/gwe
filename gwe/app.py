@@ -54,6 +54,8 @@ class Application(Gtk.Application):
                  **kwargs: Any) -> None:
         _LOG.debug("init Application")
         GLib.set_application_name(_(APP_NAME))
+        # Wayland desktops resolve window icons through the matching desktop-file identity.
+        GLib.set_prgname(application_id(APP_ID))
         super().__init__(*args, application_id=application_id(APP_ID),
                          flags=(Gio.ApplicationFlags.HANDLES_COMMAND_LINE |
                                 (Gio.ApplicationFlags.NON_UNIQUE if service_trial() else Gio.ApplicationFlags.FLAGS_NONE)),

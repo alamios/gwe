@@ -16,6 +16,7 @@
 # along with gwe.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from pathlib import Path
 from collections import OrderedDict
 from typing import Optional, Dict, List, Tuple, Any
 
@@ -191,12 +192,10 @@ class MainView(MainViewInterface):
 
     def _init_app_indicator(self) -> None:
         if AppIndicator3:
-            # Setting icon name in new() as '', because new() wants an icon path
             self._app_indicator = AppIndicator3.Indicator \
                 .new(application_id(APP_ID), '', AppIndicator3.IndicatorCategory.HARDWARE)
-            # Set the actual icon by name. If the App is not installed system-wide, the icon won't show up,
-            # otherwise it will show up correctly. The set_icon_full() function needs a description for accessibility
-            # purposes. I gave it the APP_NAME (should be 'gwe', maybe change it to 'GreenWithEnvy' in the future)
+            # The tray host is a separate process; GTK's private search path is not shared with it.
+            self._app_indicator.set_icon_theme_path(str(Path(__file__).resolve().parents[2] / 'data/icons'))
             self._app_indicator.set_icon_full(APP_ICON_NAME_SYMBOLIC, APP_NAME)
             if self._settings_interactor.get_bool('settings_show_app_indicator'):
                 self._app_indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)

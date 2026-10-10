@@ -5,6 +5,9 @@ Independent fork maintained by alamios with AI assistance. Original GWE authors 
 
 Further source correction (installed reboot acceptance pending):
 
+ * Publish native desktop/tray icons in the public icon theme and advertise the tray asset directory.
+ * Align GTK program identity with the desktop file for Wayland window icon resolution.
+
  * Save the native desktop's last exactly verified power limit and restore it once on normal launch.
  * Validate the saved GPU and current limits; retain compare-and-set/readback and reject automatic retries.
  * Keep simulated and hardware recovery checks free of saved-power reapplication.

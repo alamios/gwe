@@ -54,6 +54,14 @@ ordinary filesystem copy or overwrite the historical source with the native data
 
 ## Appearance and credits
 
+Icon correction after rc1-8 (2026-10-10): KDE showed an empty tray slot and a fallback window icon.
+Earlier packages kept icon assets inside the application tree only, and GTK's process-local search
+path was not visible to the external tray host. Corrected source advertises the existing symbolic
+icon directory to AppIndicator, installs original and native-identity icon aliases under the public
+`hicolor` hierarchy, uses the native icon name in the desktop entry, and sets GLib's program identity
+to the application's desktop identity before window creation. The original artwork is retained.
+Installed KDE visual acceptance of this correction remains pending.
+
 The desktop uses the host GTK theme and icon theme rather than forcing a Flatpak/runtime appearance.
 An application-scoped stylesheet makes title controls inherit the normal foreground, gives them a
 24-pixel minimum target with 16-pixel icons, and adds readable, underlined links. It does not change
