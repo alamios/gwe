@@ -1,5 +1,10 @@
 # GreenWithEnvy
 
+> [!NOTE]
+> **This fork is intended for the maintainer's personal use.** Hardware and desktop testing
+> is limited to one system: Kubuntu 26.04.1 LTS on AMD64, KDE Plasma/Wayland and an NVIDIA RTX 3090 Ti. Public source and packages do not imply support
+> for other configurations, including other RTX 30-series GPUs; broader compatibility is not a project goal.
+
 GreenWithEnvy (GWE) monitors NVIDIA GPUs and controls fan curves and power limits through NVML.
 This independent fork is maintained by **alamios**, starting with version **1.0.0**, and is based on
 [Roberto Leinardi's original GWE](https://gitlab.com/leinardi/gwe).
@@ -46,10 +51,23 @@ Back up your profiles using the [configuration guide](docs/configuration-backup.
 ## Compatibility and status
 
 The development candidate is **1.0.0-rc1**. The latest prepared package is **1.0.0~rc1-9**.
-Testing covers an RTX 3090 Ti with two fans, NVIDIA 580.178.04 and KDE on Kubuntu 26.04/Wayland.
+The current tested personal system is:
+
+| Component | Tested configuration |
+| --- | --- |
+| OS and architecture | Kubuntu 26.04.1 LTS, AMD64 (x86-64) |
+| Desktop session | KDE Plasma, Wayland |
+| GPU | NVIDIA GeForce RTX 3090 Ti, two fans |
+| NVIDIA driver | 615.71.09, open kernel module |
+| Application runtime | System Python 3.14.4, GTK3 |
+
+Testing this GPU does not establish support for the entire RTX 30-series or other NVIDIA cards.
 The complete automated suite passes 632 tests on system Python 3.14.4. Installed lifecycle and
 supervisor recovery have hardware evidence; the owner reports working power restoration.
 Installed automatic curve resume and the latest icon correction still need acceptance.
+On 2026-10-11, read-only inspection confirmed driver 615.71.09 and installed package 1.0.0~rc1-9;
+the maintainer reports continued normal operation after the driver update. Recorded supervisor-recovery
+checks used driver 580.178.04 and have not yet been repeated on 615.71.09.
 
 See [validation](docs/validation.md) for exact scope and outstanding checks. These results do not
 establish compatibility with every NVIDIA GPU, driver or desktop.
