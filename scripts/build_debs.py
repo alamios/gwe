@@ -292,7 +292,7 @@ StartupNotify=false
         copyright = tree / f'usr/share/doc/{package}/copyright'
         copyright.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / 'COPYING.txt', copyright)
-        shutil.copyfile(ROOT / 'docs/packaging-plan.md', copyright.parent / 'README.Debian')
+        shutil.copyfile(ROOT / 'docs/packaging.md', copyright.parent / 'README.Debian')
     if split:
         service = finish(helper, destination, 'gwe-nvml-service', version, 'python3 (>= 3.12), systemd', epoch)
         desktop = finish(client, destination, 'gwe-nvml-client', version, dependencies, epoch)

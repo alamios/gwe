@@ -54,11 +54,10 @@ further defined and clarified by project maintainers.
 
 ## Enforcement
 
-This continuation currently serves a personal maintenance workflow and has no
-public community or reporting contact. Before opening public collaboration, the
-maintainer must provide a private reporting channel and an enforcement process.
-Do not direct reports about this continuation to the original upstream maintainer.
-Any future reporting process must protect the confidentiality of reporters.
+The fork maintainer, alamios, is responsible for enforcing this Code of Conduct
+in project spaces. A dedicated private reporting address has not been published.
+Do not post confidential reports or personal information in public issues.
+Reports must be handled with respect for the privacy of everyone involved.
 
 Project maintainers who do not follow or enforce the Code of Conduct in good
 faith may face temporary or permanent repercussions as determined by other

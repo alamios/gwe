@@ -1,105 +1,57 @@
-# Preparing and publishing fork releases
+# Release procedure
 
-Rc1-9 is the latest prepared local package, correcting KDE tray/window icon integration on top of rc1-8.
-Source tests and packaged GTK icon lookup pass; installed KDE visual acceptance remains pending.
-Keep the earlier accepted artifacts and their distinct hardware acceptance scope.
+The project home is [alamios/gwe](https://github.com/alamios/gwe). Publish source and native `.deb`
+assets through GitHub Releases. Development uses `main`; release versions use annotated tags.
+Preparation does not authorize pushing or publishing.
 
-The newer local rc1-8 package includes the rc1-7 resume correction and saved-power startup restoration.
-Its source passes 632 tests and its extracted native GTK check passes. Installed suspend/resume and
-power restoration after reboot are still pending; do not describe those scenarios as accepted.
-See [power persistence](docs/power-control.md#native-startup-persistence).
+## Prepare a candidate
 
-The rc1-7 resume correction is prepared separately from accepted rc1-6. A recorded rc1-6 suspend
-verified automatic fan restoration; automatic Custom reapplication in rc1-7 requires installed
-acceptance before publishing that correction. See [suspend/resume](docs/suspend-resume.md).
+1. Update the application version, AppStream metadata and [changelog](CHANGELOG.md) together. Keep source,
+   support and changelog links pointing to this fork; retain original credits and AI-maintenance disclosure.
+2. Review configuration/schema changes and the [backup/rollback procedure](docs/configuration-backup.md).
+3. Run relevant simulated and isolated GTK checks. Perform affected installed acceptance with authorization;
+   do not substitute evidence from an older runtime. Update [validation](docs/validation.md).
+4. Build into a new directory using [reviewed inputs](docs/packaging.md) and a fixed source epoch.
+5. Inspect package/source contents, dependencies, ownership, licenses, icon identity and compiled resources.
+   Exclude private profiles, UUIDs, databases, screenshots, logs and local build inputs.
+6. Record the exact source commit, package checksum, build runtime, validation and limitations in `BUILD_INFO`.
+   Retain tested rollback bytes. Never overwrite published assets or move a published version tag.
 
-The fork is maintained by alamios with AI assistance at https://github.com/alamios/gwe.
-Original authors, history and GPL-3.0-or-later licensing are retained. Source and native packages
-are intended for GitHub Releases; no push or publication occurred during preparation.
+Application versions use SemVer, for example `1.0.0-rc1`; Debian prerelease versions use `~`, for example
+`1.0.0~rc1-9`. Choose a new package revision when changing distributed bytes. The latest prepared
+candidate and its outstanding gates are in [validation](docs/validation.md).
 
-## Current corrected candidate acceptance
+## Tag and generate source assets
 
-Installed `1.0.0~rc1-6` passes startup/editor/tray/Quit, application SIGKILL/SIGSTOP and service
-supervisor SIGKILL/SIGSTOP-watchdog recovery on the migrated KDE/Wayland, Ubuntu 26.04.1 host.
-Final independent readback confirms automatic fans, unchanged 250 W, restored CoolerControl,
-helper inactive/success, socket active and no pending journals. The GUI timeout during deliberate
-freezing is expected; independent recovery verification passed. See the
-[acceptance record](docs/continuous-control-incident.md#corrected-service-acceptance-2026-10-10).
+After review and acceptance, set the desired new tag name and create it on the reviewed commit:
 
-The acceptance hold is cleared for preparing a corrected prerelease. Preserve `v1.0.0-rc1` and
-its rc1-5 artifacts as historical evidence; use a new tag and the accepted rc1-6 bytes for the
-correction. The source/runtime correspondence must be recorded before publication. No tag was
-moved and no new release was published. Recorded suspend/resume, other hardware and driver/host
-failure guarantees remain outside validated scope. Older asset instructions below are historical.
+```bash
+GWE_RELEASE_TAG=v1.0.0-rc2
+GWE_SOURCE_ARCHIVE=gwe-1.0.0-rc2-source.tar.gz
+git tag -a "$GWE_RELEASE_TAG" -m 'GreenWithEnvy 1.0.0-rc2'
+git archive --format=tar.gz --prefix=gwe-1.0.0-rc2/ "$GWE_RELEASE_TAG" > "$GWE_SOURCE_ARCHIVE"
+```
 
-## Previous X11 acceptance
+These are examples for a new release, not instructions to retag an existing candidate. Tag the intended
+reviewed commit explicitly if it is not HEAD. Do not create a stable tag while required acceptance is pending.
 
-**1.0.0-rc1**, Debian revision **1.0.0~rc1-5**, passed the following short acceptance checks.
-On 2026-10-04 the owner completed the installed unified-package check with system Python:
+Retain four publication assets together: the tested `.deb`, tagged source archive, `BUILD_INFO` and
+`SHA256SUMS`. Generate checksums after all asset contents are final, then verify them:
 
-- Saved-curve startup, original editor, tray hide/show retaining ownership and explicit Quit passed.
-- Service SIGKILL and SIGSTOP/watchdog recovery passed while the saved curve controlled the fans.
-- Independent checks verified automatic fans, unchanged power, restored CoolerControl and an available
-  activation socket after every session. Read-only inspection confirms installed rc1-5, clean package
-  integrity, service inactive/success and socket active.
+```bash
+sha256sum -- *.deb *-source.tar.gz BUILD_INFO > SHA256SUMS
+sha256sum --check SHA256SUMS
+```
 
-The fault sessions also printed `Startup control check: FAIL` from the deliberately interrupted child
-application. Those messages describe normal-completion checks, not failed recovery; the external verifier
-passed. The development harness now launches ordinary sessions during fault injection to avoid that
-misleading message. No packaged application/helper behavior changed after installed acceptance.
+Run this in a dedicated release-asset directory containing only the intended package/source assets.
+GitHub's automatically generated source ZIP/tar downloads are source archives, not installers.
 
-The most recent full simulated suites passed 573 tests on Python 3.12 and 563 backend/package tests on
-Python 3.14. Ten HTTP update tests were excluded on 3.14 for its documented missing requests dependency;
-they passed on 3.12 and requests is a native package dependency. The subsequent nonblocking-notice change
-passed 74 focused tests and the expanded extracted-package GTK check with system Python: a notice stayed
-open for ten seconds while simulated leases renewed, and Quit completed with it still open.
-Reactivex's datetime warning remains non-fatal.
+## Publish with owner authorization
 
-Hardware evidence targets RTX 3090 Ti, NVIDIA 580.178.04, Ubuntu/Kubuntu 24.04.5 and KDE/X11.
-**Kubuntu 26.04, Wayland, other hardware and driver/host failure guarantees remain unvalidated.**
-An independently recorded suspend/resume trace remains pending. Clock-offset control is unsupported.
-The original rc1-3 hang cause remains unconfirmed; rc1-5 fixes a synchronous-dialog control-loop hazard.
-The hang itself was recovered by terminating only the GUI, preserving the observed 340 W and automatic
-fans, and restoring CoolerControl. The installed rc1-5 recovery tests above supersede earlier pending
-acceptance statements. See [native desktop](docs/native-desktop.md) and [migration readiness](docs/migration-readiness.md).
+Push the intended branch and specific new version tag to the fork. Avoid pushing all tags indiscriminately.
+In GitHub, open **Releases → Draft a new release**, select that tag, add reviewed notes and attach the
+four assets. Mark candidates as prereleases. Save and inspect the draft before publication.
 
-## Branches and artifacts
-
-Develop on `main`. The maintenance phase is merged without squash; the annotated `upstream-baseline`
-tag preserves the inherited original commit. Existing upstream tags and historical branches remain.
-Fork releases use annotated tags such as `v1.0.0-rc1`, not a separate release branch.
-
-The final publication assets are in **build/publish-v1.0.0-rc1/**:
-
-- `gwe-nvml_1.0.0~rc1-5_all.deb`: exact bytes of the installed, accepted package built at `db50975`.
-- `gwe-1.0.0-rc1-source.tar.gz`: source from the final annotated version tag.
-- `BUILD_INFO`: separate package-build and tagged-source commits, validation and limitations.
-- `SHA256SUMS`: checksums for the three assets above.
-
-Later commits contain documentation and developer fault-harness changes only; packaged runtime sources
-are unchanged. Earlier package snapshots and diagnostic evidence were moved to a private, checksummed
-Git-ignored `.local-backups/` archive before cleanup. `build/` now retains only the publication folder;
-generated review trees, smoke states and synthetic media were removed. Keep rollback assets privately
-and never replace a published artifact with different bytes under the same version/name. Private databases, UUIDs, screenshots and logs are
-excluded from publication assets. The release notes are in [the prepared notes](docs/release-notes-1.0.0-rc1.md).
-
-The native package installs through `sudo apt install ./gwe-nvml_1.0.0~rc1-5_all.deb`. Its maintainer
-scripts configure authorization and socket activation. Ordinary launch is terminal-free and unprivileged;
-no repository installer, development venv or hardware trial is required for normal users.
-
-## Future release checklist
-
-1. Update application version, AppStream, changelog and public metadata together. Preserve original
-   credits/license and disclose AI maintenance. Use the fork's source, support and changelog links.
-2. Preserve configuration/import backups and document any schema/identity migration plus rollback.
-3. Run relevant simulated/backend/UI checks. Rerun affected installed lifecycle tests for runtime changes;
-   do not substitute older launcher tests or venv dependencies for actual installed-package acceptance.
-4. Build into a new directory with the reviewed Python modules and fixed epoch. Inspect package/source
-   contents, permissions, licenses, dependencies and checksums. Keep driver/kernel/CUDA changes separate.
-5. Record the exact tested target and remaining limits. Tag only the reviewed commit after its gate passes.
-6. Publish only when the owner authorizes it. Follow [the GitHub source/binary release guide](docs/github-releases.md),
-   select the existing tag, attach the four assets and mark candidates as prereleases.
-
-Inspect build scripts before use. The historical `build.sh` regenerates the changelog and clears build
-output; it is not this fork's package builder. The uninitialized Flatpak submodule is historical upstream
-packaging and must not be fetched or installed as part of native release preparation.
+Release notes should describe resulting behavior, supported/validated scope, known limitations and
+installation. Users verify checksums, Quit GWE, finish recovery and install through APT. No development
+venv or repository installation wrapper is required.

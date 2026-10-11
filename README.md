@@ -1,154 +1,72 @@
-# GreenWithEnvy (GWE)
+# GreenWithEnvy
 
-GreenWithEnvy monitors NVIDIA GPUs and controls fan curves and power limits through NVML.
-This is an independent fork of [Roberto Leinardi’s original GWE](https://gitlab.com/leinardi/gwe),
-maintained by **alamios** from version **1.0.0**.
+GreenWithEnvy (GWE) monitors NVIDIA GPUs and controls fan curves and power limits through NVML.
+This independent fork is maintained by **alamios**, starting with version **1.0.0**, and is based on
+[Roberto Leinardi's original GWE](https://gitlab.com/leinardi/gwe).
+Original authors, copyright notices and the GPL-3.0-or-later license are retained.
 
-**This project is maintained with AI assistance**, including implementation, testing and documentation.
-Recorded tests describe what has been verified; AI assistance does not establish hardware compatibility.
-Original authors, contributor credits and the GPL-3.0-or-later license are retained.
+**The project is maintained with AI assistance**, including implementation, tests and documentation.
+Compatibility claims are limited to recorded validation.
 
-The project home is [alamios/gwe](https://github.com/alamios/gwe). Source and native `.deb` packages are
-intended for [GitHub Releases](https://github.com/alamios/gwe/releases). The first candidate is
-**1.0.0-rc1**. Debian revision `1.0.0~rc1-6` passes installed lifecycle and supervisor
-SIGKILL/watchdog recovery on the migrated KDE/Wayland host. The acceptance hold is cleared for
-preparing a corrected prerelease; the previous rc1-5 assets/tag remain historical.
-See [the incident and acceptance record](docs/continuous-control-incident.md).
-This fork currently has no Flatpak or PyPI distribution.
+- [Source and issues](https://github.com/alamios/gwe)
+- [Releases](https://github.com/alamios/gwe/releases)
+- [Changelog](https://github.com/alamios/gwe/blob/main/CHANGELOG.md)
 
-## What changed
+## Features
 
-- NVML monitoring replaces the desktop’s dependency on X11 NV-CONTROL for GPU access.
-- Fan curves and explicit power-limit changes use a separately privileged, supervised helper with
-  authenticated ownership, renewable leases, watchdog and post-stop recovery.
-- One native package contains the unprivileged GTK application and helper. Normal launch opens no
-  terminal and requests no password; administrator authorization happens during installation/setup.
-- Window controls and links retain the desktop GTK theme with scoped contrast fixes and circular
-  title-button hover feedback. About separates the original authors from the fork maintainer.
-- The original curve editor, profile persistence and minimize-to-tray preference remain available.
-  The last applied curve can be restored at startup. Automatic profiles release fan control.
-- Native error notices keep the control loop running and do not block Quit.
-- Continuous lease renewal runs independently of GTK. Control loss has a persistent error notice and
-  desktop notification. The owner reports no recurrence with rc1-6; installed lifecycle and
-  supervisor fault-recovery checks pass on the migrated host.
-- The rc1-7 correction detects actual suspend intervals and reapplies the previously active curve
-  once after verified service recovery. Other faults remain latched; installed resume acceptance is pending.
-- Private configuration is created automatically; existing development profile sources are imported
-  through a verified copy with recovery backups. Trial controls and the development status band are removed.
+- NVML telemetry: temperature, utilization, memory, power, clocks, video engines and device information.
+- Editable fan curves with hysteresis, automatic profiles and saved-curve startup restoration.
+- Supervised fan control independent of GTK scheduling, with leases, watchdog and automatic recovery.
+- Verified power-limit changes, saved per GPU and restored once when GWE starts.
+- Guarded curve reapplication after suspend, once service recovery is verified.
+- Minimize-to-tray support, desktop notifications and persistent control-failure notices.
 
-Clock-offset/overclock control is **not supported** by the NVML desktop. Explicit Power Apply requires
-readback verification; a committed limit remains in effect after normal exit. Corrected source also saves
-that verified target in the private native database and restores it once when GWE next opens, after matching
-GPU identity, live constraints and fresh telemetry. It does not set power during system boot without GWE,
-or reapply it on suspend/resume. The owner reports working power restoration with rc1-8; a recorded
-controlled reboot check remains pending. Missing readings remain unavailable
-rather than becoming zero. See [power persistence](docs/power-control.md#native-startup-persistence).
+The GTK desktop works without X11 GPU-control extensions. Missing readings remain unavailable;
+a measured zero is displayed as zero. Clock-offset and overclock control are not supported.
 
-## Validation and limitations
+## Install and run
 
-Pre-migration hardware evidence covers an RTX 3090 Ti with two fans, NVIDIA driver 580.178.04 and Ubuntu/Kubuntu
-24.04.5 on KDE/X11. Earlier supervised fan and power trials passed, including SIGKILL and watchdog recovery.
-The new native desktop has passed isolated graphical checks with simulated control and real read-only
-telemetry. Installed rc1-5 startup/editor/tray/Quit and service SIGKILL/watchdog recovery passed, with automatic
-fans, unchanged power and restored CoolerControl.
+The native **gwe-nvml** `.deb` includes the desktop and privileged helper. It uses system Python and
+GTK; no development environment or separate installation script is required. It does not replace
+drivers, kernels or CUDA.
 
-**2026-10-10:** the owner reports successful ordinary use after migrating to Kubuntu 26.04, with no
-recurrence of curve loss on rc1-6. Read-only inspection confirms Ubuntu 26.04.1 LTS, KDE, a Wayland
-session and installed `1.0.0~rc1-6`. This is initial real-use evidence, not a measured uninterrupted
-soak test or confirmation that GWE itself uses native Wayland rather than XWayland. Post-migration
-startup/editor/tray/Quit and client SIGKILL/SIGSTOP recovery now pass, preserving the current 250 W
-limit and restoring both fans to automatic. The corrected supervisor-only SIGKILL and SIGSTOP/watchdog checks also pass, preserving 250 W
-and restoring CoolerControl. A GUI timeout during deliberately frozen service operation is expected;
-independent readback verifies recovery. A recorded rc1-6 suspend restored automatic fans and preserved
-250 W, but required relaunch to restore Custom. The [rc1-7 resume correction](docs/suspend-resume.md)
-passes simulated checks; installed automatic reapplication remains pending. Driver/host guarantees remain unvalidated.
-See [migration readiness](docs/migration-readiness.md) for evidence and remaining work.
-
-Encoder/decoder telemetry has been checked against direct NVML and `nvidia-smi`. Firefox/YouTube returned
-zero in all three; Firefox reported hardware decoding blocked by its decoding test. Playback alone does
-not require encoder activity. This observation is separate from GWE’s successful controlled video-engine
-checks.
-
-## Build, install and configuration
-
-The maintained build is [the native package builder](docs/packaging-plan.md). It uses reviewed Python
-modules with their licenses and distribution-provided GTK/Matplotlib libraries, not a frozen executable.
-It does not bundle or replace drivers, kernels or CUDA. Follow the documented package inspection and
-installation procedure; do not run the historical upstream build/reset/install instructions.
-After migration, builds and tests use system Python 3.14 with separately preserved reviewed build
-inputs; they no longer require the historical Python 3.12 environment. The obsolete user-local
-**GreenWithEnvy (NVML)** test menu entry has been archived and removed; use **GreenWithEnvy**.
-The old snapshot launcher and Python 3.12 environment are also retired into private recovery archives.
-The native configuration and curves remain in place. Rebuilding with Python 3.14 and the preserved
-inputs passes; installed suspend/reboot acceptance is still pending.
-
-Rc1-9 corrects missing KDE tray/window icons by publishing the artwork in the public icon theme,
-advertising its path to the tray host and aligning the GTK program identity. Installed visual acceptance
-is pending; source tests pass and GTK loads the packaged native and symbolic icons.
-
-The accepted rc1-6 package passes post-migration lifecycle and supervisor fault checks.
-The new rc1-9 package includes the rc1-8 curve resume/power restoration and desktop icon correction,
-with recorded installed suspend/reboot acceptance pending. The owner reports successful power restoration.
-Pause GPU work and close GWE applications with
-**Quit**, allowing recovery to finish, before updating:
+Choose a release package and verify its checksum. Before an update, quit GWE using **Quit**, pause GPU
+work and allow recovery to finish. For the current prepared candidate:
 
 ```bash
-sudo apt install ./build/icon-fix-rc1-9/gwe-nvml_1.0.0~rc1-9_all.deb
+sudo apt install ./gwe-nvml_1.0.0~rc1-9_all.deb
 ```
 
-After local cleanup, `build/publish-v1.0.0-rc1/` retains the original candidate assets. New correction
-builds use separate directories. Earlier package snapshots and
-diagnostic evidence were archived privately under Git-ignored `.local-backups/`; generated review
-trees, smoke states and synthetic media were removed. The four publication assets are unchanged.
+Launch **GreenWithEnvy** from the application menu or run `gwe-nvml`. Normal launch opens no terminal
+and requests no password; administrator authorization is configured during installation.
 
-The package handles helper setup and socket activation; no separate installation script or venv is
-required. The optional `scripts/install_release_candidate.sh` combines installation with development
-checks and a real startup/recovery trial. Those tests are not required for ordinary installation.
-The current-host package is installed and the owner reports successful ordinary use and corrected UI.
-Installed rc1-5 startup/editor/tray/Quit and privileged service fault-recovery acceptance passed.
-The original rc1-3 hang cause remains unconfirmed; native error notices are now nonblocking.
+See the [user guide](docs/user-guide.md) for curves, power, startup, updates and recovery.
+Back up your profiles using the [configuration guide](docs/configuration-backup.md).
 
-After installation, launch **GreenWithEnvy** from the application menu or run `gwe-nvml`.
-Configuration and curves belong to the desktop user; the root helper stores only its authorization.
-See [native configuration, import and rollback](docs/native-desktop.md). Close any other GPU fan
-controller before beginning a control session. Closing can minimize to the tray; use **Quit** to release.
+## Compatibility and status
 
-## Development and recovery documentation
+The development candidate is **1.0.0-rc1**. The latest prepared package is **1.0.0~rc1-9**.
+Testing covers an RTX 3090 Ti with two fans, NVIDIA 580.178.04 and KDE on Kubuntu 26.04/Wayland.
+The complete automated suite passes 632 tests on system Python 3.14.4. Installed lifecycle and
+supervisor recovery have hardware evidence; the owner reports working power restoration.
+Installed automatic curve resume and the latest icon correction still need acceptance.
 
-Development continues on `main`. The annotated `upstream-baseline` tag preserves the inherited
-original code; version tags identify fork releases. The maintenance branch has been merged with its
-full history. See [publishing source and packages](docs/github-releases.md).
-Documentation and code comments are in English. Tests do not authorize writes to a live GPU.
+See [validation](docs/validation.md) for exact scope and outstanding checks. These results do not
+establish compatibility with every NVIDIA GPU, driver or desktop.
 
-- [Contributing](CONTRIBUTING.md), [agent instructions](AGENTS.md) and [release checklist](RELEASING.md)
-- [Setup assessment](docs/setup-compatibility.md), [maintenance plan](docs/maintenance-plan.md) and
-  [technical references](docs/technical-references.md)
-- [Native packaging](docs/packaging-plan.md), [native desktop](docs/native-desktop.md) and
-  [configuration backup](docs/configuration-backup.md)
-- [NVML diagnostics](docs/nvml-diagnostics.md), [backend contract](docs/nvml-backend.md),
-  [monitor mode](docs/monitor-mode.md) and [GUI environment](docs/gui-development.md)
-- [Fan service](docs/fan-service.md), [power control](docs/power-control.md) and
-  [migration readiness](docs/migration-readiness.md)
-- [Continuous-control incident and correction](docs/continuous-control-incident.md)
-- [Suspend/resume behavior and acceptance](docs/suspend-resume.md)
+## Documentation
 
-Earlier supervised experiments remain documented in [fan trials](docs/nvml-fan-trial.md),
-[curve recovery](docs/nvml-fan-curves.md), [profile review](docs/fan-gui.md),
-[main-window trials](docs/main-window-service.md), [continuous sessions](docs/continuous-session.md) and
-[local snapshots](docs/local-installation.md). These developer procedures are not the ordinary release
-launch path. Historical Flatpak references describe the original installation and its backup/rollback.
-
-Report this fork’s issues at [alamios/gwe issues](https://github.com/alamios/gwe/issues).
-See [CHANGELOG.md](CHANGELOG.md) for fork notes and preserved upstream history.
+- [User guide](docs/user-guide.md)
+- [Configuration backup and restore](docs/configuration-backup.md)
+- [Architecture and control contracts](docs/architecture.md)
+- [Development and testing](docs/development.md)
+- [Building native packages](docs/packaging.md)
+- [Validation and remaining checks](docs/validation.md)
+- [Technical references](docs/technical-references.md)
+- [Contributing](CONTRIBUTING.md), [release procedure](RELEASING.md) and [agent instructions](AGENTS.md)
 
 ## Credits and license
 
-Original GWE was created by Roberto Leinardi, with contributions including Gabriele Musco and the upstream
-community. Thanks also to the NVML bindings, python-xlib and the original icon contributors; existing
-source and bundled dependency license notices are retained.
-
-Upstream acknowledgements include TingPing, 999eagle, tim74, Lighty, fbcotter, the python-xlib developers
-and tiheum’s Faenza icons, alongside everyone who tested and reported bugs. Historical packaging credits
-do not imply those contributors maintain this fork.
-
-Licensed under [GPL-3.0-or-later](COPYING.txt). This software is provided without warranty; see the license.
+Created by Roberto Leinardi, with contributions from Gabriele Musco and the original community.
+The fork maintainer is alamios. Existing artwork and dependency acknowledgements are retained.
+Licensed under [GPL-3.0-or-later](COPYING.txt).
