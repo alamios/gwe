@@ -9,7 +9,8 @@ comes only from that personal system. Broader compatibility is not a project goa
 ## Current candidate
 
 - Application: **1.0.0-rc1**.
-- Latest prepared package: **1.0.0~rc1-9**, runtime source `82f8087`.
+- Latest prepared package: **1.0.0~rc1-10**, built from `ad7f72a` plus the autostart fix before commit;
+  exact source patch and build provenance retained with the local artifact.
 - Build/test runtime: system Python **3.14.4**, reviewed standalone dependency inputs.
 - Recorded target: RTX 3090 Ti, two fans, NVIDIA **615.71.09** (open kernel module), KDE,
   Kubuntu **26.04.1/Wayland**, AMD64.
@@ -42,6 +43,29 @@ not been repeated on **615.71.09**. Hardware evidence from an earlier runtime do
 change. The latest isolated Wayland check proves the test window uses Wayland, not that every installed
 launch has the same backend. Measured extended uninterrupted operation and driver/host-failure recovery
 are not established.
+
+## Autostart correction and acceptance (2026-11-06–07)
+
+On system Python 3.14.4, the focused command
+`/usr/bin/python3 -m pytest -q tests/test_desktop_entry.py tests/test_runtime_mode.py tests/test_native_launcher.py`
+passes **12 tests**, including five new autostart cases. Temporary-directory tests cover removing both
+enabled and legacy disabled entries, repeated removal, a missing directory, preservation of unrelated
+entries, native command recreation and a simulated permission failure. No personal autostart files,
+GTK sessions, services or GPU settings were changed. This is focused source validation, not a new full
+suite result or installed Plasma acceptance. The prepared rc1-10 package contains this fix.
+
+Package rc1-10 was built on 2026-11-06 with verified standalone dependency checksums. The focused
+autostart, native packaging and native launcher tests pass **17 tests**. Extracted-package inspection
+confirmed the fixed source, compiled resources and vendor metadata; an isolated enable/disable cycle
+passed using the extracted code. No installation or real desktop launch was performed.
+
+On 2026-11-07, the maintainer reported no login startup after manually removing the legacy disabled
+entry, then confirmed successful startup after the enabled-case test was requested for rc1-10.
+This is owner-reported functional acceptance on the personal Plasma system, not an independently
+captured session trace. Automatic file removal and recreation are covered by the isolated tests above;
+the report does not separately establish inspection of every file key or tray behavior.
+Old disabled entries still require the cleanup described in the
+[user guide](user-guide.md#startup-and-suspend).
 
 ## Remaining checks
 

@@ -46,6 +46,19 @@ not reapply power. A storage failure is reported separately from a successfully 
 Enable login launch through GWE preferences if desired. Startup can apply both the saved fan profile
 and saved power target; it is not a read-only launch. The login entry uses the native desktop identity.
 
+Disabling login launch now removes GWE's user autostart entry. Enabling it recreates the entry with
+`Exec=gwe-nvml --hide-window --delay` and `X-GNOME-Autostart-enabled=true`. The native package does not
+install a system-wide autostart entry. The removal avoids relying on the GNOME-specific flag, which
+the systemd XDG autostart generator does not interpret.
+
+The prepared rc1-10 package includes this fix but does not automatically migrate old entries.
+If login launch was disabled with an older version, remove
+`${XDG_CONFIG_HOME:-$HOME/.config}/autostart/io.github.alamios.gwe.desktop` manually while leaving the
+preference disabled, or toggle login launch on and off after installing a corrected build.
+Removing this file affects future login startup; it does not stop a running GWE session.
+The native `gwe-nvml` launcher currently does not accept `--autostart-off`, even though the underlying
+GTK application has an autostart command-line handler.
+
 After detecting suspend, an active curve waits for verified service recovery, then attempts to reacquire
 the exact previously applied curve once. Quit, release or deletion of the applied profile cancels this.
 A merely selected or edited curve is not substituted. Other failures remain latched for inspection.

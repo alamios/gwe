@@ -7,6 +7,8 @@ license retained. Validation scope and remaining release gates are in [validatio
 
 - Replace desktop X11 GPU-control dependencies with NVML telemetry and supervised fan/power control.
 - Preserve editable curves, hysteresis, startup profile restoration and minimize-to-tray behavior.
+- Remove the user autostart entry when login launch is disabled instead of relying on a GNOME-only
+  flag; existing disabled entries require cleanup (included in the rc1-10 package).
 - Renew fan leases independently of GTK; supervise privileged workers with watchdog and verified recovery.
 - Report unexpected control loss with persistent notices and desktop notifications.
 - Restore the previously applied curve once after detected suspend and verified service recovery.

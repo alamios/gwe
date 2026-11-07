@@ -35,6 +35,11 @@ APPLICATION_ENTRY_FILE_PATH = Path(xdg_data_home).joinpath('applications').joinp
 
 
 def set_autostart_entry(is_enabled: bool) -> None:
+    if not is_enabled:
+        # The GNOME-specific flag does not disable XDG autostart on other desktops.
+        AUTOSTART_FILE_PATH.unlink(missing_ok=True)
+        return
+
     desktop_parser = DesktopParser(str(AUTOSTART_FILE_PATH))
 
     if not AUTOSTART_FILE_PATH.is_file():

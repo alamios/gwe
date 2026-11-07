@@ -39,7 +39,7 @@ Choose a release package and verify its checksum. Before an update, quit GWE usi
 work and allow recovery to finish. For the current prepared candidate:
 
 ```bash
-sudo apt install ./gwe-nvml_1.0.0~rc1-9_all.deb
+sudo apt install ./gwe-nvml_1.0.0~rc1-10_all.deb
 ```
 
 Launch **GreenWithEnvy** from the application menu or run `gwe-nvml`. Normal launch opens no terminal
@@ -48,9 +48,14 @@ and requests no password; administrator authorization is configured during insta
 See the [user guide](docs/user-guide.md) for curves, power, startup, updates and recovery.
 Back up your profiles using the [configuration guide](docs/configuration-backup.md).
 
+The source now removes the login entry when autostart is disabled, fixing reliance on a
+GNOME-specific flag under Plasma. This fix is included in the prepared rc1-10 package.
+The maintainer reports successful login startup with the option enabled and no startup with it disabled.
+Existing disabled entries need cleanup; see [startup and suspend](docs/user-guide.md#startup-and-suspend).
+
 ## Compatibility and status
 
-The development candidate is **1.0.0-rc1**. The latest prepared package is **1.0.0~rc1-9**.
+The development candidate is **1.0.0-rc1**. The latest prepared package is **1.0.0~rc1-10**.
 The current tested personal system is:
 
 | Component | Tested configuration |
