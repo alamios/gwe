@@ -16,11 +16,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--hide-window', action='store_true')
     parser.add_argument('--delay', action='store_true')
+    parser.add_argument('--external-fans', action='store_true',
+                        help='Leave fans to another application for this launch; keep power control')
     parser.add_argument('--check-startup', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     from check_controllers import main as check_controllers
     from gwe.fan_service import FanClient
-    from gwe.native_configuration import prepare
+    from gwe.native_configuration import prepare, external_fans
     if check_controllers():
         raise RuntimeError('Another GWE controller is running or desktop inspection failed')
     base = Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share'))) / 'gwe-nvml'
@@ -31,22 +33,26 @@ def main():
     fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
     os.set_inheritable(descriptor, True)
     config = prepare(base)
+    fan_control = not (args.external_fans or external_fans(config))
+    if args.check_startup and not fan_control:
+        raise ValueError('Fan startup acceptance is unavailable with external fan control')
     # Keep the same process identity across exec so root pidfd supervision follows the GUI.
     client = FanClient('/run/gwe-fan-service/control.sock')
     try:
         client.socket.settimeout(15)
-        response = client.request('status')
-        if not response.get('ok') or response.get('state') != 'idle':
+        response = client.request('session', fan_control=fan_control)
+        if (not response.get('ok') or response.get('state') != 'idle'
+                or response.get('fan_control') is not fan_control):
             raise RuntimeError('Control service is unavailable or requires recovery')
     finally:
         client.close()
     environment = dict(os.environ, GWE_STATE_HOME=str(state))
     environment.pop('GWE_STARTUP_PROFILE', None)
-    if config.get('startup_profile'):
+    if fan_control and config.get('startup_profile'):
         environment['GWE_STARTUP_PROFILE'] = config['startup_profile']
     os.execve('/usr/bin/python3', ['python3', str(ROOT / 'scripts/run_service_gui.py'),
-                                 '--native', '--allow-control',
-                                 '--allow-power-control', '--continuous'] +
+                                 '--native', '--allow-power-control', '--continuous'] +
+              (['--allow-control'] if fan_control else ['--external-fans']) +
               (['--hide-window'] if args.hide_window else []) +
               (['--delay'] if args.delay else []) +
               (['--check-startup'] if args.check_startup else []), environment)

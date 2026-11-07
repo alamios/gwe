@@ -27,6 +27,28 @@ Hiding to the tray retains control. **Quit** releases the curve and verifies aut
 Do not run another controller against the same GPU. The helper coordinates CoolerControl when present
 and restores its prior service state after the control session ends.
 
+### Using another application for fans
+
+Enable **Let another application manage fans** in Preferences, then choose **Quit** and reopen GWE.
+The preference takes effect on the next launch, including login autostart. In this mode GWE leaves
+the external controller running and disables its own fan controls, including Auto and saved-curve restoration.
+Fan readings remain visible. Power-limit Apply and saved power restoration continue to work.
+
+For the first launch without stopping CoolerControl, run `gwe-nvml --external-fans`, then enable the
+preference if you want future launches to use it. The command-line flag alone is temporary. GWE does
+not start or configure the external application for you: its fan profiles must already be configured and running.
+GWE's saved power target may still be applied when it opens; use GWE as the only power-limit writer.
+
+Disable the preference and Quit/reopen to return fan control to GWE. That restores the ordinary
+CoolerControl stop/restore behavior and can reapply the saved GWE fan curve. Merely selecting Auto is
+not equivalent to external fan control. Overclocking remains unsupported.
+
+Package rc1-11 uses the older label **Let CoolerControl manage fans**. Package rc1-12 includes the
+generic name; the behavior is the same. The mode is not tied to CoolerControl, although
+other applications have not been individually validated and protections against competing GWE instances
+remain active. The owner reports successful use with CoolerControl; detailed fault/suspend checks remain
+pending. See [validation](validation.md#external-fan-control). Update the desktop and helper together.
+
 ## Power limits
 
 Select a limit and press **Apply**. A successful operation requires service verification and exact

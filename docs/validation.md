@@ -9,12 +9,12 @@ comes only from that personal system. Broader compatibility is not a project goa
 ## Current candidate
 
 - Application: **1.0.0-rc1**.
-- Latest prepared package: **1.0.0~rc1-10**, built from `ad7f72a` plus the autostart fix before commit;
-  exact source patch and build provenance retained with the local artifact.
+- Latest prepared package: **1.0.0~rc1-12**, runtime source `a71b7bb`;
+  build provenance and checksums retained with the local artifact.
 - Build/test runtime: system Python **3.14.4**, reviewed standalone dependency inputs.
 - Recorded target: RTX 3090 Ti, two fans, NVIDIA **615.71.09** (open kernel module), KDE,
   Kubuntu **26.04.1/Wayland**, AMD64.
-- Latest complete source suite: **632 passing tests** (2026-10-10).
+- Latest complete source suite: **667 passing tests** (2026-11-07, under Xvfb).
 
 Read-only inspection on 2026-10-11 confirms installed package **1.0.0~rc1-9** and active driver
 **615.71.09**, matching both `nvidia-smi` and the loaded NVIDIA open kernel module. The maintainer
@@ -26,7 +26,7 @@ does not establish publication or acceptance of every scenario.
 
 | Scenario | Result and scope |
 | --- | --- |
-| Backend/control/package tests | 632 simulated tests pass, including failure paths and subprocess supervision |
+| Backend/control/package tests | 667 tests pass, including failure paths, subprocess supervision and isolated GTK |
 | Native package build | Pass on Python 3.14 with preserved inputs, independent of an older interpreter environment |
 | Extracted candidate GTK on Wayland | Pass with synthetic control and real telemetry reads; isolated protocol identity verified |
 | Public and tray icon lookup | GTK loads native/original/symbolic assets; final installed KDE rendering pending |
@@ -68,6 +68,38 @@ Old disabled entries still require the cleanup described in the
 [user guide](user-guide.md#startup-and-suspend).
 
 ## Remaining checks
+
+### External fan control
+
+On 2026-11-07, the complete suite passed **667 tests** on system Python 3.14.4 with reviewed standalone
+inputs and Xvfb. One existing dependency deprecation warning was reported. External-mode coverage includes
+strict/legacy handshake parsing, blocked fan operations, permitted power requests and identity rejection,
+preference persistence and write failure, conflicting modes, pending recovery and stale overrides.
+Simulated daemon startup/shutdown/failure and post-stop recovery reject any cooling-service command or
+fan worker creation. An isolated GTK/ORM check verifies the preference, disabled fan actions, suppression
+of a saved curve and continued power scheduling. No installed service, personal profiles or GPU setters
+were used. Existing power tests cover stale/missing telemetry, bounds, permissions and verified rollback.
+
+Package **1.0.0~rc1-11** was built with verified standalone dependency checksums. Its extracted helper
+and desktop match the reviewed sources. The GTK/ORM integration check also passes using the extracted
+package's vendor modules and compiled resource, with temporary configuration and no hardware access.
+
+The owner reports successful ordinary use with CoolerControl on 2026-11-07. This is functional owner
+feedback, not independent evidence for every power, suspend or failure scenario, or for other controllers.
+Package rc1-12 uses the generic label "Let another application manage fans"; rc1-11 retains the older
+CoolerControl label with the same behavior. Six focused GTK/launcher tests passed after renaming.
+The rc1-12 build used verified dependency inputs; extracted resource/XML inspection confirms the new
+label, and packaged source comparisons, isolated imports and payload checks pass. No new hardware
+checks or installation were performed.
+
+For detailed installed acceptance, with CoolerControl configured and active, launch the updated
+package with `gwe-nvml --external-fans`; verify CoolerControl remains active, fan actions are disabled and
+power telemetry remains available. Save the preference and verify ordinary and login launches retain
+the mode. Under a separately authorized hardware procedure, verify one power change/readback and the
+chosen final target, plus Quit/reopen, suspend and service-failure recovery without disturbing external
+cooling. Return to ordinary mode only with an explicit cooling handoff. Clock offsets are not implemented.
+
+### Other hardware and desktop acceptance
 
 1. Verify both the tray and window icons in the installed candidate on KDE.
 2. With the applied curve active and the GPU available, suspend/resume once. Verify new service ownership

@@ -36,6 +36,15 @@ GTK, read private profiles or write GPU settings. Avoid publishing identity-bear
 
 ## Separate graphical checks
 
+The external-fan preference and native controller can be checked without NVML access or a real desktop:
+
+```bash
+PYTHONPATH="$GWE_BUILD_INPUTS" xvfb-run -a /usr/bin/python3 -m pytest -q tests/test_external_fans_ui.py
+```
+
+This uses temporary XDG directories, real GTK/ORM components and a fan client that fails if opened.
+The test skips without a display; run it explicitly under Xvfb when changing this behavior.
+
 ```bash
 PYTHONPATH="$GWE_BUILD_INPUTS" /usr/bin/python3 scripts/run_monitor.py --smoke-test
 PYTHONPATH="$GWE_BUILD_INPUTS" /usr/bin/python3 scripts/run_service_gui.py --smoke-native

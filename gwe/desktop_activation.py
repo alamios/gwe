@@ -6,6 +6,23 @@ import socket
 import stat
 import struct
 
+from gwe.fan_service import MAX_PACKET, decode
+
+
+def session_fan_control(peer):
+    """Read the authenticated launcher's mode before any cooling-service action.
+
+    Peek preserves the request for the normal service response. Legacy launchers
+    send status and retain exclusive fan control. Missing/invalid intent fails closed.
+    """
+    peer.settimeout(5)
+    request = decode(peer.recv(MAX_PACKET + 1, socket.MSG_PEEK))
+    if request['op'] == 'status':
+        return True
+    if request['op'] != 'session':
+        raise ValueError('Session negotiation required before desktop activation')
+    return request['fan_control']
+
 
 def activated_listener(path, uid):
     if os.environ.get('LISTEN_PID') != str(os.getpid()) or os.environ.get('LISTEN_FDS') != '1':

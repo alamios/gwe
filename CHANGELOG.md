@@ -7,6 +7,9 @@ license retained. Validation scope and remaining release gates are in [validatio
 
 - Replace desktop X11 GPU-control dependencies with NVML telemetry and supervised fan/power control.
 - Preserve editable curves, hysteresis, startup profile restoration and minimize-to-tray behavior.
+- Add an opt-in external fan control preference: leave fans to the external controller, reject
+  GWE fan writes and retain power controls (rc1-11). Mode changes require Quit/reopen; overclocking is unchanged.
+  Rename the option to "Let another application manage fans" after rc1-11; behavior is unchanged.
 - Remove the user autostart entry when login launch is disabled instead of relying on a GNOME-only
   flag; existing disabled entries require cleanup (included in the rc1-10 package).
 - Renew fan leases independently of GTK; supervise privileged workers with watchdog and verified recovery.

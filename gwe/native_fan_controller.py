@@ -7,7 +7,8 @@ from gwe.fan_profiles import read_profiles
 
 
 class NativeFanController(FanMainController):
-    def __init__(self, view, database, limits, session, *, power=None, startup_profile_name=None):
+    def __init__(self, view, database, limits, session, *, power=None, startup_profile_name=None,
+                 allow_control=True):
         from gwe.model.fan_profile import FanProfile
         from gwe.model.current_fan_profile import CurrentFanProfile
         from gwe.interactor.settings_interactor import SettingsInteractor
@@ -25,9 +26,9 @@ class NativeFanController(FanMainController):
                 current = self._persist(matches[0].identifier)
             SettingsInteractor.set_bool('settings_native_startup_initialized', True)
         selected = next((p for p in profiles if current is not None and p.identifier == current.profile_id), profiles[0])
-        restore = (selected.curve is not None and not selected.problem
+        restore = (allow_control and selected.curve is not None and not selected.problem
                    and SettingsInteractor.get_bool('settings_load_last_profile', True))
-        super().__init__(view, profiles, limits, session, allow_control=True, power=power,
+        super().__init__(view, profiles, limits, session, allow_control=allow_control, power=power,
                          startup_profile_name=None)
         self.selected = selected
         # The native database remembers an ID; duplicate editor names must not make restart ambiguous.
@@ -76,6 +77,8 @@ class NativeFanController(FanMainController):
         self.refresh()
 
     def problem(self):
+        if not self.allow_control:
+            return 'Fans are managed by another application. GWE only controls power in this session.'
         if self.selected is None:
             return 'Select a fan profile.'
         if self.selected and self.selected.automatic:
@@ -83,7 +86,7 @@ class NativeFanController(FanMainController):
         return super().problem()
 
     def refresh(self):
-        busy = (self.closed or self.pending_transition or self.desired is not None
+        busy = (not self.allow_control or self.closed or self.pending_transition or self.desired is not None
                 or self.session.state not in ('idle', 'active'))
         self.view.set_service_selection_enabled(not busy)
         self.view.set_apply_fan_profile_button_enabled(bool(
@@ -94,7 +97,8 @@ class NativeFanController(FanMainController):
         self.view.show_service_control_fault(self.session.message if self.session.state == 'fault' else None)
         from gwe.model.fan_profile import FanProfile
         profile = FanProfile.get_or_none(id=self.selected.identifier) if self.selected else None
-        self.view.set_edit_fan_profile_button_enabled(bool(profile and not profile.read_only and not self.closed))
+        self.view.set_edit_fan_profile_button_enabled(bool(
+            self.allow_control and profile and not profile.read_only and not self.closed))
         if self.session.state == 'fault' and self.last_fault != self.session.last_error:
             self.last_fault = self.session.last_error
             self.view.show_error_message_dialog('GPU control stopped', self.session.message)
@@ -109,6 +113,10 @@ class NativeFanController(FanMainController):
         if self.session.state in ('active', 'starting'):
             self.release()
         self.refresh()
+
+    def release(self):
+        if self.allow_control:
+            super().release()
 
     def pulse(self):
         if self.closed:
@@ -132,6 +140,8 @@ class NativeFanController(FanMainController):
         return result
 
     def edit(self, presenter):
+        if not self.allow_control:
+            return
         from gwe.model.fan_profile import FanProfile
         profile = FanProfile.get_or_none(id=self.selected.identifier) if self.selected else None
         if profile and not profile.read_only:

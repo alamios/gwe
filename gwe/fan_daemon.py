@@ -160,7 +160,7 @@ def session_record():
     return row
 
 
-def prepare_session(pid, uid):
+def prepare_session(pid, uid, *, fan_control=True):
     if type(pid) is not int or pid <= 1:
         raise ValueError('Explicit session owner required')
     if any((RUNTIME / name).exists() for name in ('owned.json', 'power-pending.json', 'power-trial.json')):
@@ -168,13 +168,33 @@ def prepare_session(pid, uid):
     actual_uid, start = process_identity(pid)
     if actual_uid != uid:
         raise ValueError('Session owner does not match configured desktop user')
-    result = subprocess.run(['systemctl', 'is-active', 'coolercontrold.service'],
-                            capture_output=True, timeout=5)
-    if (result.returncode, result.stdout.strip()) not in (
-            (0, b'active'), (3, b'inactive'), (3, b'failed')):
-        raise RuntimeError('Cannot determine previous CoolerControl state')
+    cooler_active = False
+    if fan_control:
+        result = subprocess.run(['systemctl', 'is-active', 'coolercontrold.service'],
+                                capture_output=True, timeout=5)
+        if (result.returncode, result.stdout.strip()) not in (
+                (0, b'active'), (3, b'inactive'), (3, b'failed')):
+            raise RuntimeError('Cannot determine previous CoolerControl state')
+        cooler_active = result.returncode == 0
     PowerRecord(RUNTIME).write(RUNTIME / 'session.json', dict(
-        version=1, pid=pid, uid=uid, start=start, cooler_active=result.returncode == 0), exclusive=True)
+        version=1, pid=pid, uid=uid, start=start, cooler_active=cooler_active), exclusive=True)
+
+
+class ExternalFanBackend:
+    """No fan worker, ownership journal, NVML initialization or recovery writes."""
+    state = 'idle'
+
+    def start(self, curve):
+        raise RuntimeError('Fan control belongs to an external controller')
+
+    def poll(self):
+        return self.state
+
+    def stop(self):
+        pass
+
+    def close(self):
+        return True
 
 
 def recover_session():
@@ -246,6 +266,7 @@ def main(argv=None):
     lock = None
     owner_fd = None
     listener = peer = None
+    fan_control = True
     try:
         if args.action != 'check' and RUNTIME.exists():
             trusted(RUNTIME)
@@ -288,19 +309,23 @@ def main(argv=None):
         if stat.S_IMODE(RUNTIME.stat().st_mode) != 0o711:
             raise ValueError('Unexpected runtime directory permissions')
         if args.desktop:
-            from gwe.desktop_activation import activated_listener
+            from gwe.desktop_activation import activated_listener, session_fan_control
             if any((RUNTIME / name).exists() or (RUNTIME / name).is_symlink()
                    for name in ('session.json', 'owned.json', 'power-pending.json', 'power-trial.json')):
                 raise RuntimeError('Recovery pending before desktop activation')
             listener, peer, pid = activated_listener(RUNTIME / 'control.sock', config['allowed_uid'])
-            prepare_session(pid, config['allowed_uid'])
+            fan_control = session_fan_control(peer)
+            if not fan_control and (SESSION_OVERRIDE.exists() or SESSION_OVERRIDE.is_symlink()):
+                raise RuntimeError('Manual session override requires recovery before external cooling')
+            prepare_session(pid, config['allowed_uid'], fan_control=fan_control)
             owner_fd = session_owner(config['allowed_uid'])
             if session_record()['cooler_active']:
                 subprocess.run(['systemctl', 'stop', 'coolercontrold.service'], check=True, timeout=5)
         # Manual trials require operator-arranged exclusivity; desktop activation records the prior state.
-        result = subprocess.run(['systemctl', 'is-active', 'coolercontrold.service'], capture_output=True, timeout=2)
-        if result.returncode != 3 or result.stdout.strip() not in (b'inactive', b'failed'):
-            raise RuntimeError('CoolerControl must be confirmed stopped before starting')
+        if fan_control:
+            result = subprocess.run(['systemctl', 'is-active', 'coolercontrold.service'], capture_output=True, timeout=2)
+            if result.returncode != 3 or result.stdout.strip() not in (b'inactive', b'failed'):
+                raise RuntimeError('CoolerControl must be confirmed stopped before starting')
         # Process names provide an additional guard, not a global GPU ownership lock.
         for entry in Path('/proc').iterdir():
             if entry.name.isdigit():
@@ -308,7 +333,7 @@ def main(argv=None):
                     name = (entry / 'comm').read_text().strip().lower()
                 except (FileNotFoundError, ProcessLookupError):
                     continue
-                if name in ('gwe', 'fancontrol', 'nvfancontrol'):
+                if name == 'gwe' or (fan_control and name in ('fancontrol', 'nvfancontrol')):
                     raise RuntimeError('Another fan controller is running')
         record = OwnershipRecord(RUNTIME / 'owned.json', config['gpu_uuid'])
         if args.continuous and (RUNTIME / 'power-trial.json').exists():
@@ -323,10 +348,11 @@ def main(argv=None):
                 raise RuntimeError('Unexpected existing endpoint')
             endpoint.unlink()  # Root-owned parent, only after an old service has stopped.
         backend = ProcessBackend(config['gpu_uuid'], ceiling=85 if args.continuous else 60,
-                                 record=record.record, clear=record.clear)
+                                 record=record.record, clear=record.clear) if fan_control else ExternalFanBackend()
         power = PowerBackend(config['gpu_uuid'], RUNTIME)
         service = FanService(endpoint, backend, allowed_uid=config['allowed_uid'], provision=True,
-                             power=power, power_with_fan=args.continuous, listener=listener, initial_peer=peer)
+                             power=power, power_with_fan=args.continuous and fan_control,
+                             listener=listener, initial_peer=peer, fan_control=fan_control)
         listener = peer = None  # Service now owns the descriptors, systemd owns the socket path.
         stopping = False
         def stop(signum, frame):
