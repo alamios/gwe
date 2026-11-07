@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with gwe.  If not, see <http://www.gnu.org/licenses/>.
 import logging
+import os
 from typing import Dict, Any
 
 from gi.repository import Gtk
@@ -24,6 +25,7 @@ from gwe.di import PreferencesBuilder
 from gwe.presenter.preferences_presenter import PreferencesViewInterface, PreferencesPresenter
 from gwe.util.deployment import is_flatpak
 from gwe.util.view import hide_on_delete
+from gwe.runtime_mode import native_desktop
 
 _LOG = logging.getLogger(__name__)
 
@@ -56,6 +58,15 @@ class PreferencesView(PreferencesViewInterface):
 
     def show(self) -> None:
         self._dialog.show_all()
+        self._builder.get_object('settings_external_fans_row').set_visible(
+            native_desktop() and os.environ.get('GWE_UI_SMOKE_TEST') != '1')
+
+    def show_error(self, message: str) -> None:
+        dialog = Gtk.MessageDialog(transient_for=self._dialog, modal=True,
+                                   message_type=Gtk.MessageType.ERROR,
+                                   buttons=Gtk.ButtonsType.CLOSE, text=message)
+        dialog.run()
+        dialog.destroy()
 
     def hide(self) -> None:
         self._dialog.hide()

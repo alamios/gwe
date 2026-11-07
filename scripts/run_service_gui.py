@@ -21,6 +21,7 @@ def main(argv=None):
     source.add_argument('--database', type=Path, help='Explicit backup opened read-only')
     source.add_argument('--demo', action='store_true', help='Use a synthetic curve; telemetry still uses read-only NVML')
     parser.add_argument('--native', action='store_true', help='Use private writable configuration and the standard desktop controls')
+    parser.add_argument('--external-fans', action='store_true', help='Disable all fan control; retain native power controls')
     parser.add_argument('--hide-window', action='store_true', help='Start minimized to the system tray')
     parser.add_argument('--delay', action='store_true', help='Delay startup briefly for desktop login')
     parser.add_argument('--allow-control', action='store_true', help='Enable explicit ten-second service trials')
@@ -36,6 +37,8 @@ def main(argv=None):
     checks.add_argument('--smoke-native', action='store_true', help='Check writable curves, editor, tray and automatic mode with simulated control')
     checks.add_argument('--check-startup', action='store_true', help='Verify real startup control briefly and close; requires the supervised wrapper')
     args = parser.parse_args(argv)
+    if args.external_fans and (not args.native or args.allow_control or args.startup_profile or args.check_startup):
+        parser.error('--external-fans requires native mode without fan control or startup checks')
     if args.smoke_native:
         args.native = args.demo = args.continuous = True
     if args.native:
@@ -59,7 +62,7 @@ def main(argv=None):
         parser.error('--check-startup requires a configured startup curve and continuous control')
     if args.smoke_combined:
         args.continuous = True
-    if args.continuous and not (args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup or args.smoke_native):
+    if args.continuous and not (args.external_fans or args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup or args.smoke_native):
         parser.error('--continuous requires --allow-control or a simulated continuous check')
     if (args.allow_control or args.allow_power_control) and (args.demo or args.smoke_test or args.smoke_service or args.smoke_power or args.smoke_combined or args.smoke_startup):
         parser.error('Real control cannot be combined with demo or smoke checks')
@@ -83,7 +86,7 @@ def main(argv=None):
             profiles = (SavedFanProfile(1, 'Synthetic trial', FanCurve(((0, 40), (50, 40), (80, 100))), None),)
         else:
             profiles = read_profiles(args.database)
-        limits = (30, 100) if args.demo else manual_limits()
+        limits = (30, 100) if args.demo or args.external_fans else manual_limits()
         if startup_profile is not None and not args.native:
             matches = [profile for profile in profiles if profile.name == startup_profile]
             if len(matches) != 1 or matches[0].problem:
@@ -178,7 +181,8 @@ def main(argv=None):
                 CurrentFanProfile.create(profile=profile)
                 SettingsInteractor.set_bool('settings_load_last_profile', True)
             return NativeFanController(view, INJECTOR.get(SqliteDatabase), limits, session,
-                                       power=power, startup_profile_name=startup_profile)
+                                       power=power, startup_profile_name=startup_profile,
+                                       allow_control=not args.external_fans)
         return FanMainController(view, profiles, limits, session,
                                  allow_control=args.allow_control or args.smoke_service or args.smoke_combined or args.smoke_startup,
                                  power=power, startup_profile_name=startup_profile)

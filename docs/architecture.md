@@ -24,7 +24,7 @@ socket. The root configuration pins one GPU and desktop UID. A mode-0600 Unix se
 checks kernel peer credentials. Requests cannot choose an arbitrary GPU, executable or filesystem path.
 The desktop PID is supervised so process death can end the session and restore cooling coordination.
 
-The protocol provides `status`, `acquire`, `renew`, `release`, `power_status` and `power_apply`.
+The protocol provides `session`, `status`, `acquire`, `renew`, `release`, `power_status` and `power_apply`.
 Malformed messages, unknown fields and unsupported versions are rejected. A fan lease belongs to its
 specific connection; another connection from the same UID cannot renew or release it. Status does not
 renew a lease. Acquisition acceptance is distinct from an `active` state verified by the worker;
@@ -47,6 +47,27 @@ The native service has no fixed session-duration cap. Its ten-second systemd wat
 The service records a competing CoolerControl service's state and coordinates its stop/restore.
 This does not authorize arbitrary simultaneous GPU fan controllers. Control loss produces a persistent
 notice and notification; it is not silently rearmed.
+
+### External fan control
+
+The native launcher reads the `external_fans` boolean from its private configuration before connecting.
+The authenticated initial packet negotiates `session` with a strict boolean `fan_control`; the daemon
+peeks at that packet with a five-second timeout before any CoolerControl action. Legacy initial `status`
+requests retain exclusive fan control. Other initial operations, malformed packets and missing intent
+fail before cooling coordination. Subsequent negotiation can confirm the mode but cannot change it.
+
+With fan control disabled, the daemon leaves CoolerControl untouched, creates no fan worker and rejects
+`acquire`, `renew` and `release` from every connection. Its inert fan backend performs no NVML calls or
+fan recovery. The session record's `cooler_active` flag is false because there is no cooling service to
+restore on this session's behalf; it is not an observation of CoolerControl's live state. PID supervision,
+watchdog and power transaction recovery remain active. Pending journals and stale manual-session overrides
+block activation; this mode never discards recovery obligations from an earlier session.
+
+The desktop disables fan selection, Apply and editing, suppresses saved fan restoration and leaves the
+fan client disconnected, including through suspend and Quit. Power controls and saved power restoration
+remain available. Changing the preference only affects the next process launch. The temporary
+`--external-fans` launcher option selects the mode for one launch without changing the saved preference.
+No clock-control capability is introduced.
 
 ## Power transactions and persistence
 

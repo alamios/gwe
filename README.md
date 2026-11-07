@@ -24,6 +24,7 @@ Compatibility claims are limited to recorded validation.
 - Supervised fan control independent of GTK scheduling, with leases, watchdog and automatic recovery.
 - Verified power-limit changes, saved per GPU and restored once when GWE starts.
 - Guarded curve reapplication after suspend, once service recovery is verified.
+- Optional external fan control with GWE power controls retained.
 - Minimize-to-tray support, desktop notifications and persistent control-failure notices.
 
 The GTK desktop works without X11 GPU-control extensions. Missing readings remain unavailable;
@@ -39,7 +40,7 @@ Choose a release package and verify its checksum. Before an update, quit GWE usi
 work and allow recovery to finish. For the current prepared candidate:
 
 ```bash
-sudo apt install ./gwe-nvml_1.0.0~rc1-10_all.deb
+sudo apt install ./gwe-nvml_1.0.0~rc1-11_all.deb
 ```
 
 Launch **GreenWithEnvy** from the application menu or run `gwe-nvml`. Normal launch opens no terminal
@@ -48,6 +49,11 @@ and requests no password; administrator authorization is configured during insta
 See the [user guide](docs/user-guide.md) for curves, power, startup, updates and recovery.
 Back up your profiles using the [configuration guide](docs/configuration-backup.md).
 
+Preferences includes **Let another application manage fans**. It takes effect after Quit/reopen;
+use `gwe-nvml --external-fans` for an initial launch that leaves external cooling active. The prepared
+rc1-11 package labels this option **Let CoolerControl manage fans**; the generic name is a later source
+change. See [using another application for fans](docs/user-guide.md#using-another-application-for-fans).
+
 The source now removes the login entry when autostart is disabled, fixing reliance on a
 GNOME-specific flag under Plasma. This fix is included in the prepared rc1-10 package.
 The maintainer reports successful login startup with the option enabled and no startup with it disabled.
@@ -55,7 +61,7 @@ Existing disabled entries need cleanup; see [startup and suspend](docs/user-guid
 
 ## Compatibility and status
 
-The development candidate is **1.0.0-rc1**. The latest prepared package is **1.0.0~rc1-10**.
+The development candidate is **1.0.0-rc1**. The latest prepared package is **1.0.0~rc1-11**.
 The current tested personal system is:
 
 | Component | Tested configuration |
@@ -67,7 +73,8 @@ The current tested personal system is:
 | Application runtime | System Python 3.14.4, GTK3 |
 
 Testing this GPU does not establish support for the entire RTX 30-series or other NVIDIA cards.
-The complete automated suite passes 632 tests on system Python 3.14.4. Installed lifecycle and
+The complete automated suite passes 667 tests on system Python 3.14.4, including isolated GTK checks.
+The owner reports working CoolerControl coexistence; detailed fault/suspend checks remain pending. Installed lifecycle and
 supervisor recovery have hardware evidence; the owner reports working power restoration.
 Installed automatic curve resume and the latest icon correction still need acceptance.
 On 2026-10-11, read-only inspection confirmed driver 615.71.09 and installed package 1.0.0~rc1-9;

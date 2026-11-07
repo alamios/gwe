@@ -5,7 +5,7 @@
 | Location | Purpose |
 | --- | --- |
 | `$XDG_CONFIG_HOME/gwe-native/gwe.db` | Private profiles and preferences, including the verified power target |
-| `$XDG_DATA_HOME/gwe-nvml/config.json` | Desktop launcher configuration |
+| `$XDG_DATA_HOME/gwe-nvml/config.json` | Desktop launcher configuration, including the `external_fans` preference |
 | `$XDG_DATA_HOME/gwe-nvml/state/` | Session lock and bounded private diagnostics |
 | `/etc/gwe-fan-service.json` | Privileged authorization: desktop UID and pinned GPU identity |
 | `/run/gwe-fan-service/` | Runtime ownership and recovery journals |
@@ -43,6 +43,8 @@ with closing(sqlite3.connect(source.as_uri() + '?mode=ro', uri=True)) as origina
 ```
 
 Verify and retain a checksum alongside the backup. Preserve `config.json` and any import backups too.
+The external-fan preference is stored in that JSON file, not in the profile database; a missing key
+defaults to GWE fan control. Review it before restoring or launching with a backup.
 An online backup is a consistent snapshot, not a copy of subsequent edits. Keep an additional copy on
 independent storage; a Git-ignored directory on the same disk does not protect against disk failure.
 

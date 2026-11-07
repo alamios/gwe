@@ -203,6 +203,75 @@ along with GWE.  If not, see <http://www.gnu.org/licenses/>.
                                       </object>
                                     </child>
                                     <child>
+                                      <object class="GtkListBoxRow" id="settings_external_fans_row">
+                                        <property name="height_request">52</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <child>
+                                          <object class="GtkGrid" id="settings_external_fans_grid">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="valign">center</property>
+                                            <property name="margin_left">20</property>
+                                            <property name="margin_right">20</property>
+                                            <property name="margin_top">6</property>
+                                            <property name="margin_bottom">6</property>
+                                            <property name="row_spacing">2</property>
+                                            <property name="column_spacing">24</property>
+                                            <child>
+                                              <object class="GtkLabel">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="hexpand">True</property>
+                                                <property name="label" translatable="yes">Let another application manage fans</property>
+                                                <property name="use_underline">True</property>
+                                                <property name="xalign">0</property>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">0</property>
+                                                <property name="top_attach">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel" id="settings_external_fans_description_label">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="wrap">True</property>
+                                                <property name="max_width_chars">45</property>
+                                                <property name="label" translatable="yes">Keep power control in GWE. Takes effect after quitting and reopening GWE.</property>
+                                                <property name="xalign">0</property>
+                                                <attributes>
+                                                  <attribute name="scale" value="0.90000000000000002"/>
+                                                </attributes>
+                                                <style>
+                                                  <class name="dim-label"/>
+                                                </style>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">0</property>
+                                                <property name="top_attach">1</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkSwitch" id="settings_external_fans_switch">
+                                                <property name="name">settings_external_fans_switch</property>
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="halign">end</property>
+                                                <property name="valign">center</property>
+                                                <signal name="state-set" handler="on_setting_changed" swapped="no"/>
+                                              </object>
+                                              <packing>
+                                                <property name="left_attach">1</property>
+                                                <property name="top_attach">0</property>
+                                                <property name="height">2</property>
+                                              </packing>
+                                            </child>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </child>
+                                    <child>
                                       <object class="GtkListBoxRow">
                                         <property name="height_request">52</property>
                                         <property name="visible">True</property>

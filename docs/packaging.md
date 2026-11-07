@@ -58,6 +58,10 @@ replace published bytes under an existing version or tag. Publishing is covered 
 
 ## Install/update guarantees
 
+External fan control changes both launcher negotiation and helper policy. Update them together using
+the combined package. The mode requires no change to root authorization or systemd unit configuration.
+The desktop preference is saved in the user's existing launcher JSON and takes effect on the next launch.
+
 The package configures authorization and socket activation during installation. Desktop launch needs no
 sudo or terminal. Maintainer scripts refuse an active controller or pending recovery before replacement.
 Authorization and private user configuration are preserved during updates/removal. Quit and finish

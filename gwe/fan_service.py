@@ -37,8 +37,12 @@ def decode(packet):
     fields = {'version', 'op', 'points', 'hysteresis', 'vbios_silent'} if op == 'acquire' else {'version', 'op'}
     if op == 'power_apply':
         fields |= {'limit_mw', 'expected_mw', 'expected_uuid'}
-    if op not in ('status', 'acquire', 'renew', 'release', 'power_status', 'power_apply') or set(request) != fields:
+    if op == 'session':
+        fields.add('fan_control')
+    if op not in ('session', 'status', 'acquire', 'renew', 'release', 'power_status', 'power_apply') or set(request) != fields:
         raise ValueError('Unknown operation or fields')
+    if op == 'session' and type(request['fan_control']) is not bool:
+        raise ValueError('Invalid session mode')
     if op == 'power_apply':
         if not isinstance(request['expected_uuid'], str) or not request['expected_uuid'].startswith('GPU-'):
             raise ValueError('Invalid expected identity')
@@ -128,8 +132,10 @@ class FanService:
     Caller owns lifecycle/event-loop scheduling. Production root-to-user socket
     provisioning uses an explicitly supplied root-owned runtime directory.
     """
+    fan_control = True
+
     def __init__(self, path, backend, *, allowed_uid, clock=boot_time, provision=False, power=None,
-                 power_with_fan=False, listener=None, initial_peer=None):
+                 power_with_fan=False, listener=None, initial_peer=None, fan_control=True):
         self.path = Path(path)
         parent = self.path.parent.stat()
         if type(allowed_uid) is not int or allowed_uid < 0:
@@ -140,6 +146,7 @@ class FanService:
         if parent.st_uid != os.geteuid() or stat.S_IMODE(parent.st_mode) != expected_mode:
             raise ValueError('Socket directory ownership or mode mismatch')
         self.allowed_uid = allowed_uid
+        self.fan_control = fan_control
         self.lease = Lease(backend, clock)
         self.power = power
         self.power_with_fan = power_with_fan
@@ -217,6 +224,12 @@ class FanService:
 
     def request(self, client, request):
         """Continuous sessions may change power alongside a stable owned fan curve."""
+        if request['op'] == 'session':
+            if request['fan_control'] is not self.fan_control:
+                return {'ok': False, 'error': 'session_mode_mismatch'}
+            return {'ok': True, 'state': self.lease.state, 'fan_control': self.fan_control}
+        if not self.fan_control and request['op'] in ('acquire', 'renew', 'release'):
+            return {'ok': False, 'error': 'fan_control_disabled'}
         if request['op'].startswith('power_'):
             if self.power is None:
                 return {'ok': False, 'error': 'power_unavailable'}
